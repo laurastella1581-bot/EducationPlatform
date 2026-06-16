@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patchwork Board Game - Advanced</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;700;900&display=swap');
+        body {
+            background-color: #f0f2f5;
+            font-family: 'Pretendard', sans-serif;
+            user-select: none;
+        }
+        .grid-cell {
+            width: 38px;
+            height: 38px;
+            border: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .time-track-cell {
+            width: 45px;
+            height: 45px;
+            border: 2px solid #fff;
+            position: relative;
+            background: white;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            color: #9ca3af;
+        }
+        .player-token {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            position: absolute;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 20;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .patch-preview-cell {
+            width: 18px;
+            height: 18px;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        .active-turn {
+            ring: 4px;
+            ring-color: #3b82f6;
+            transform: scale(1.02);
+        }
+        .placed-patch {
+            transition: all 0.2s;
+            position: relative;
+        }
+        .placed-patch::after {
+            content: '';
+            position: absolute;
+            inset: 2px;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 2px;
+        }
+        .button-icon {
+            font-size: 14px;
+            filter: drop-shadow(0 1px 1px rgba(0,0,0,0.2));
+        }
+    </style>
+</head>
+<body class="p-2 md:p-6">
+    <div id="game-container" class="max-w-7xl mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[90vh]">
+        <!-- Header -->
+        <header class="bg-gray-800 text-white p-4 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-black tracking-tighter">PATCHWORK <span class="text-blue-400">STRATEGY</span></h1>
+                <p class="text-xs text-gray-400">상대보다 더 아름다운 퀼트를 완성하세요</p>
+            </div>
+            <div id="turn-indicator" class="px-4 py-2 bg-blue-600 rounded-full font-bold text-sm animate-pulse">
+                플레이어 1의 차례
+            </div>
+        </header>
+
+        <div class="flex-grow flex flex-col lg:flex-row overflow-hidden">
+            <!-- Left Side: Player Boards & Track -->
+            <div class="flex-grow p-4 overflow-y-auto space-y-6">
+                <!-- Boards Container -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- P1 -->
+                    <div id="p1-container" class="p-4 rounded-2xl bg-blue-50 border-2 border-transparent transition-all">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="flex items-center gap-2 font-black text-blue-700">
+                                <div class="w-4 h-4 rounded-full bg-blue-500"></div> P1
+                            </span>
+                            <div class="flex gap-3 font-bold">
+                                <span class="bg-white px-2 py-1 rounded-lg shadow-sm">🔘 <span id="p1-buttons">5</span></span>
+                                <span class="bg-white px-2 py-1 rounded-lg shadow-sm">⏳ <span id="p1-time">0</span>/53</span>
+                                <span class="bg-blue-100 px-2 py-1 rounded-lg text-blue-600">➕🔘 <span id="p1-income">0</span></span>
+                            </div>
+                        </div>
+                        <div id="p1-board" class="grid grid-cols-9 gap-px bg-gray-200 border-2 border-blue-200 shadow-inner rounded overflow-hidden mx-auto" style="width: fit-content;"></div>
+                    </div>
+                    <!-- P2 -->
+                    <div id="p2-container" class="p-4 rounded-2xl bg-pink-50 border-2 border-transparent transition-all">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="flex items-center gap-2 font-black text-pink-700">
+                                <div class="w-4 h-4 rounded-full bg-pink-500"></div> P2
+                            </span>
+                            <div class="flex gap-3 font-bold">
+                                <span class="bg-white px-2 py-1 rounded-lg shadow-sm">🔘 <span id="p2-buttons">5</span></span>
+                                <span class="bg-white px-2 py-1 rounded-lg shadow-sm">⏳ <span id="p2-time">0</span>/53</span>
+                                <span class="bg-pink-100 px-2 py-1 rounded-lg text-pink-600">➕🔘 <span id="p2-income">0</span></span>
+                            </div>
+                        </div>
+                        <div id="p2-board" class="grid grid-cols-9 gap-px bg-gray-200 border-2 border-pink-200 shadow-inner rounded overflow-hidden mx-auto" style="width: fit-content;"></div>
+                    </div>
+                </div>
+
+                <!-- Time Track -->
+                <div class="bg-gray-100 p-4 rounded-2xl border border-gray-200">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-xs font-black text-gray-500 uppercase tracking-widest">Time Track</h3>
+                        <div class="flex gap-2 text-[10px] text-gray-400">
+                            <span>🔘 수입 발생</span>
+                            <span>🟫 가죽 패치</span>
+                        </div>
+                    </div>
+                    <div id="time-track" class="flex flex-wrap gap-1 p-2 bg-gray-200 rounded-xl relative">
+                        <!-- Tokens will be moved here by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Shop & Controls -->
+            <div class="w-full lg:w-96 bg-gray-50 border-l border-gray-200 flex flex-col">
+                <div class="p-4 border-b bg-white">
+                    <h2 class="text-lg font-black flex items-center gap-2">
+                        <span>🛍️</span> 패치 상점
+                    </h2>
+                    <p class="text-xs text-gray-500">현재 위치에서 다음 3개의 패치 중 선택 가능</p>
+                </div>
+                
+                <div id="patch-list" class="flex-grow overflow-y-auto p-4 space-y-3">
+                    <!-- Shop items -->
+                </div>
+
+                <div class="p-6 bg-white border-t space-y-4">
+                    <div id="selection-info" class="text-center p-3 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+                        <span id="selected-name" class="font-bold text-gray-400 italic">패치를 선택하세요</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="rotatePatch()" class="py-3 bg-white border-2 border-gray-200 rounded-xl font-bold hover:bg-gray-50 active:scale-95 transition">🔄 회전</button>
+                        <button onclick="flipPatch()" class="py-3 bg-white border-2 border-gray-200 rounded-xl font-bold hover:bg-gray-50 active:scale-95 transition">↔️ 반전</button>
+                    </div>
+                    <button id="pass-btn" onclick="handlePass()" class="w-full py-4 bg-gray-800 text-white rounded-2xl font-black hover:bg-black active:scale-95 transition shadow-lg">
+                        시간 전진 (단추 획득)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="game-over-modal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl scale-in-center">
+            <div class="text-5xl mb-4">🏆</div>
+            <h2 class="text-3xl font-black mb-2">게임 종료!</h2>
+            <div id="final-scores" class="space-y-3 my-6 text-left"></div>
+            <button onclick="location.reload()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black hover:bg-blue-700 shadow-lg transition">다시 시작하기</button>
+        </div>
+    </div>
+
+    <script>
+        const GRID_SIZE = 9;
+        const TIME_LIMIT = 53;
+        
+        // 보드게임 공식 데이터 기반 패치 데이터
+        const PATCH_DATA = [
+            { shape: [[1,1],[1,1]], cost: 2, time: 2, buttons: 0, color: '#f87171' },
+            { shape: [[1,1,1],[0,1,0]], cost: 4, time: 2, buttons: 1, color: '#fb923c' },
+            { shape: [[1,1,1,1]], cost: 3, time: 3, buttons: 1, color: '#fbbf24' },
+            { shape: [[1,1],[1,0],[1,0]], cost: 1, time: 3, buttons: 0, color: '#a3e635' },
+            { shape: [[1,1,1],[1,0,0],[1,0,0]], cost: 10, time: 4, buttons: 3, color: '#34d399' },
+            { shape: [[1,1,1],[0,0,1]], cost: 2, time: 1, buttons: 0, color: '#22d3ee' },
+            { shape: [[1,1,1,1,1]], cost: 7, time: 1, buttons: 1, color: '#818cf8' },
+            { shape: [[1,1],[0,1],[1,1]], cost: 5, time: 5, buttons: 2, color: '#a78bfa' },
+            { shape: [[1,1,0],[0,1,1]], cost: 3, time: 4, buttons: 1, color: '#f472b6' },
+            { shape: [[1,1,1],[1,1,1]], cost: 1, time: 2, buttons: 0, color: '#94a3b8' },
+            { shape: [[1,1,1],[1,0,1]], cost: 2, time: 2, buttons: 0, color: '#52525b' },
+            { shape: [[1,0],[1,1],[0,1]], cost: 7, time: 2, buttons: 2, color: '#dc2626' },
+            { shape: [[1,1,1],[0,1,0],[0,1,0]], cost: 5, time: 3, buttons: 1, color: '#d97706' },
+            { shape: [[1,1,1,1],[1,0,0,0]], cost: 1, time: 5, buttons: 1, color: '#65a30d' },
+            { shape: [[0,1,1],[1,1,0]], cost: 4, time: 6, buttons: 2, color: '#059669' },
+            { shape: [[1,1,1,1],[0,1,1,0]], cost: 1, time: 2, buttons: 0, color: '#be185d' },
+            { shape: [[1,1,0],[1,1,1]], cost: 2, time: 3, buttons: 1, color: '#4338ca' },
+        ];
+
+        let players = [
+            { id: 0, buttons: 5, time: 0, board: Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null)), color: '#3b82f6', income: 0, hasSpecialBonus: false },
+            { id: 1, buttons: 5, time: 0, board: Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null)), color: '#ec4899', income: 0, hasSpecialBonus: false }
+        ];
+
+        let currentPlayerIdx = 0;
+        let shopPatches = [];
+        let selectedIdx = null;
+        let rotation = 0;
+        let flipped = false;
+        let bonus7x7Claimed = false;
+        let leatherPatchesToPlace = 0; // 1x1 패치 배치 대기열
+
+        // Initialize
+        function init() {
+            shopPatches = [...PATCH_DATA].sort(() => Math.random() - 0.5);
+            createBoards();
+            createTrack();
+            updateUI();
+        }
+
+        function createBoards() {
+            [0, 1].forEach(pIdx => {
+                const el = document.getElementById(`p${pIdx+1}-board`);
+                el.innerHTML = '';
+                for (let r = 0; r < GRID_SIZE; r++) {
+                    for (let c = 0; c < GRID_SIZE; c++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'grid-cell cursor-pointer bg-white';
+                        cell.onclick = () => onCellClick(pIdx, r, c);
+                        cell.onmouseover = () => onCellOver(pIdx, r, c);
+                        cell.onmouseout = () => clearPreview(pIdx);
+                        el.appendChild(cell);
+                    }
+                }
+            });
+        }
+
+        function createTrack() {
+            const track = document.getElementById('time-track');
+            track.innerHTML = '';
+            for (let i = 0; i <= TIME_LIMIT; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'time-track-cell';
+                cell.innerText = i;
+                if ([5, 11, 17, 23, 29, 35, 41, 47].includes(i)) cell.innerHTML += '<div class="absolute -top-1 -right-1 text-xs">🔘</div>';
+                if ([20, 26, 32, 38, 44].includes(i)) {
+                    cell.dataset.leather = "true";
+                    cell.innerHTML += '<div class="absolute -bottom-1 -right-1 text-xs leather-patch">🟫</div>';
+                }
+                track.appendChild(cell);
+            }
+            // Add Player Tokens
+            players.forEach(p => {
+                const token = document.createElement('div');
+                token.id = `token-p${p.id}`;
+                token.className = 'player-token';
+                token.style.backgroundColor = p.color;
+                token.style.border = '3px solid white';
+                document.body.appendChild(token);
+            });
+            positionTokens();
+        }
+
+        function positionTokens() {
+            players.forEach(p => {
+                const trackCell = document.getElementById('time-track').children[p.time];
+                const rect = trackCell.getBoundingClientRect();
+                const token = document.getElementById(`token-p${p.id}`);
+                
+                // If same space, offset P2 slightly
+                let offsetX = rect.left + rect.width/2 - 12;
+                let offsetY = rect.top + rect.height/2 - 12;
+                if (players[0].time === players[1].time) {
+                    offsetX += p.id === 0 ? -4 : 4;
+                    offsetY += p.id === 0 ? -4 : 4;
+                    token.style.zIndex = p.id === currentPlayerIdx ? "30" : "20"; // Active player on top
+                }
+                
+                token.style.left = `${offsetX}px`;
+                token.style.top = `${offsetY}px`;
+            });
+        }
+
+        function renderShop() {
+            const list = document.getElementById('patch-list');
+            list.innerHTML = '';
+            const nextThree = shopPatches.slice(0, 3);
+            
+            nextThree.forEach((p, i) => {
+                const item = document.createElement('div');
+                item.className = `p-3 rounded-2xl border-2 cursor-pointer transition-all ${selectedIdx === i ? 'bg-blue-50 border-blue-500 shadow-md' : 'bg-white border-gray-100 hover:border-gray-200'}`;
+                item.onclick = () => selectPatch(i);
+                
+                // Mini preview
+                const preview = document.createElement('div');
+                preview.className = 'grid gap-px';
+                preview.style.gridTemplateColumns = `repeat(${p.shape[0].length}, 18px)`;
+                p.shape.flat().forEach(cell => {
+                    const c = document.createElement('div');
+                    c.className = 'patch-preview-cell';
+                    if (cell) c.style.backgroundColor = p.color;
+                    else c.style.border = 'none';
+                    preview.appendChild(c);
+                });
+
+                item.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <div class="flex-shrink-0">${preview.outerHTML}</div>
+                        <div class="flex-grow">
+                            <div class="flex justify-between font-black text-sm mb-1">
+                                <span class="text-gray-700">🔘 ${p.cost}</span>
+                                <span class="text-gray-500">⏳ ${p.time}</span>
+                            </div>
+                            <div class="text-[10px] font-bold text-blue-500">➕🔘 수입: ${p.buttons}</div>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+            
+            if (shopPatches.length === 0) {
+                list.innerHTML = '<div class="text-center p-8 text-gray-400 font-bold">상점이 비었습니다</div>';
+            }
+        }
+
+        function selectPatch(idx) {
+            if (leatherPatchesToPlace > 0) return; // 1x1 배치 중에는 상점 이용 불가
+            selectedIdx = idx;
+            rotation = 0;
+            flipped = false;
+            document.getElementById('selected-name').innerText = `패치 #${idx + 1} 선택됨`;
+            renderShop();
+        }
+
+        function getShape(originalShape, rot, flip) {
+            let shape = JSON.parse(JSON.stringify(originalShape));
+            if (flip) shape = shape.map(row => [...row].reverse());
+            const rCount = (rot / 90) % 4;
+            for (let i = 0; i < rCount; i++) {
+                const R = shape.length, C = shape[0].length;
+                const rotated = Array(C).fill().map(() => Array(R).fill(0));
+                for (let y = 0; y < R; y++) {
+                    for (let x = 0; x < C; x++) rotated[x][R - 1 - y] = shape[y][x];
+                }
+                shape = rotated;
+            }
+            return shape;
+        }
+
+        function onCellOver(pIdx, r, c) {
+            if (pIdx !== currentPlayerIdx) return;
+            const boardEl = document.getElementById(`p${pIdx+1}-board`);
+            const cells = boardEl.children;
+
+            let shape, color;
+            if (leatherPatchesToPlace > 0) {
+                shape = [[1]];
+                color = '#78350f'; // 가죽 색상
+            } else if (selectedIdx !== null) {
+                const p = shopPatches[selectedIdx];
+                shape = getShape(p.shape, rotation, flipped);
+                color = p.color;
+            } else return;
+
+            let canPlace = true;
+            for(let i=0; i<shape.length; i++) {
+                for(let j=0; j<shape[0].length; j++) {
+                    if (shape[i][j]) {
+                        const tr = r+i, tc = c+j;
+                        if (tr >= GRID_SIZE || tc >= GRID_SIZE || players[pIdx].board[tr][tc]) canPlace = false;
+                    }
+                }
+            }
+
+            for(let i=0; i<shape.length; i++) {
+                for(let j=0; j<shape[0].length; j++) {
+                    if (shape[i][j]) {
+                        const tr = r+i, tc = c+j;
+                        if (tr < GRID_SIZE && tc < GRID_SIZE) {
+                            const cell = cells[tr * GRID_SIZE + tc];
+                            cell.style.backgroundColor = canPlace ? color : '#fee2e2';
+                            cell.style.opacity = '0.6';
+                        }
+                    }
+                }
+            }
+        }
+
+        function clearPreview(pIdx) {
+            const boardEl = document.getElementById(`p${pIdx+1}-board`);
+            const cells = boardEl.children;
+            for(let r=0; r<GRID_SIZE; r++) {
+                for(let c=0; c<GRID_SIZE; c++) {
+                    const data = players[pIdx].board[r][c];
+                    const cell = cells[r * GRID_SIZE + c];
+                    cell.style.backgroundColor = data ? data.color : '';
+                    cell.style.opacity = '1';
+                }
+            }
+        }
+
+        function onCellClick(pIdx, r, c) {
+            if (pIdx !== currentPlayerIdx) return;
+            
+            // 1x1 가죽 패치 배치 로직
+            if (leatherPatchesToPlace > 0) {
+                if (players[pIdx].board[r][c]) return;
+                players[pIdx].board[r][c] = { color: '#78350f', buttons: 0 };
+                leatherPatchesToPlace--;
+                if (leatherPatchesToPlace === 0) {
+                    check7x7(pIdx);
+                    nextTurn();
+                }
+                updateUI();
+                return;
+            }
+
+            // 일반 패치 배치 로직
+            if (selectedIdx === null) return;
+            const p = shopPatches[selectedIdx];
+            if (players[pIdx].buttons < p.cost) {
+                showToast("단추가 부족합니다!");
+                return;
+            }
+
+            const shape = getShape(p.shape, rotation, flipped);
+            if (!canFit(pIdx, r, c, shape)) return;
+
+            // 구매 실행
+            players[pIdx].buttons -= p.cost;
+            const oldT = players[pIdx].time;
+            players[pIdx].time = Math.min(TIME_LIMIT, players[pIdx].time + p.time);
+            players[pIdx].income += p.buttons;
+
+            for(let i=0; i<shape.length; i++) {
+                for(let j=0; j<shape[0].length; j++) {
+                    if (shape[i][j]) players[pIdx].board[r+i][c+j] = { color: p.color, buttons: 0 };
+                }
+            }
+
+            shopPatches.splice(selectedIdx, 1);
+            selectedIdx = null;
+            document.getElementById('selected-name').innerText = '패치를 선택하세요';
+            
+            processPassage(pIdx, oldT, players[pIdx].time);
+            if (leatherPatchesToPlace === 0) {
+                check7x7(pIdx);
+                nextTurn();
+            }
+        }
+
+        function canFit(pIdx, r, c, shape) {
+            for(let i=0; i<shape.length; i++) {
+                for(let j=0; j<shape[0].length; j++) {
+                    if (shape[i][j]) {
+                        const tr = r+i, tc = c+j;
+                        if (tr >= GRID_SIZE || tc >= GRID_SIZE || players[pIdx].board[tr][tc]) return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        function handlePass() {
+            if (leatherPatchesToPlace > 0) return;
+            const pIdx = currentPlayerIdx;
+            const otherIdx = 1 - pIdx;
+            const oldT = players[pIdx].time;
+            const targetT = Math.min(TIME_LIMIT, players[otherIdx].time + 1);
+            const move = targetT - oldT;
+            
+            if (move <= 0) {
+                // 이미 끝에 도달했거나 더 갈 수 없는 경우
+                if (players[pIdx].time < TIME_LIMIT) {
+                    players[pIdx].time++;
+                    players[pIdx].buttons++;
+                    processPassage(pIdx, oldT, oldT + 1);
+                }
+            } else {
+                players[pIdx].time = targetT;
+                players[pIdx].buttons += move;
+                processPassage(pIdx, oldT, targetT);
+            }
+            
+            if (leatherPatchesToPlace === 0) nextTurn();
+        }
+
+        function processPassage(pIdx, oldT, newT) {
+            // 수입 체크 (🔘)
+            [5, 11, 17, 23, 29, 35, 41, 47].forEach(m => {
+                if (oldT < m && newT >= m) {
+                    players[pIdx].buttons += players[pIdx].income;
+                    showToast(`수입 발생! 🔘+${players[pIdx].income}`);
+                }
+            });
+
+            // 가죽 패치 체크 (🟫)
+            const trackCells = document.getElementById('time-track').children;
+            for (let t = oldT + 1; t <= newT; t++) {
+                if (trackCells[t] && trackCells[t].dataset.leather === "true") {
+                    trackCells[t].dataset.leather = "false";
+                    trackCells[t].querySelector('.leather-patch').style.opacity = '0.2';
+                    leatherPatchesToPlace++;
+                    showToast("🟫 가죽 패치를 획득했습니다! 보드에 배치하세요.");
+                }
+            }
+        }
+
+        function check7x7(pIdx) {
+            if (bonus7x7Claimed) return;
+            const b = players[pIdx].board;
+            for (let r = 0; r <= GRID_SIZE - 7; r++) {
+                for (let c = 0; c <= GRID_SIZE - 7; c++) {
+                    let full = true;
+                    for (let i = 0; i < 7; i++) {
+                        for (let j = 0; j < 7; j++) {
+                            if (!b[r + i][c + j]) { full = false; break; }
+                        }
+                        if (!full) break;
+                    }
+                    if (full) {
+                        bonus7x7Claimed = true;
+                        players[pIdx].hasSpecialBonus = true;
+                        showToast(`플레이어 ${pIdx+1} 7x7 보너스 달성! (7점)`);
+                        return;
+                    }
+                }
+            }
+        }
+
+        function nextTurn() {
+            const p1 = players[0], p2 = players[1];
+            if (p1.time === TIME_LIMIT && p2.time === TIME_LIMIT) {
+                endGame();
+                return;
+            }
+
+            // 규칙: 뒤처진 사람이 플레이, 시간이 같으면 위에 있는 사람(나중에 온 사람)이 플레이
+            if (p1.time < p2.time) currentPlayerIdx = 0;
+            else if (p2.time < p1.time) currentPlayerIdx = 1;
+            // 같을 때는 현재 플레이어를 유지 (현 구현 방식의 단순화)
+
+            updateUI();
+        }
+
+        function updateUI() {
+            players.forEach(p => {
+                document.getElementById(`p${p.id+1}-buttons`).innerText = p.buttons;
+                document.getElementById(`p${p.id+1}-time`).innerText = p.time;
+                document.getElementById(`p${p.id+1}-income`).innerText = p.income;
+                
+                const boardEl = document.getElementById(`p${p.id+1}-board`);
+                const cells = boardEl.children;
+                for(let r=0; r<GRID_SIZE; r++) {
+                    for(let c=0; c<GRID_SIZE; c++) {
+                        const data = p.board[r][c];
+                        const cell = cells[r * GRID_SIZE + c];
+                        cell.style.backgroundColor = data ? data.color : '';
+                        if (data) cell.classList.add('placed-patch');
+                        else cell.classList.remove('placed-patch');
+                    }
+                }
+
+                const cont = document.getElementById(`p${p.id+1}-container`);
+                if (currentPlayerIdx === p.id) cont.classList.add('active-turn', 'border-blue-400');
+                else cont.classList.remove('active-turn', 'border-blue-400');
+            });
+
+            document.getElementById('turn-indicator').innerText = leatherPatchesToPlace > 0 
+                ? `플레이어 ${currentPlayerIdx+1} 가죽 패치 배치 중...` 
+                : `플레이어 ${currentPlayerIdx+1}의 차례`;
+            document.getElementById('turn-indicator').style.backgroundColor = players[currentPlayerIdx].color;
+
+            positionTokens();
+            renderShop();
+        }
+
+        function rotatePatch() { rotation = (rotation + 90) % 360; }
+        function flipPatch() { flipped = !flipped; }
+
+        function showToast(msg) {
+            const t = document.createElement('div');
+            t.className = 'fixed bottom-24 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-2xl shadow-2xl z-[100] font-bold animate-bounce text-sm';
+            t.innerText = msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 2500);
+        }
+
+        function endGame() {
+            const modal = document.getElementById('game-over-modal');
+            const scoresEl = document.getElementById('final-scores');
+            modal.classList.remove('hidden');
+
+            const results = players.map(p => {
+                const empty = p.board.flat().filter(c => c === null).length;
+                const bonus = p.hasSpecialBonus ? 7 : 0;
+                const score = p.buttons - (empty * 2) + bonus;
+                return { id: p.id + 1, score, buttons: p.buttons, empty, bonus };
+            });
+
+            scoresEl.innerHTML = results.map(r => `
+                <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="font-black text-lg">P${r.id}</span>
+                        <span class="text-2xl font-black ${r.score >= 0 ? 'text-blue-600' : 'text-red-600'}">${r.score}점</span>
+                    </div>
+                    <div class="text-xs text-gray-500 flex gap-2">
+                        <span>🔘 ${r.buttons}</span>
+                        <span>❌ 빈칸 ${r.empty} (-${r.empty*2})</span>
+                        ${r.bonus ? '<span class="text-green-600">✨ 보너스 +7</span>' : ''}
+                    </div>
+                </div>
+            `).join('');
+
+            const winMsg = results[0].score > results[1].score ? "플레이어 1 승리!" : (results[1].score > results[0].score ? "플레이어 2 승리!" : "무승부!");
+            scoresEl.innerHTML += `<div class="text-2xl font-black text-center mt-6 text-gray-800">${winMsg}</div>`;
+        }
+
+        window.addEventListener('resize', positionTokens);
+        window.onload = init;
+    </script>
+</body>
+</html>

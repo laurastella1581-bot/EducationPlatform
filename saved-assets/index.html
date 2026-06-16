@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<!-- saved from url=(0059)http://127.0.0.1:5500/Pond_Superpowers_WebSlides/index.html -->
+<html lang="ko"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pond Superpowers Web Slides</title>
+<style>
+html,body{margin:0;height:100%;background:#111;color:#fff;font-family:Arial,sans-serif;overflow:hidden}
+#app{height:100%;display:flex;align-items:center;justify-content:center;position:relative}
+.slide{max-width:96vw;max-height:92vh;display:none;box-shadow:0 20px 60px rgba(0,0,0,.45);border-radius:12px}
+.slide.active{display:block}
+.nav{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);display:flex;gap:10px;align-items:center}
+button{padding:10px 14px;border:0;border-radius:10px;cursor:pointer;font-weight:700}
+#counter{background:#222;padding:10px 14px;border-radius:10px}
+.hint{position:fixed;top:14px;right:14px;font-size:12px;opacity:.75}
+</style>
+</head>
+<body>
+<div id="app"><img src="./slide1.png" class="slide active"><img src="./slide2.png" class="slide"><img src="./slide3.png" class="slide"><img src="./slide4.png" class="slide"><img src="./slide5.png" class="slide"><img src="./slide6.png" class="slide"><img src="./slide7.png" class="slide"><img src="./slide8.png" class="slide"><img src="./slide9.png" class="slide"><img src="./slide10.png" class="slide"><img src="./slide11.png" class="slide"><img src="./slide12.png" class="slide"><img src="./slide13.png" class="slide"><img src="./slide14.png" class="slide"><img src="./slide15.png" class="slide"></div>
+<div class="hint">← → 키 / Space / F 전체화면</div>
+<div class="nav">
+<button onclick="prev()">◀ Prev</button>
+<div id="counter">1 / 15</div>
+<button onclick="next()">Next ▶</button>
+<button onclick="autoPlay()">Auto</button>
+</div>
+<script>
+const total=15;
+const app=document.getElementById('app');
+for(let i=1;i<=total;i++){
+ const img=document.createElement('img');
+ img.src=`assets/slide${i}.png`;
+ img.className='slide'+(i===1?' active':'');
+ app.appendChild(img);
+}
+let idx=0,timer=null;
+const slides=[...document.querySelectorAll('.slide')];
+function render(){slides.forEach((s,n)=>s.classList.toggle('active',n===idx));
+document.getElementById('counter').textContent=(idx+1)+' / '+slides.length;}
+function next(){idx=(idx+1)%slides.length;render();}
+function prev(){idx=(idx-1+slides.length)%slides.length;render();}
+function autoPlay(){ if(timer){clearInterval(timer);timer=null;return;}
+timer=setInterval(next,3000);}
+document.addEventListener('keydown',e=>{
+if(e.key==='ArrowRight'||e.key===' ')next();
+if(e.key==='ArrowLeft')prev();
+if(e.key.toLowerCase()==='f')document.documentElement.requestFullscreen?.();
+});
+render();
+</script>
+<!-- Code injected by live-server -->
+<script>
+	// <![CDATA[  <-- For SVG support
+	if ('WebSocket' in window) {
+		(function () {
+			function refreshCSS() {
+				var sheets = [].slice.call(document.getElementsByTagName("link"));
+				var head = document.getElementsByTagName("head")[0];
+				for (var i = 0; i < sheets.length; ++i) {
+					var elem = sheets[i];
+					var parent = elem.parentElement || head;
+					parent.removeChild(elem);
+					var rel = elem.rel;
+					if (elem.href && typeof rel != "string" || rel.length == 0 || rel.toLowerCase() == "stylesheet") {
+						var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, '');
+						elem.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cacheOverride=' + (new Date().valueOf());
+					}
+					parent.appendChild(elem);
+				}
+			}
+			var protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://';
+			var address = protocol + window.location.host + window.location.pathname + '/ws';
+			var socket = new WebSocket(address);
+			socket.onmessage = function (msg) {
+				if (msg.data == 'reload') window.location.reload();
+				else if (msg.data == 'refreshcss') refreshCSS();
+			};
+			if (sessionStorage && !sessionStorage.getItem('IsThisFirstTime_Log_From_LiveServer')) {
+				console.log('Live reload enabled.');
+				sessionStorage.setItem('IsThisFirstTime_Log_From_LiveServer', true);
+			}
+		})();
+	}
+	else {
+		console.error('Upgrade your browser. This Browser is NOT supported WebSocket for Live-Reloading.');
+	}
+	// ]]>
+</script>
+</body></html>

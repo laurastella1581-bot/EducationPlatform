@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>전통 놀이: 뱅고람도</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #f3f4f6;
+            touch-action: none;
+        }
+        canvas {
+            max-width: 100%;
+            height: auto;
+            cursor: pointer;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        /* 시작 모달 */
+        .start-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.72);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            backdrop-filter: blur(4px);
+        }
+        .start-modal.hidden { display: none; }
+        .start-modal-box {
+            background: #fff;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 400px;
+            overflow: hidden;
+            border: 4px solid #b45309;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.35);
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn {
+            from { transform: scale(0.7); opacity: 0; }
+            to   { transform: scale(1);   opacity: 1; }
+        }
+        .modal-header {
+            background: linear-gradient(135deg, #92400e, #b45309);
+            padding: 1.5rem;
+            text-align: center;
+        }
+        .rule-item {
+            background: #fffbeb;
+            border-left: 4px solid #b45309;
+            border-radius: 8px;
+            padding: 0.5rem 0.8rem;
+            margin: 0.35rem 0;
+            font-size: 0.9rem;
+            color: #78350f;
+            font-weight: 600;
+        }
+        .game-start-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #b45309, #92400e);
+            color: white;
+            font-size: 1.3rem;
+            font-weight: 900;
+            padding: 0.9rem;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            box-shadow: 0 5px 0 #78350f;
+            transition: all 0.15s;
+        }
+        .game-start-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 1px 0 #78350f;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
+
+    <!-- 게임 시작 모달 -->
+    <div id="startModal" class="start-modal">
+        <div class="start-modal-box">
+            <div class="modal-header">
+                <div style="font-size:3rem;margin-bottom:0.3rem;">🎯</div>
+                <h2 style="font-size:1.9rem;font-weight:900;color:white;margin:0;">뱅고람도</h2>
+                <p style="color:rgba(255,255,255,0.85);font-size:0.82rem;margin-top:4px;">전통 전략 보드게임 · 2명</p>
+            </div>
+            <div style="padding:1.2rem 1.5rem;">
+                <p style="font-size:0.72rem;font-weight:900;color:#92400e;text-transform:uppercase;letter-spacing:0.1em;text-align:center;margin-bottom:0.8rem;">게임 방법</p>
+                <div class="rule-item">1️⃣ 흑(Player 1)과 백(Player 2)이 각각 4개씩 말을 가집니다.</div>
+                <div class="rule-item">2️⃣ 번갈아가며 선을 따라 인접한 빈 칸으로 한 칸씩 이동합니다.</div>
+                <div class="rule-item">3️⃣ 대각선 이동은 선이 그려진 곳에서만 가능합니다.</div>
+                <div class="rule-item">4️⃣ 상대 말을 둘러싸서 움직이지 못하게 하면 승리! 🏆</div>
+            </div>
+            <div style="padding:0 1.5rem 1.5rem;">
+                <button class="game-start-btn" onclick="startGame()">🎯 게임 시작!</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-md w-full bg-white p-6 rounded-2xl shadow-xl text-center">
+        <h1 class="text-2xl font-bold mb-2 text-amber-800">뱅고람도 (방고람도)</h1>
+        <p class="text-gray-600 text-sm mb-4">상대방의 말을 가두어 움직이지 못하게 하세요!</p>
+
+        <div id="status-container" class="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200">
+            <span id="turn-indicator" class="font-bold text-lg">흑색(Player 1)의 차례입니다</span>
+        </div>
+
+        <canvas id="gameCanvas" width="400" height="400" class="bg-[#fdf6e3] mx-auto"></canvas>
+
+        <div class="mt-6 flex gap-2 justify-center">
+            <button id="resetBtn" class="bg-amber-700 hover:bg-amber-800 text-white px-6 py-2 rounded-full font-medium transition-colors">
+                게임 초기화
+            </button>
+            <button id="rulesBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-2 rounded-full font-medium transition-colors">
+                방법 설명
+            </button>
+        </div>
+    </div>
+
+    <!-- 도움말 모달 -->
+    <div id="modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white p-6 rounded-xl max-w-sm w-full">
+            <h2 class="text-xl font-bold mb-3">놀이 방법</h2>
+            <ul class="text-left text-sm text-gray-700 space-y-2 mb-4">
+                <li>1. 흑과 백이 각각 4개씩 말을 가집니다.</li>
+                <li>2. 선을 따라 한 칸씩 이동할 수 있습니다.</li>
+                <li>3. 상대방의 말을 둘러싸서 더 이상 움직일 곳이 없게 만들면 승리합니다.</li>
+                <li>4. 대각선은 그려진 선이 있는 곳으로만 이동 가능합니다.</li>
+            </ul>
+            <button id="closeModal" class="w-full bg-amber-700 text-white py-2 rounded-lg">확인</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const turnIndicator = document.getElementById('turn-indicator');
+        const resetBtn = document.getElementById('resetBtn');
+        const rulesBtn = document.getElementById('rulesBtn');
+        const modal = document.getElementById('modal');
+        const closeModal = document.getElementById('closeModal');
+
+        const PADDING = 50;
+        const SIZE = 300;
+        const GRID_SIZE = SIZE / 2;
+        const RADIUS = 18;
+
+        // 노드 정의 (0 to 8)
+        // 0--1--2
+        // | \|/ |
+        // 3--4--5
+        // | /|\ |
+        // 6--7--8
+        const nodes = [
+            { x: PADDING, y: PADDING }, { x: PADDING + GRID_SIZE, y: PADDING }, { x: PADDING + SIZE, y: PADDING },
+            { x: PADDING, y: PADDING + GRID_SIZE }, { x: PADDING + GRID_SIZE, y: PADDING + GRID_SIZE }, { x: PADDING + SIZE, y: PADDING + GRID_SIZE },
+            { x: PADDING, y: PADDING + SIZE }, { x: PADDING + GRID_SIZE, y: PADDING + SIZE }, { x: PADDING + SIZE, y: PADDING + SIZE }
+        ];
+
+        // 연결 정보
+        const connections = [
+            [1, 3, 4],    // 0
+            [0, 2, 4],    // 1
+            [1, 5, 4],    // 2
+            [0, 6, 4],    // 3
+            [0, 1, 2, 3, 5, 6, 7, 8], // 4 (중앙은 모두 연결)
+            [2, 8, 4],    // 5
+            [3, 7, 4],    // 6
+            [6, 8, 4],    // 7
+            [5, 7, 4]     // 8
+        ];
+
+        let gameState = {
+            pieces: [1, 1, 1, 1, 0, 2, 2, 2, 2], // 1: Black, 2: White, 0: Empty (초기 배치: 상단 4개 흑, 하단 4개 백)
+            turn: 1, // 1: Black, 2: White
+            selected: null,
+            gameOver: false
+        };
+
+        function drawBoard() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 선 그리기
+            ctx.strokeStyle = '#5d4037';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            
+            // 가로 세로 외곽 및 십자
+            for(let i=0; i<3; i++) {
+                // 가로
+                ctx.moveTo(nodes[i*3].x, nodes[i*3].y);
+                ctx.lineTo(nodes[i*3+2].x, nodes[i*3+2].y);
+                // 세로
+                ctx.moveTo(nodes[i].x, nodes[i].y);
+                ctx.lineTo(nodes[i+6].x, nodes[i+6].y);
+            }
+            
+            // 대각선 (X자)
+            ctx.moveTo(nodes[0].x, nodes[0].y);
+            ctx.lineTo(nodes[8].x, nodes[8].y);
+            ctx.moveTo(nodes[2].x, nodes[2].y);
+            ctx.lineTo(nodes[6].x, nodes[6].y);
+            
+            ctx.stroke();
+
+            // 노드 포인트 (교차점)
+            nodes.forEach((node, idx) => {
+                ctx.fillStyle = '#8d6e63';
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, 5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 말 그리기
+                const piece = gameState.pieces[idx];
+                if (piece !== 0) {
+                    const isSelected = gameState.selected === idx;
+                    
+                    // 그림자
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = 'rgba(0,0,0,0.3)';
+                    ctx.shadowOffsetY = 4;
+
+                    // 몸체
+                    ctx.fillStyle = piece === 1 ? '#333' : '#fff';
+                    ctx.beginPath();
+                    ctx.arc(node.x, node.y, RADIUS, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // 테두리
+                    ctx.shadowBlur = 0;
+                    ctx.shadowOffsetY = 0;
+                    ctx.strokeStyle = isSelected ? '#f59e0b' : (piece === 1 ? '#000' : '#ccc');
+                    ctx.lineWidth = isSelected ? 4 : 2;
+                    ctx.stroke();
+
+                    // 선택 표시 하이라이트
+                    if (isSelected) {
+                        ctx.strokeStyle = 'rgba(245, 158, 11, 0.5)';
+                        ctx.lineWidth = 8;
+                        ctx.beginPath();
+                        ctx.arc(node.x, node.y, RADIUS + 5, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                }
+            });
+        }
+
+        function getClickedNode(x, y) {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = (x - rect.left) * (canvas.width / rect.width);
+            const mouseY = (y - rect.top) * (canvas.height / rect.height);
+
+            for (let i = 0; i < nodes.length; i++) {
+                const dist = Math.sqrt(Math.pow(nodes[i].x - mouseX, 2) + Math.pow(nodes[i].y - mouseY, 2));
+                if (dist < RADIUS * 1.5) return i;
+            }
+            return null;
+        }
+
+        function checkWinner(player) {
+            const opponent = player === 1 ? 2 : 1;
+            let canMove = false;
+
+            // 상대방의 말이 하나라도 움직일 수 있는지 확인
+            for (let i = 0; i < gameState.pieces.length; i++) {
+                if (gameState.pieces[i] === opponent) {
+                    const possibleMoves = connections[i];
+                    for (let target of possibleMoves) {
+                        if (gameState.pieces[target] === 0) {
+                            canMove = true;
+                            break;
+                        }
+                    }
+                }
+                if (canMove) break;
+            }
+
+            if (!canMove) {
+                gameState.gameOver = true;
+                const winnerText = player === 1 ? '흑색(Player 1)' : '백색(Player 2)';
+                turnIndicator.innerHTML = `<span class="text-red-600">축하합니다! ${winnerText} 승리!</span>`;
+                return true;
+            }
+            return false;
+        }
+
+        function handleInteraction(e) {
+            if (gameState.gameOver) return;
+
+            const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+            
+            const nodeIdx = getClickedNode(clientX, clientY);
+            if (nodeIdx === null) return;
+
+            const piece = gameState.pieces[nodeIdx];
+
+            // 1. 자신의 말 선택
+            if (piece === gameState.turn) {
+                gameState.selected = nodeIdx;
+            } 
+            // 2. 이동할 빈 공간 선택
+            else if (piece === 0 && gameState.selected !== null) {
+                // 인접한 곳인지 확인
+                if (connections[gameState.selected].includes(nodeIdx)) {
+                    // 이동 실행
+                    gameState.pieces[nodeIdx] = gameState.turn;
+                    gameState.pieces[gameState.selected] = 0;
+                    
+                    const lastTurn = gameState.turn;
+                    gameState.selected = null;
+                    
+                    // 승리 체크
+                    if (!checkWinner(lastTurn)) {
+                        gameState.turn = lastTurn === 1 ? 2 : 1;
+                        updateStatus();
+                    }
+                }
+            }
+            
+            drawBoard();
+        }
+
+        function updateStatus() {
+            const playerStr = gameState.turn === 1 ? '흑색(Player 1)' : '백색(Player 2)';
+            turnIndicator.textContent = `${playerStr}의 차례입니다`;
+        }
+
+        function resetGame() {
+            gameState = {
+                pieces: [1, 1, 1, 1, 0, 2, 2, 2, 2],
+                turn: 1,
+                selected: null,
+                gameOver: false
+            };
+            updateStatus();
+            drawBoard();
+        }
+
+        // 이벤트 리스너
+        canvas.addEventListener('mousedown', handleInteraction);
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            handleInteraction(e);
+        }, { passive: false });
+
+        resetBtn.addEventListener('click', resetGame);
+        rulesBtn.addEventListener('click', () => modal.classList.remove('hidden'));
+        closeModal.addEventListener('click', () => modal.classList.add('hidden'));
+
+        function startGame() {
+            document.getElementById('startModal').classList.add('hidden');
+            resetGame();
+        }
+
+        // 초기 실행: 모달 표시
+        window.onload = () => {
+            drawBoard();
+            document.getElementById('startModal').classList.remove('hidden');
+        };
+
+    </script>
+</body>
+</html>

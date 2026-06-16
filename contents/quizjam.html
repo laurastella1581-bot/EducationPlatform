@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>쿼카의 영어 퀴즈 잼! (Quokka's English Quiz)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=Fredoka+One&display=swap');
+        
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 50%, #f0f9ff 100%);
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .english-font {
+            font-family: 'Fredoka One', cursive;
+        }
+
+        .step-content {
+            display: none;
+        }
+
+        .step-content.active {
+            display: block;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .option-btn {
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .option-btn:hover {
+            transform: scale(1.02);
+        }
+
+        .correct {
+            background-color: #4ade80 !important;
+            border-color: #22c55e !important;
+            color: white !important;
+        }
+
+        .wrong {
+            background-color: #f87171 !important;
+            border-color: #ef4444 !important;
+            color: white !important;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+  <!-- con01 서브헤더 -->
+  <div style="position:fixed;top:0;left:0;right:0;z-index:9999;background:#f0fdf4;border-bottom:2px solid #bbf7d0;padding:6px 16px;">
+    <div style="max-width:900px;margin:0 auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <span style="font-size:10px;font-weight:900;color:#166534;background:#dcfce7;border:1.5px solid #86efac;border-radius:999px;padding:2px 10px;flex-shrink:0;">📌 con01</span>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="con-btn" data-label="🔬 자연관찰놀이" onclick="showAllCon()" style="background:#fff;border:1.5px solid #86efac;border-radius:999px;padding:3px 11px;font-size:10px;font-weight:800;color:#166534;cursor:pointer;transition:all 0.2s;">🔬 자연관찰놀이</button>
+        <button class="con-btn" data-label="📖 국어 동화코너" onclick="showAllCon()" style="background:#fff;border:1.5px solid #86efac;border-radius:999px;padding:3px 11px;font-size:10px;font-weight:800;color:#166534;cursor:pointer;transition:all 0.2s;">📖 국어 동화코너</button>
+        <button class="con-btn" data-label="📚 English story book" onclick="showAllCon()" style="background:#fff;border:1.5px solid #86efac;border-radius:999px;padding:3px 11px;font-size:10px;font-weight:800;color:#166534;cursor:pointer;transition:all 0.2s;">📚 English story book</button>
+        <button class="con-btn" data-label="🗣️ 쿼카의 영어 Q&A 영어라운지" onclick="showAllCon()" style="background:#fff;border:1.5px solid #86efac;border-radius:999px;padding:3px 11px;font-size:10px;font-weight:800;color:#166534;cursor:pointer;transition:all 0.2s;">🗣️ 쿼카의 영어 Q&A 영어라운지</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    var conShown = false;
+    function showAllCon() {
+      conShown = !conShown;
+      document.querySelectorAll('.con-btn').forEach(function(b) {
+        if (conShown) { b.textContent = b.dataset.label + ' · con01'; b.style.background = '#16a34a'; b.style.color = '#fff'; }
+        else { b.textContent = b.dataset.label; b.style.background = '#fff'; b.style.color = '#166534'; }
+      });
+    }
+  </script>
+
+    <div class="max-w-3xl w-full bg-white/95 backdrop-blur-xl rounded-[3.5rem] shadow-[0_32px_64px_-15px_rgba(0,0,0,0.15)] p-8 md:p-14 border border-white relative overflow-hidden">
+        
+        <!-- Background Decor -->
+        <div class="absolute -top-20 -left-20 w-80 h-80 bg-green-200/20 rounded-full blur-[100px] pointer-events-none"></div>
+        <div class="absolute -bottom-20 -right-20 w-80 h-80 bg-blue-200/20 rounded-full blur-[100px] pointer-events-none"></div>
+
+        <!-- Header: Score & Progress -->
+        <div id="quiz-header" class="hidden mb-10 flex justify-between items-center px-2">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-600">
+                    <i data-lucide="award"></i>
+                </div>
+                <div>
+                    <p class="text-xs font-black text-slate-400 uppercase tracking-widest">Progress</p>
+                    <p id="progress-text" class="text-xl font-black text-slate-700 english-font">Question 1/3</p>
+                </div>
+            </div>
+            <div id="score-display" class="bg-slate-100 px-6 py-2 rounded-2xl font-black text-slate-600 english-font text-xl">
+                Score: 0
+            </div>
+        </div>
+
+        <main class="min-h-[500px] flex flex-col justify-center relative z-10">
+            
+            <!-- 0. Start Screen -->
+            <section id="step-intro" class="step-content active text-center space-y-8">
+                <div class="relative inline-block">
+                    <div class="text-[10rem] mb-6">🐨</div>
+                    <div class="absolute -top-4 -right-4 bg-yellow-400 p-4 rounded-full animate-bounce shadow-xl">
+                        <i data-lucide="languages" class="text-white w-8 h-8"></i>
+                    </div>
+                </div>
+                <h1 class="text-5xl font-black text-slate-800 tracking-tight">Quokka's English Jam!</h1>
+                <p class="text-2xl text-slate-600 max-w-lg mx-auto leading-relaxed">
+                    "Hi! I'm Quokka. <br>
+                    Let's solve some fun English puzzles about Goldie the Frog!"
+                </p>
+                <button onclick="startQuiz()" class="px-12 py-6 bg-orange-500 hover:bg-orange-600 text-white rounded-3xl font-bold text-2xl shadow-2xl transition-all hover:scale-105 active:scale-95 flex items-center gap-3 mx-auto">
+                    Start Challenge <i data-lucide="play" class="w-8 h-8"></i>
+                </button>
+            </section>
+
+            <!-- 1. Quiz Question Template -->
+            <section id="step-quiz" class="step-content space-y-8">
+                <div class="text-center space-y-4">
+                    <div id="q-image" class="text-[8rem] mb-2 animate-bounce">🐸</div>
+                    <h2 id="q-text" class="text-3xl font-black text-slate-800 leading-tight english-font italic">"Why is Goldie staying so still?"</h2>
+                    <p id="q-hint" class="text-lg text-slate-500 font-medium tracking-tight bg-slate-50 py-2 px-4 rounded-full inline-block">힌트: 골디가 왜 가만히 있을까요?</p>
+                </div>
+
+                <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Options will be injected here -->
+                </div>
+
+                <div id="feedback-area" class="hidden text-center p-6 rounded-3xl border-4 animate-in zoom-in">
+                    <p id="feedback-msg" class="text-2xl font-black mb-4"></p>
+                    <button onclick="nextQuestion()" class="px-10 py-4 bg-slate-800 text-white rounded-2xl font-bold text-xl hover:bg-slate-700 shadow-lg">
+                        Next Question
+                    </button>
+                </div>
+            </section>
+
+            <!-- 2. Final Reward Screen -->
+            <section id="step-reward" class="step-content space-y-10 text-center">
+                <div class="relative inline-block">
+                    <div class="w-64 h-64 bg-yellow-400 rounded-full flex items-center justify-center shadow-2xl border-[12px] border-white animate-pulse mx-auto">
+                        <i data-lucide="trophy" class="text-white w-32 h-32"></i>
+                    </div>
+                    <div class="absolute -top-8 -left-8 text-6xl animate-bounce">✨</div>
+                    <div class="absolute -bottom-8 -right-8 text-6xl animate-bounce">✨</div>
+                </div>
+                <div class="space-y-2">
+                    <h2 class="text-6xl font-black text-slate-800 tracking-tight english-font">Great Job!</h2>
+                    <p class="text-2xl text-slate-600 font-medium">You finished the English adventure!</p>
+                </div>
+                <div class="bg-white p-8 rounded-[3rem] shadow-xl border-2 border-slate-50">
+                    <p id="final-score" class="text-5xl font-black text-orange-500 english-font mb-4">Score: 3/3</p>
+                    <p class="text-slate-500 font-bold">"You are an English Master!" 🐨🏅</p>
+                </div>
+                <button onclick="resetGame()" class="flex items-center gap-3 px-10 py-5 bg-slate-800 text-white rounded-2xl font-bold text-xl mx-auto shadow-xl hover:bg-slate-700 transition-all hover:scale-105">
+                    <i data-lucide="rotate-ccw"></i> Try Again
+                </button>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="mt-12 pt-8 border-t border-slate-100 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-slate-800 rounded-lg flex items-center justify-center text-white text-[10px] font-black italic">EJ</div>
+                <span class="text-sm font-black text-slate-400 uppercase tracking-widest">English Quiz Jam</span>
+            </div>
+            <div class="text-xs text-slate-300 font-bold italic bg-slate-50 px-3 py-1 rounded-full">Easy & Fun English</div>
+        </footer>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        const quizData = [
+            {
+                question: "Why is Goldie staying so still?",
+                hint: "골디가 왜 가만히 있을까요?",
+                image: "🐸",
+                options: [
+                    "He is sleeping.",
+                    "He is waiting for snacks.",
+                    "He is dancing.",
+                    "He is playing tag."
+                ],
+                correct: 1
+            },
+            {
+                question: "Why is Goldie's tongue sticky?",
+                hint: "골디의 혀는 왜 끈적거리나요?",
+                image: "👅",
+                options: [
+                    "To taste food better.",
+                    "To clean his face.",
+                    "To catch insects quickly.",
+                    "To drink some water."
+                ],
+                correct: 2
+            },
+            {
+                question: "What happens if Goldie moves?",
+                hint: "골디가 움직이면 어떤 일이 벌어질까요?",
+                image: "🪰",
+                options: [
+                    "The insects will fly away.",
+                    "The insects will stay still.",
+                    "Goldie will get faster.",
+                    "The lily pad will sink."
+                ],
+                correct: 0
+            }
+        ];
+
+        let currentQIndex = 0;
+        let score = 0;
+        let canAnswer = true;
+
+        function startQuiz() {
+            document.getElementById('quiz-header').classList.remove('hidden');
+            document.getElementById('quiz-header').classList.add('flex');
+            showQuestion();
+            changeStep('quiz');
+        }
+
+        function showQuestion() {
+            canAnswer = true;
+            const q = quizData[currentQIndex];
+            document.getElementById('q-text').innerText = `"${q.question}"`;
+            document.getElementById('q-hint').innerText = `힌트: ${q.hint}`;
+            document.getElementById('q-image').innerText = q.image;
+            document.getElementById('progress-text').innerText = `Question ${currentQIndex + 1}/${quizData.length}`;
+            
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+            document.getElementById('feedback-area').classList.add('hidden');
+            
+            q.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "option-btn w-full p-6 text-left bg-slate-50 border-2 border-slate-200 rounded-[2rem] text-xl font-bold text-slate-700 flex items-center gap-4 hover:border-orange-300 hover:bg-orange-50";
+                btn.innerHTML = `<span class="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm text-slate-400 font-black">${String.fromCharCode(65 + idx)}</span> ${opt}`;
+                btn.onclick = () => checkAnswer(idx, btn);
+                container.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selectedIdx, btn) {
+            if (!canAnswer) return;
+            canAnswer = false;
+            
+            const q = quizData[currentQIndex];
+            const feedbackArea = document.getElementById('feedback-area');
+            const feedbackMsg = document.getElementById('feedback-msg');
+            const options = document.querySelectorAll('.option-btn');
+
+            if (selectedIdx === q.correct) {
+                btn.classList.add('correct');
+                score++;
+                feedbackMsg.innerText = "Correct! You're so smart! 🌟";
+                feedbackMsg.className = "text-3xl font-black mb-4 text-green-600";
+                feedbackArea.className = "text-center p-6 rounded-3xl border-4 border-green-200 bg-green-50 animate-in zoom-in";
+            } else {
+                btn.classList.add('wrong');
+                options[q.correct].classList.add('correct');
+                feedbackMsg.innerText = "Oops! Try again next time! 🐨";
+                feedbackMsg.className = "text-3xl font-black mb-4 text-red-600";
+                feedbackArea.className = "text-center p-6 rounded-3xl border-4 border-red-200 bg-red-50 animate-in zoom-in";
+            }
+            
+            document.getElementById('score-display').innerText = `Score: ${score}`;
+            feedbackArea.classList.remove('hidden');
+        }
+
+        function nextQuestion() {
+            currentQIndex++;
+            if (currentQIndex < quizData.length) {
+                showQuestion();
+            } else {
+                showReward();
+            }
+        }
+
+        function showReward() {
+            document.getElementById('quiz-header').classList.add('hidden');
+            document.getElementById('final-score').innerText = `Score: ${score}/${quizData.length}`;
+            changeStep('reward');
+        }
+
+        function changeStep(newStep) {
+            document.querySelectorAll('.step-content').forEach(el => el.classList.remove('active'));
+            document.getElementById('step-' + newStep).classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        function resetGame() {
+            currentQIndex = 0;
+            score = 0;
+            document.getElementById('score-display').innerText = `Score: 0`;
+            changeStep('intro');
+        }
+    </script>
+</body>
+</html>

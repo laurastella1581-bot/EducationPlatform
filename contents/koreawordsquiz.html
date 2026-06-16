@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>초등 어휘력 퀴즈 대모험</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f0f9ff;
+        }
+        .font-gaegu {
+            font-family: 'Gaegu', cursive;
+        }
+        .quiz-card {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+        .option-btn:active {
+            transform: scale(0.98);
+        }
+        .correct-anim {
+            animation: bounce 0.5s;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* 시작 모달 */
+        .start-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.72);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            backdrop-filter: blur(4px);
+        }
+        .start-modal.hidden { display: none; }
+        .start-modal-box {
+            background: #fff;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 400px;
+            overflow: hidden;
+            border: 4px solid #7c3aed;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.35);
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn {
+            from { transform: scale(0.7); opacity: 0; }
+            to   { transform: scale(1);   opacity: 1; }
+        }
+        .modal-header {
+            background: linear-gradient(135deg, #7c3aed, #6d28d9);
+            padding: 1.5rem;
+            text-align: center;
+        }
+        .rule-item {
+            background: #f5f3ff;
+            border-left: 4px solid #7c3aed;
+            border-radius: 8px;
+            padding: 0.5rem 0.8rem;
+            margin: 0.35rem 0;
+            font-size: 0.9rem;
+            color: #4c1d95;
+            font-weight: 600;
+        }
+        .mode-btn {
+            display: block;
+            width: 100%;
+            padding: 0.8rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 900;
+            cursor: pointer;
+            margin-bottom: 8px;
+            font-family: 'Noto Sans KR', sans-serif;
+            transition: all 0.15s;
+            color: white;
+        }
+        .mode-btn:active { transform: scale(0.96); }
+        .mode-btn:last-child { margin-bottom: 0; }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- 게임 시작 모달 -->
+    <div id="startModal" class="start-modal">
+        <div class="start-modal-box">
+            <div class="modal-header">
+                <div style="font-size:3rem;margin-bottom:0.3rem;">💬</div>
+                <h2 style="font-size:1.9rem;font-weight:900;color:white;margin:0;">어휘력 퀴즈 대모험</h2>
+                <p style="color:rgba(255,255,255,0.85);font-size:0.82rem;margin-top:4px;">초등 2~3학년 · 우리말 단어 맞히기</p>
+            </div>
+            <div style="padding:1.2rem 1.5rem;">
+                <p style="font-size:0.72rem;font-weight:900;color:#6d28d9;text-transform:uppercase;letter-spacing:0.1em;text-align:center;margin-bottom:0.8rem;">게임 방법</p>
+                <div class="rule-item">1️⃣ 모드를 선택해 퀴즈를 시작합니다.</div>
+                <div class="rule-item">2️⃣ 총 10문제가 주어집니다.</div>
+                <div class="rule-item">3️⃣ 4개 보기 중 알맞은 답을 고르세요.</div>
+                <div class="rule-item">4️⃣ 정답이면 10점, 틀리면 0점입니다.</div>
+                <div class="rule-item">5️⃣ 10문제를 모두 풀면 최종 점수를 확인! 🏆</div>
+                <p style="font-size:0.8rem;font-weight:800;color:#6d28d9;text-align:center;margin:0.8rem 0 0.5rem;">모드를 선택해 바로 시작!</p>
+                <button class="mode-btn" style="background:linear-gradient(135deg,#7c3aed,#6d28d9);box-shadow:0 4px 0 #4c1d95;" onclick="startQuizModal('meaning')">📖 뜻 보고 단어 맞히기</button>
+                <button class="mode-btn" style="background:linear-gradient(135deg,#a855f7,#7c3aed);box-shadow:0 4px 0 #4c1d95;margin-bottom:0;" onclick="startQuizModal('word')">🔤 단어 보고 뜻 맞히기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div id="app" class="w-full max-w-md bg-white rounded-3xl overflow-hidden quiz-card relative">
+        
+        <!-- Progress Bar -->
+        <div id="progress-container" class="hidden absolute top-0 left-0 w-full h-2 bg-gray-100">
+            <div id="progress-bar" class="h-full bg-yellow-400 transition-all duration-300" style="width: 0%"></div>
+        </div>
+
+        <!-- Start Screen -->
+        <div id="start-screen" class="p-8 text-center">
+            <div class="mb-6">
+                <span class="text-6xl">📚</span>
+            </div>
+            <h1 class="text-3xl font-bold font-gaegu text-blue-600 mb-2">어휘력 퀴즈 대모험</h1>
+            <p class="text-gray-600 mb-8">초등학교 2~3학년 수준의<br>우리말 단어를 맞춰보세요!</p>
+            
+            <div class="space-y-4">
+                <button onclick="startQuiz('meaning')" class="w-full py-4 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-2xl shadow-lg transition-colors">
+                    뜻 보고 단어 맞히기
+                </button>
+                <button onclick="startQuiz('word')" class="w-full py-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-2xl shadow-lg transition-colors">
+                    단어 보고 뜻 맞히기
+                </button>
+            </div>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div id="quiz-screen" class="hidden p-8">
+            <div class="flex justify-between items-center mb-6">
+                <!-- 나가기 버튼 추가 -->
+                <button onclick="goToStart()" class="flex items-center text-gray-400 hover:text-gray-600 transition-colors text-sm font-medium">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    나가기
+                </button>
+                <span id="question-number" class="text-sm font-bold text-blue-500 bg-blue-50 px-3 py-1 rounded-full">문제 1/10</span>
+                <span id="score-display" class="text-sm font-bold text-orange-500">점수: 0</span>
+            </div>
+            
+            <div id="question-box" class="mb-8">
+                <h2 id="question-type" class="text-gray-500 text-sm mb-2 text-center">다음 뜻이 설명하는 단어는?</h2>
+                <div id="question-text" class="text-xl font-bold text-center bg-gray-50 p-6 rounded-2xl min-h-[120px] flex items-center justify-center leading-relaxed">
+                    단어의 뜻이 여기에 표시됩니다.
+                </div>
+            </div>
+
+            <div id="options-container" class="grid grid-cols-1 gap-3">
+                <!-- Options will be injected here -->
+            </div>
+        </div>
+
+        <!-- Feedback Overlay (Correct/Wrong) -->
+        <div id="feedback-overlay" class="hidden absolute inset-0 flex items-center justify-center bg-white/80 z-10">
+            <div id="feedback-content" class="text-center">
+                <div id="feedback-icon" class="text-8xl mb-4">⭕</div>
+                <div id="feedback-text" class="text-2xl font-bold">정답이에요!</div>
+            </div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="hidden p-8 text-center">
+            <div class="mb-6">
+                <span id="result-emoji" class="text-7xl">🎉</span>
+            </div>
+            <h2 class="text-2xl font-bold mb-2">참 잘했어요!</h2>
+            <p id="final-score-text" class="text-gray-600 mb-8">당신의 점수는 100점입니다.</p>
+            
+            <div class="space-y-3">
+                <button onclick="restartSameMode()" class="w-full py-4 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-2xl shadow-lg transition-colors">
+                    한 번 더 하기
+                </button>
+                <button onclick="goToStart()" class="w-full py-4 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-2xl transition-colors">
+                    처음 화면으로 (모드 변경)
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const quizData = [
+            { word: "겸손", meaning: "남을 존중하고 자기를 낮추는 태도" },
+            { word: "용기", meaning: "씩씩하고 굳센 기운. 겁내지 않는 마음" },
+            { word: "배려", meaning: "도와주거나 보살펴 주려고 마음을 쓰는 것" },
+            { word: "절약", meaning: "물건이나 돈을 아껴서 쓰는 것" },
+            { word: "정직", meaning: "마음이 바르고 곧으며 거짓이 없음" },
+            { word: "슬기", meaning: "어려움을 잘 헤쳐 나가는 똑똑한 마음" },
+            { word: "인사", meaning: "사람을 만날 때 예의를 갖추는 행동" },
+            { word: "끈기", meaning: "물러서지 않고 끝까지 견디어 나가는 기운" },
+            { word: "관찰", meaning: "어떤 것을 주의 깊게 자세히 살펴보는 것" },
+            { word: "실험", meaning: "어떤 일을 실제로 해 보며 결과를 알아보는 것" },
+            { word: "다정하다", meaning: "정답고 친절한 마음이 넘치다" },
+            { word: "소중하다", meaning: "매우 귀중하고 중요하다" },
+            { word: "약속", meaning: "장래의 일을 어떻게 할지 미리 정하는 것" },
+            { word: "창의력", meaning: "새로운 것을 생각해 내는 능력" },
+            { word: "협동", meaning: "마음을 합쳐서 함께 일을 하는 것" }
+        ];
+
+        let currentMode = 'meaning'; 
+        let currentQuestions = [];
+        let currentIndex = 0;
+        let score = 0;
+        let canAnswer = true;
+
+        // 시작 화면으로 돌아가는 기능
+        function goToStart() {
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('progress-container').classList.add('hidden');
+            document.getElementById('start-screen').classList.remove('hidden');
+        }
+
+        function restartSameMode() {
+            startQuiz(currentMode);
+        }
+
+        function startQuiz(mode) {
+            currentMode = mode;
+            currentIndex = 0;
+            score = 0;
+            
+            // Shuffle and pick 10 questions
+            currentQuestions = [...quizData].sort(() => Math.random() - 0.5).slice(0, 10);
+            
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            document.getElementById('progress-container').classList.remove('hidden');
+            
+            updateQuiz();
+        }
+
+        function updateQuiz() {
+            canAnswer = true;
+            const q = currentQuestions[currentIndex];
+            const qNum = document.getElementById('question-number');
+            const qType = document.getElementById('question-type');
+            const qText = document.getElementById('question-text');
+            const optionsContainer = document.getElementById('options-container');
+            const scoreDisplay = document.getElementById('score-display');
+            const progressBar = document.getElementById('progress-bar');
+
+            qNum.innerText = `문제 ${currentIndex + 1}/${currentQuestions.length}`;
+            scoreDisplay.innerText = `점수: ${score}`;
+            progressBar.style.width = `${(currentIndex / currentQuestions.length) * 100}%`;
+
+            optionsContainer.innerHTML = '';
+
+            let correctAnswer, questionContent;
+            if (currentMode === 'meaning') {
+                qType.innerText = "다음 뜻이 설명하는 낱말은?";
+                questionContent = q.meaning;
+                correctAnswer = q.word;
+                
+                const others = quizData.filter(item => item.word !== q.word)
+                                       .sort(() => Math.random() - 0.5)
+                                       .slice(0, 3)
+                                       .map(item => item.word);
+                
+                const choices = [correctAnswer, ...others].sort(() => Math.random() - 0.5);
+                
+                choices.forEach(choice => {
+                    const btn = createOptionButton(choice, choice === correctAnswer);
+                    optionsContainer.appendChild(btn);
+                });
+            } else {
+                qType.innerText = "다음 낱말의 알맞은 뜻은?";
+                questionContent = q.word;
+                correctAnswer = q.meaning;
+                
+                const others = quizData.filter(item => item.meaning !== q.meaning)
+                                       .sort(() => Math.random() - 0.5)
+                                       .slice(0, 3)
+                                       .map(item => item.meaning);
+                
+                const choices = [correctAnswer, ...others].sort(() => Math.random() - 0.5);
+                
+                choices.forEach(choice => {
+                    const btn = createOptionButton(choice, choice === correctAnswer);
+                    optionsContainer.appendChild(btn);
+                });
+            }
+
+            qText.innerText = questionContent;
+        }
+
+        function createOptionButton(text, isCorrect) {
+            const btn = document.createElement('button');
+            btn.className = "option-btn w-full p-4 text-left border-2 border-gray-100 rounded-2xl hover:border-blue-300 hover:bg-blue-50 transition-all font-medium text-gray-700";
+            btn.innerText = text;
+            btn.onclick = () => handleAnswer(isCorrect);
+            return btn;
+        }
+
+        function handleAnswer(isCorrect) {
+            if (!canAnswer) return;
+            canAnswer = false;
+
+            const feedbackOverlay = document.getElementById('feedback-overlay');
+            const feedbackIcon = document.getElementById('feedback-icon');
+            const feedbackText = document.getElementById('feedback-text');
+
+            if (isCorrect) {
+                score += 10;
+                feedbackIcon.innerText = "⭕";
+                feedbackText.innerText = "정답이에요!";
+                feedbackText.className = "text-2xl font-bold text-green-600";
+            } else {
+                feedbackIcon.innerText = "❌";
+                feedbackText.innerText = "아쉬워요!";
+                feedbackText.className = "text-2xl font-bold text-red-500";
+            }
+
+            feedbackOverlay.classList.remove('hidden');
+
+            setTimeout(() => {
+                feedbackOverlay.classList.add('hidden');
+                currentIndex++;
+                if (currentIndex < currentQuestions.length) {
+                    updateQuiz();
+                } else {
+                    showResult();
+                }
+            }, 1000);
+        }
+
+        function showResult() {
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('progress-container').classList.add('hidden');
+            const resultScreen = document.getElementById('result-screen');
+            resultScreen.classList.remove('hidden');
+
+            const finalScoreText = document.getElementById('final-score-text');
+            const emoji = document.getElementById('result-emoji');
+
+            finalScoreText.innerText = `총 10문제 중 ${score / 10}문제를 맞혀서\n당신의 점수는 ${score}점입니다!`;
+
+            if (score >= 90) {
+                emoji.innerText = "👑";
+            } else if (score >= 70) {
+                emoji.innerText = "✨";
+            } else {
+                emoji.innerText = "👍";
+            }
+        }
+
+        function startQuizModal(mode) {
+            document.getElementById('startModal').classList.add('hidden');
+            startQuiz(mode);
+        }
+
+        window.onload = () => {
+            document.getElementById('startModal').classList.remove('hidden');
+        };
+    </script>
+</body>
+</html>

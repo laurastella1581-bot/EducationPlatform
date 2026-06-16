@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>쿼카와 친구들의 세상 탐험 놀이터</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;800&display=swap');
+        
+        :root {
+            --quokka-brown: #E6C8A4;
+            --forest-green: #2D5A27;
+            --sunny-yellow: #FFD93D;
+            --soft-gray: #FAFAFA;
+        }
+
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: var(--soft-gray);
+            color: #333;
+            scroll-behavior: smooth;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            border: 2px solid #fff;
+            box-shadow: 0 10px 25px -5px rgba(230, 200, 164, 0.2);
+            border-radius: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link { @apply hover:text-[#2D5A27] transition-colors cursor-pointer; }
+
+        /* 히어로 섹션 */
+        .hero-bg {
+            background: radial-gradient(circle at 70% 50%, #ffffff 0%, #f3f4f6 100%);
+            position: relative;
+            overflow: hidden;
+            min-height: 600px;
+            display: flex;
+            align-items: center;
+        }
+
+        .hero-image-container {
+            position: absolute;
+            right: -5%;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 55%;
+            z-index: 1;
+        }
+
+        .hero-image-container img {
+            width: 100%;
+            height: auto;
+            filter: drop-shadow(0 20px 50px rgba(0,0,0,0.1));
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .hero-text-content {
+            position: relative;
+            z-index: 2;
+            max-width: 600px;
+        }
+
+        /* 등급 도트 스타일 */
+        .rating-dot { 
+            appearance: none; 
+            width: 1.8rem; 
+            height: 1.8rem; 
+            border: 3px solid #e2e8f0; 
+            border-radius: 50%; 
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: white;
+        }
+        .rating-dot:checked { 
+            background-color: #2D5A27; 
+            border-color: #2D5A27;
+            transform: scale(1.2);
+            box-shadow: 0 0 15px rgba(45, 90, 39, 0.3);
+        }
+
+        /* 지능 카드 상세 스타일 */
+        .intelligence-card {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .intelligence-card:hover {
+            transform: translateY(-12px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+        }
+
+        @media (max-width: 1024px) {
+            .hero-image-container {
+                position: relative;
+                right: 0;
+                top: 0;
+                transform: none;
+                width: 100%;
+                margin-top: 3rem;
+            }
+            .hero-bg {
+                flex-direction: column;
+                text-align: center;
+                padding-top: 5rem;
+            }
+            .hero-text-content {
+                max-width: 100%;
+            }
+        }
+
+        /* 모달 스타일 대체 (커스텀 알림) */
+        #custom-alert {
+            display: none;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <!-- 커스텀 알림 UI -->
+    <div id="custom-alert" class="bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3">
+        <span class="text-xl">✅</span>
+        <span id="alert-message" class="font-bold"></span>
+    </div>
+
+    <!-- 헤더 -->
+    <header class="bg-white/90 sticky top-0 z-50 backdrop-blur-md border-b border-orange-50">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex justify-between items-center h-20">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-[#E6C8A4] rounded-xl flex items-center justify-center text-2xl">🐨</div>
+                    <span class="text-xl font-extrabold text-slate-800 tracking-tight">쿼카 놀이터</span>
+                </div>
+
+                <nav class="hidden md:flex gap-10 text-sm font-bold text-slate-600">
+                    <a href="#intelligence-grid" class="nav-link">지능별 놀이</a>
+                    <a href="#observation" class="nav-link">성장 관찰</a>
+                    <a href="#portfolio" class="nav-link">포트폴리오</a>
+                </nav>
+
+                <div class="flex items-center gap-4">
+                    <button class="text-sm font-bold text-slate-500 hover:text-slate-800 px-4 py-2">로그인</button>
+                    <button class="text-sm font-bold bg-[#2D5A27] text-white px-6 py-2.5 rounded-xl hover:shadow-lg transition-all">회원가입</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 히어로 섹션 -->
+    <section class="hero-bg">
+        <div class="max-w-7xl mx-auto px-6 w-full flex flex-col lg:flex-row items-center">
+            <div class="hero-text-content">
+                <div class="inline-block px-4 py-1.5 bg-white/60 border border-orange-100 rounded-full text-orange-700 text-xs font-bold mb-6">
+                    ✨ 쿼카 친구들과 떠나는 즐거운 여행
+                </div>
+                <h1 class="text-5xl md:text-6xl font-extrabold text-slate-900 leading-[1.15] mb-8">
+                    호기심 가득한<br/>
+                    <span class="text-[#2D5A27]">쿼카 친구들의 모험</span>
+                </h1>
+                <p class="text-slate-600 font-medium text-lg md:text-xl mb-10 leading-relaxed">
+                    호기심 가득한 아이들의 숨겨진 재능을 발견하고<br/>
+                    신비가득한 세상 속에서 놀면서 도전해 봐요!
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                    <a href="#intelligence-grid" class="px-10 py-5 bg-[#2D5A27] text-white rounded-2xl font-bold text-lg shadow-xl hover:-translate-y-1 transition-all text-center">오늘의 놀이 시작하기</a>
+                    <button class="px-10 py-5 bg-white text-slate-700 border border-slate-200 rounded-2xl font-bold text-lg hover:bg-slate-50 transition-all">놀이 가이드 보기</button>
+                </div>
+            </div>
+            
+            <div class="hero-image-container">
+                <img 
+                    src="https://images.unsplash.com/photo-1544111300-3f43372c3886?auto=format&fit=crop&q=80&w=800" 
+                    alt="세 마리의 쿼카 친구들"
+                    class="rounded-[3rem]"
+                >
+            </div>
+        </div>
+    </section>
+
+    <main class="max-w-7xl mx-auto px-6 py-24 space-y-40">
+        
+        <!-- 지능별 놀이 -->
+        <section id="intelligence-grid">
+            <div class="text-center mb-16">
+                <div class="inline-block px-4 py-1 bg-green-100 text-green-700 rounded-full text-sm font-bold mb-4">다중지능 이론 기반 보드게임 분류</div>
+                <h2 class="text-4xl font-extrabold text-slate-900 mb-4">🌟 8가지 다중지능 놀이창고</h2>
+                <p class="text-slate-500">영역별 맞춤 놀이와 함께 신나는 수학동화 코너를 만나보세요!</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <!-- 1. 논리수학 지능 -->
+                <div class="intelligence-card glass-card p-8 bg-orange-50/40">
+                    <div class="text-5xl mb-4">🔢</div>
+                    <h3 class="font-bold text-xl text-slate-800 mb-3">논리수학 지능</h3>
+                    <div class="text-xs font-semibold text-orange-600 mb-4 bg-orange-100/50 p-2 rounded-lg">수 개념 이해, 순차적/조직적 사고력</div>
+                    <div class="flex-grow space-y-4">
+                        <div>
+                            <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">추천 게임</p>
+                            <p class="text-sm text-slate-700 leading-relaxed font-medium">셈셈시리즈, 셋(SET), 로보77, 할리갈리, 젝스님트, 루미큐브</p>
+                        </div>
+                        <button onclick="showNotice('논리수학 지능 관련 수학동화를 불러옵니다.')" class="w-full py-2 bg-orange-500/10 text-orange-700 rounded-xl text-xs font-bold hover:bg-orange-500/20 transition-colors">📚 수학동화코너/퀴즈</button>
+                    </div>
+                </div>
+
+                <!-- 2. 공간시각 지능 -->
+                <div class="intelligence-card glass-card p-8 bg-purple-50/40">
+                    <div class="text-5xl mb-4">🎨</div>
+                    <h3 class="font-bold text-xl text-slate-800 mb-3">공간시각 지능</h3>
+                    <div class="text-xs font-semibold text-purple-600 mb-4 bg-purple-100/50 p-2 rounded-lg">공간 인식, 형태 시각화 능력</div>
+                    <div class="flex-grow space-y-4">
+                        <div>
+                            <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">추천 게임</p>
+                            <p class="text-sm text-slate-700 leading-relaxed font-medium">라비린스, 블로커스, 패치워크, 우봉고, 미라케시, 아발론, 트위스터</p>
+                        </div>
+                        <button onclick="showNotice('공간시각 지능 관련 활동지를 준비합니다.')" class="w-full py-2 bg-purple-500/10 text-purple-700 rounded-xl text-xs font-bold hover:bg-purple-500/20 transition-colors">📚 수학동화코너/퀴즈</button>
+                    </div>
+                </div>
+
+                <!-- 3. 언어 지능 -->
+                <div class="intelligence-card glass-card p-8 bg-blue-50/40">
+                    <div class="text-5xl mb-4">📖</div>
+                    <h3 class="font-bold text-xl text-slate-800 mb-3">언어 지능</h3>
+                    <div class="text-xs font-semibold text-blue-600 mb-4 bg-blue-100/50 p-2 rounded-lg">어휘력 확장, 이야기 구성 및 표현</div>
+                    <div class="flex-grow space-y-4">
+                        <div>
+                            <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">추천 게임</p>
+                            <p class="text-sm text-slate-700 leading-relaxed font-medium">치킨차차, 딕싯, 징고, 딩고, 고양이와 쥐, 유령의 성, 클루, 콘셉트</p>
+                        </div>
+                        <button onclick="showNotice('언어 지능 발달 이야기를 생성합니다.')" class="w-full py-2 bg-blue-500/10 text-blue-700 rounded-xl text-xs font-bold hover:bg-blue-500/20 transition-colors">📚 수학동화코너</button>
+                    </div>
+                </div>
+
+                <!-- 4. 신체운동 지능 -->
+                <div class="intelligence-card glass-card p-8 bg-emerald-50/40">
+                    <div class="text-5xl mb-4">🏃</div>
+                    <h3 class="font-bold text-xl text-slate-800 mb-3">신체운동 지능</h3>
+                    <div class="text-xs font-semibold text-emerald-600 mb-4 bg-emerald-100/50 p-2 rounded-lg">소/대근육 발달, 정교한 신체 조절</div>
+                    <div class="flex-grow space-y-4">
+                        <div>
+                            <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">추천 게임</p>
+                            <p class="text-sm text-slate-700 leading-relaxed font-medium">콘체르토 그로소, 할리갈리, 젠가, 오퍼레이션, 톡톡 우드맨, 젬스톤</p>
+                        </div>
+                        <button onclick="showNotice('운동 지능을 높이는 신체 놀이 정보를 불러옵니다.')" class="w-full py-2 bg-emerald-500/10 text-emerald-700 rounded-xl text-xs font-bold hover:bg-emerald-500/20 transition-colors">📚 수학동화코너/퀴즈</button>
+                    </div>
+                </div>
+
+                <!-- 5. 음악 지능 -->
+                <div class="intelligence-card glass-card p-8 bg-yellow-50/40">
+                    <div class="text-5xl mb-4">🎵</div>
+                    <h3 class="font-bold text-xl text-slate-800 mb-3">음악 지능</h3>
+                    <div class="text-xs font-semibold text-yellow-600 mb-4 bg-yellow-100/50 p-2 rounded-lg">리듬/멜로디 분석, 청각 반응력</div>
+                    <div class="flex-grow space-y-4">
+                        <div>
+                            <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">추천 게임</p>
+                            <p class="text-sm text-slate-700 leading-relaxed font-medium">도레미라, 음악 퀴즈 보드게임</p>
+                        </div>
+                        <button onclick="showNotice('리듬과 멜로디 퀴즈를 준비 중입니다.')" class="w-full py-2 bg-yellow-500/10 text-yellow-700 rounded-xl text-xs font-bold hover:bg-yellow-500/20 transition-colors">📚 수학동화코너/퀴즈</button>
+                    </div>
+                </div>
+
+                <!-- 6. 대인관계 지능 -->
+                <div class="intelligence-card glass-card p-8 bg-rose-50/40">
+                    <div class="text-5xl mb-4">🤝</div>
+                    <h3 class="font-bold text-xl text-slate-800 mb-3">대인관계 지능</h3>
+                    <div class="text-xs font-semibold text-rose-600 mb-4 bg-rose-100/50 p-2 rounded-lg">사회성, 규칙 준수, 상호작용</div>
+                    <div class="flex-grow space-y-4">
+                        <div>
+                            <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">추천 게임</p>
+                            <p class="text-sm text-slate-700 leading-relaxed font-medium">로보77, 뱅고람, 프레젠트, 우노, 꼬마돼지서커스</p>
+                        </div>
+                        <button onclick="showNotice('협동심을 키우는 대인관계 시나리오를 로딩합니다.')" class="w-full py-2 bg-rose-500/10 text-rose-700 rounded-xl text-xs font-bold hover:bg-rose-500/20 transition-colors">📚 수학동화코너/퀴즈</button>
+                    </div>
+                </div>
+
+                <!-- 7. 자연친화 지능 -->
+                <div class="intelligence-card glass-card p-8 bg-green-50/40">
+                    <div class="text-5xl mb-4">🌿</div>
+                    <h3 class="font-bold text-xl text-slate-800 mb-3">자연친화 지능</h3>
+                    <div class="text-xs font-semibold text-green-600 mb-4 bg-green-100/50 p-2 rounded-lg">자연 패턴 인식 및 관찰력 향상</div>
+                    <div class="flex-grow space-y-4">
+                        <div>
+                            <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">추천 게임</p>
+                            <p class="text-sm text-slate-700 leading-relaxed font-medium">카드라인 시리즈 (동물편, 과학과 발견편 등)</p>
+                        </div>
+                        <button onclick="showNotice('숲속 동식물 관찰 퀴즈를 시작합니다.')" class="w-full py-2 bg-green-500/10 text-green-700 rounded-xl text-xs font-bold hover:bg-green-500/20 transition-colors">📚 수학동화코너/퀴즈</button>
+                    </div>
+                </div>
+
+                <!-- 8. 자기이해 지능 -->
+                <div class="intelligence-card glass-card p-8 bg-indigo-50/40">
+                    <div class="text-5xl mb-4">🧘</div>
+                    <h3 class="font-bold text-xl text-slate-800 mb-3">자기이해 지능</h3>
+                    <div class="text-xs font-semibold text-indigo-600 mb-4 bg-indigo-100/50 p-2 rounded-lg">자기 통제, 목표 설정, 자기 성찰</div>
+                    <div class="flex-grow space-y-4">
+                        <div>
+                            <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">발달 과정</p>
+                            <p class="text-sm text-slate-700 leading-relaxed font-medium">모든 게임 진행 중 규칙 습득 및 목표 달성 과정</p>
+                        </div>
+                        <button onclick="showNotice('오늘의 감정 일기 템플릿을 불러옵니다.')" class="w-full py-2 bg-indigo-500/10 text-indigo-700 rounded-xl text-xs font-bold hover:bg-indigo-500/20 transition-colors">📚 수학동화코너/퀴즈</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 성장 관찰 -->
+        <section id="observation">
+            <div class="mb-12 text-center md:text-left">
+                <h2 class="text-3xl font-extrabold text-slate-900 mb-2">🔍 쿼카가 관찰해요</h2>
+                <p class="text-slate-500">오늘 아이의 활동을 관찰하며 느낀 점들을 기록해 주세요.</p>
+            </div>
+
+            <div class="glass-card overflow-hidden">
+                <div class="bg-gradient-to-r from-[#2D5A27] to-[#4A7c44] p-8 text-white flex justify-between items-center">
+                    <h3 class="text-2xl font-bold">꼬마 쿼카 성장 리포트</h3>
+                    <span class="text-xs bg-white/20 px-3 py-1 rounded-full border border-white/30">교사용 관찰지</span>
+                </div>
+                <div class="p-8 md:p-12 space-y-12">
+                    <div class="space-y-6">
+                        <div class="flex flex-col md:flex-row justify-between items-center p-6 bg-slate-50 rounded-3xl border border-slate-100 gap-6">
+                            <span class="font-bold text-slate-700">놀이가 재미있어 시간 가는 줄 몰랐나요?</span>
+                            <div class="flex gap-4">
+                                <input type="radio" name="q1" class="rating-dot"><input type="radio" name="q1" class="rating-dot"><input type="radio" name="q1" class="rating-dot"><input type="radio" name="q1" class="rating-dot"><input type="radio" name="q1" class="rating-dot" checked>
+                            </div>
+                        </div>
+                        <div class="flex flex-col md:flex-row justify-between items-center p-6 bg-slate-50 rounded-3xl border border-slate-100 gap-6">
+                            <span class="font-bold text-slate-700">친구와 자신의 생각을 잘 나누었나요?</span>
+                            <div class="flex gap-4">
+                                <input type="radio" name="q2" class="rating-dot"><input type="radio" name="q2" class="rating-dot"><input type="radio" name="q2" class="rating-dot" checked><input type="radio" name="q2" class="rating-dot"><input type="radio" name="q2" class="rating-dot">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <label class="block font-bold text-[#2D5A27]">Step 2. 교사 관찰 한줄평</label>
+                        <textarea id="comment" class="w-full h-32 p-6 rounded-3xl bg-slate-50 border-none focus:ring-2 focus:ring-[#2D5A27] resize-none text-slate-700 outline-none" placeholder="아이의 오늘 성장을 기록해 주세요."></textarea>
+                        <button onclick="analyzeData()" class="w-full py-5 bg-[#2D5A27] text-white font-bold rounded-2xl shadow-xl hover:scale-[1.01] transition-all">분석 결과 업데이트</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 포트폴리오 -->
+        <section id="portfolio">
+            <h2 class="text-3xl font-extrabold text-slate-900 mb-12">📓 쿼카의 모험 포트폴리오</h2>
+            <div class="glass-card p-12 bg-white flex flex-col md:flex-row items-center gap-12 text-center md:text-left border-orange-50">
+                <div class="w-48 h-64 bg-[#E6C8A4] border-r-[12px] border-[#8B5E3C] rounded-r-2xl shadow-2xl flex flex-col items-center justify-center p-8">
+                    <div class="text-6xl mb-4">🐨</div>
+                    <div class="h-1 w-12 bg-white/40 rounded-full"></div>
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-4xl font-black text-slate-800 mb-6">성장 히스토리</h3>
+                    <p class="text-slate-500 text-lg mb-8 leading-relaxed">
+                        객관적인 지능 분석 리포트와 함께<br/>
+                        선생님의 따뜻한 시선이 담긴 기록들을 확인하세요.
+                    </p>
+                    <button onclick="showNotice('보호자 전용 히스토리 페이지로 이동합니다.')" class="px-10 py-4 bg-slate-900 text-white font-bold rounded-2xl hover:shadow-2xl transition-all">전체 기록 보기</button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ══════════════════════════════════
+         FOOTER  1000 × 270 (approx)
+    ══════════════════════════════════ -->
+    <footer id="footer" style="background: linear-gradient(135deg, #152e12 0%, #1e4119 40%, #2D5A27 100%); color: white; position: relative; overflow: hidden;">
+
+        <!-- 배경 장식 원 -->
+        <div style="position:absolute;top:-60px;right:-60px;width:240px;height:240px;background:rgba(255,255,255,0.03);border-radius:50%;pointer-events:none;"></div>
+        <div style="position:absolute;bottom:-40px;left:60px;width:160px;height:160px;background:rgba(255,255,255,0.03);border-radius:50%;pointer-events:none;"></div>
+        <div style="position:absolute;top:20px;left:38%;width:90px;height:90px;background:rgba(230,200,164,0.06);border-radius:50%;pointer-events:none;"></div>
+
+        <!-- 메인 콘텐츠 (1000px 고정 센터) -->
+        <div style="max-width:1000px;margin:0 auto;padding:44px 40px 20px;display:grid;grid-template-columns:1.9fr 1fr 1fr 1.4fr;gap:36px;align-items:start;">
+
+            <!-- ① 브랜드 -->
+            <div>
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+                    <div style="width:46px;height:46px;background:#E6C8A4;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 4px 12px rgba(0,0,0,0.25);">🐨</div>
+                    <div>
+                        <div style="font-size:17px;font-weight:800;letter-spacing:-0.5px;line-height:1.2;">쿼카 놀이터</div>
+                        <div style="font-size:10px;color:rgba(255,255,255,0.45);letter-spacing:0.5px;font-weight:600;">QUOKKA PLAY FOREST</div>
+                    </div>
+                </div>
+                <p style="font-size:12.5px;color:rgba(255,255,255,0.62);line-height:1.75;margin-bottom:20px;">
+                    호기심 가득한 아이들의 숨겨진 재능을<br>
+                    보드게임과 함께 발견하는 숲속 놀이 공간 🌿
+                </p>
+                <!-- SNS 아이콘 -->
+                <div style="display:flex;gap:9px;">
+                    <a href="#" title="Instagram" style="width:34px;height:34px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.12);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">📷</a>
+                    <a href="#" title="YouTube" style="width:34px;height:34px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.12);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;text-decoration:none;color:white;font-weight:bold;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">▶</a>
+                    <a href="#" title="Naver Blog" style="width:34px;height:34px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.12);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;text-decoration:none;color:white;font-weight:800;letter-spacing:-1px;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">N</a>
+                    <a href="#" title="KakaoTalk" style="width:34px;height:34px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.12);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;text-decoration:none;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">💬</a>
+                </div>
+            </div>
+
+            <!-- ② 서비스 메뉴 -->
+            <div>
+                <h4 style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.42);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.1);">서비스</h4>
+                <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:11px;">
+                    <li><a href="#intelligence-grid" style="color:rgba(255,255,255,0.78);text-decoration:none;font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;" onmouseover="this.style.color='#FFD93D'" onmouseout="this.style.color='rgba(255,255,255,0.78)'"><span style="font-size:11px;">🧩</span> 다중지능 놀이</a></li>
+                    <li><a href="#observation" style="color:rgba(255,255,255,0.78);text-decoration:none;font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;" onmouseover="this.style.color='#FFD93D'" onmouseout="this.style.color='rgba(255,255,255,0.78)'"><span style="font-size:11px;">📊</span> 성장 관찰 리포트</a></li>
+                    <li><a href="#portfolio" style="color:rgba(255,255,255,0.78);text-decoration:none;font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;" onmouseover="this.style.color='#FFD93D'" onmouseout="this.style.color='rgba(255,255,255,0.78)'"><span style="font-size:11px;">📓</span> 모험 포트폴리오</a></li>
+                    <li><a href="#" style="color:rgba(255,255,255,0.78);text-decoration:none;font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;" onmouseover="this.style.color='#FFD93D'" onmouseout="this.style.color='rgba(255,255,255,0.78)'"><span style="font-size:11px;">🎲</span> 보드게임 추천</a></li>
+                    <li><a href="#" style="color:rgba(255,255,255,0.78);text-decoration:none;font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;" onmouseover="this.style.color='#FFD93D'" onmouseout="this.style.color='rgba(255,255,255,0.78)'"><span style="font-size:11px;">📖</span> 영어 동화극장</a></li>
+                </ul>
+            </div>
+
+            <!-- ③ 이용 안내 -->
+            <div>
+                <h4 style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.42);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.1);">안내</h4>
+                <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:11px;">
+                    <li><a href="#" style="color:rgba(255,255,255,0.78);text-decoration:none;font-size:13px;font-weight:500;" onmouseover="this.style.color='#FFD93D'" onmouseout="this.style.color='rgba(255,255,255,0.78)'">이용약관</a></li>
+                    <li><a href="#" style="color:rgba(255,217,61,0.85);text-decoration:none;font-size:13px;font-weight:600;" onmouseover="this.style.color='#FFD93D'" onmouseout="this.style.color='rgba(255,217,61,0.85)'">개인정보처리방침 ★</a></li>
+                    <li><a href="#" style="color:rgba(255,255,255,0.78);text-decoration:none;font-size:13px;font-weight:500;" onmouseover="this.style.color='#FFD93D'" onmouseout="this.style.color='rgba(255,255,255,0.78)'">고객센터</a></li>
+                    <li><a href="#" style="color:rgba(255,255,255,0.78);text-decoration:none;font-size:13px;font-weight:500;" onmouseover="this.style.color='#FFD93D'" onmouseout="this.style.color='rgba(255,255,255,0.78)'">교구 구매 안내</a></li>
+                    <li><a href="#" style="color:rgba(255,255,255,0.78);text-decoration:none;font-size:13px;font-weight:500;" onmouseover="this.style.color='#FFD93D'" onmouseout="this.style.color='rgba(255,255,255,0.78)'">도서 구입처</a></li>
+                </ul>
+            </div>
+
+            <!-- ④ 주변 놀이 장소 -->
+            <div>
+                <h4 style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.42);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.1);">주변 놀이 장소 찾기</h4>
+                <div style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:16px;font-size:12.5px;color:rgba(255,255,255,0.72);line-height:1.8;">
+                    <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;">
+                        <span>🏪</span><span>교구 구매처 · 도서구입처</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;">
+                        <span>🏛</span><span>도서관 · 문화센터</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:7px;margin-bottom:14px;">
+                        <span>🗺</span><span>박물관 · 놀이 공간</span>
+                    </div>
+                    <button onclick="alert('지도 서비스 준비 중입니다 🗺')" style="width:100%;padding:9px 0;background:#FFD93D;color:#152e12;border:none;border-radius:10px;font-size:12.5px;font-weight:700;cursor:pointer;letter-spacing:0.3px;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
+                        🗺 내 주변 지도에서 찾기
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 하단 구분선 + 저작권 -->
+        <div style="max-width:1000px;margin:0 auto;padding:16px 40px;border-top:1px solid rgba(255,255,255,0.09);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+            <p style="font-size:11.5px;color:rgba(255,255,255,0.38);margin:0;">
+                © 2025 쿼카의 숲속 탐험대. 아이들의 꿈과 성장을 함께합니다.
+            </p>
+            <div style="display:flex;align-items:center;gap:5px;font-size:11.5px;color:rgba(255,255,255,0.35);">
+                <span>🐨</span>
+                <span>쿼카 · 루이 · 모스 · 루나 · 피카 · 콘니와 함께</span>
+            </div>
+        </div>
+
+    </footer>
+
+    <script>
+        function showNotice(message) {
+            const alertBox = document.getElementById('custom-alert');
+            const messageEl = document.getElementById('alert-message');
+            messageEl.innerText = message;
+            alertBox.style.display = 'flex';
+            alertBox.style.opacity = '1';
+            
+            setTimeout(() => {
+                alertBox.style.opacity = '0';
+                alertBox.style.transition = 'opacity 0.5s ease';
+                setTimeout(() => {
+                    alertBox.style.display = 'none';
+                    alertBox.style.opacity = '1';
+                }, 500);
+            }, 3000);
+        }
+
+        function analyzeData() {
+            const comment = document.getElementById('comment').value;
+            if(!comment.trim()) {
+                showNotice('한줄평을 입력해 주세요!');
+                return;
+            }
+            showNotice('데이터를 분석 중입니다... 잠시만 기다려 주세요.');
+        }
+    </script>
+</body>
+</html>

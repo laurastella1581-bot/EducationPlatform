@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clue - 추리 보드게임</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --board-size: 600px;
+            --cell-count: 12;
+            --cell-size: calc(var(--board-size) / var(--cell-count));
+        }
+
+        .board-grid {
+            display: grid;
+            grid-template-columns: repeat(var(--cell-count), var(--cell-size));
+            grid-template-rows: repeat(var(--cell-count), var(--cell-size));
+            width: var(--board-size);
+            height: var(--board-size);
+            border: 4px solid #2d3436;
+            background-color: #ecf0f1;
+            position: relative;
+        }
+
+        .cell {
+            border: 0.5px solid #bdc3c7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .cell:hover {
+            background-color: #dfe6e9;
+        }
+
+        .room {
+            background-color: #dcdde1;
+            border: 2px solid #7f8c8d;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            z-index: 5;
+        }
+
+        .player {
+            width: 70%;
+            height: 70%;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            z-index: 10;
+            transition: all 0.3s ease;
+        }
+
+        .highlight {
+            background-color: #55efc4 !important;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .notebook-table th, .notebook-table td {
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex items-center justify-center p-4">
+
+    <div class="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- 왼쪽: 게임 정보 및 컨트롤 -->
+        <div class="bg-slate-800 p-6 rounded-xl shadow-2xl space-y-6">
+            <h1 class="text-3xl font-bold text-center border-b border-slate-700 pb-4">CLUE <span class="text-red-500 font-serif">?</span></h1>
+            
+            <div id="game-status" class="bg-slate-700 p-4 rounded-lg">
+                <p class="text-sm text-slate-400">현재 턴</p>
+                <p id="current-player-name" class="text-xl font-bold text-yellow-400">당신의 차례입니다</p>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <button id="roll-dice-btn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-lg transition">주사위 굴리기</button>
+                <div id="dice-result" class="text-center text-2xl font-mono hidden">🎲 <span id="dice-value">0</span></div>
+                
+                <button id="suggest-btn" class="bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 px-4 rounded-lg hidden">제시하기 (추측)</button>
+                <button id="accuse-btn" class="bg-red-700 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg">최종 고발하기</button>
+            </div>
+
+            <div>
+                <h3 class="font-bold mb-2 text-slate-300">내 카드</h3>
+                <div id="my-cards" class="flex flex-wrap gap-2">
+                    <!-- 카드 목록 렌더링 -->
+                </div>
+            </div>
+
+            <div id="log" class="bg-black/30 p-3 rounded-lg h-32 overflow-y-auto text-xs font-mono space-y-1">
+                <div>게임을 시작합니다. 범인을 찾으세요!</div>
+            </div>
+        </div>
+
+        <!-- 중앙: 보드판 -->
+        <div class="flex justify-center items-center">
+            <div id="board" class="board-grid rounded shadow-2xl overflow-hidden">
+                <!-- 자바스크립트로 셀 생성 -->
+            </div>
+        </div>
+
+        <!-- 오른쪽: 추리 수첩 -->
+        <div class="bg-white text-slate-900 p-6 rounded-xl shadow-2xl overflow-y-auto max-h-[700px]">
+            <h2 class="text-xl font-bold mb-4 border-b pb-2 flex items-center gap-2">
+                🕵️ 추리 수첩
+            </h2>
+            <div id="notebook-content">
+                <!-- 추리 수첩 테이블 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 모달: 제시/고발 팝업 -->
+    <div id="action-modal" class="fixed inset-0 bg-black/80 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-800 p-8 rounded-2xl w-full max-w-md border border-slate-700">
+            <h2 id="modal-title" class="text-2xl font-bold mb-6">제시하기</h2>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">용의자 선택</label>
+                    <select id="select-suspect" class="w-full bg-slate-700 p-3 rounded-lg text-white"></select>
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">범행 도구 선택</label>
+                    <select id="select-weapon" class="w-full bg-slate-700 p-3 rounded-lg text-white"></select>
+                </div>
+                <div id="room-selection-div" class="hidden">
+                    <label class="block text-sm text-slate-400 mb-1">범행 장소 선택 (고발용)</label>
+                    <select id="select-room" class="w-full bg-slate-700 p-3 rounded-lg text-white"></select>
+                </div>
+            </div>
+
+            <div class="flex gap-3 mt-8">
+                <button id="modal-submit" class="flex-1 bg-green-600 hover:bg-green-500 py-3 rounded-lg font-bold">확인</button>
+                <button id="modal-close" class="flex-1 bg-slate-600 hover:bg-slate-500 py-3 rounded-lg font-bold">취소</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 게임 데이터 정의
+        const DATA = {
+            suspects: ["미스 스칼렛", "커널 머스타드", "미세스 화이트", "미스터 그린", "미세스 피콕", "프로페서 플럼"],
+            weapons: ["밧줄", "단검", "납파이프", "권총", "촛대", "렌치"],
+            rooms: [
+                { name: "부엌", x: [0, 2], y: [0, 2] },
+                { name: "무도회장", x: [4, 7], y: [0, 2] },
+                { name: "온실", x: [9, 11], y: [0, 2] },
+                { name: "당구실", x: [0, 2], y: [4, 6] },
+                { name: "도서관", x: [9, 11], y: [4, 6] },
+                { name: "서재", x: [0, 2], y: [9, 11] },
+                { name: "홀", x: [4, 7], y: [9, 11] },
+                { name: "라운지", x: [9, 11], y: [9, 11] },
+                { name: "식당", x: [4, 7], y: [4, 7] }
+            ]
+        };
+
+        const playerColors = ["#e17055", "#fdcb6e", "#f5f6fa", "#26de81", "#0984e3", "#6c5ce7"];
+        let players = [];
+        let solution = {};
+        let currentPlayerIndex = 0;
+        let movesLeft = 0;
+        let isGameOver = false;
+
+        // 초기화 함수
+        function initGame() {
+            // 정답 설정 (랜덤)
+            solution = {
+                suspect: DATA.suspects[Math.floor(Math.random() * DATA.suspects.length)],
+                weapon: DATA.weapons[Math.floor(Math.random() * DATA.weapons.length)],
+                room: DATA.rooms[Math.floor(Math.random() * DATA.rooms.length)].name
+            };
+            console.log("Solution:", solution); // 개발용
+
+            // 카드 뭉치 만들기
+            let deck = [];
+            DATA.suspects.forEach(s => s !== solution.suspect && deck.push(s));
+            DATA.weapons.forEach(w => w !== solution.weapon && deck.push(w));
+            DATA.rooms.forEach(r => r.name !== solution.room && deck.push(r.name));
+            
+            // 셔플
+            deck.sort(() => Math.random() - 0.5);
+
+            // 플레이어 생성 (사람 1명 + AI 3명)
+            players = [
+                { id: 0, name: "당신 (스칼렛)", color: playerColors[0], x: 3, y: 0, cards: [], type: 'human' },
+                { id: 1, name: "AI 1 (머스타드)", color: playerColors[1], x: 8, y: 0, cards: [], type: 'ai' },
+                { id: 2, name: "AI 2 (그린)", color: playerColors[3], x: 3, y: 11, cards: [], type: 'ai' },
+                { id: 3, name: "AI 3 (피콕)", color: playerColors[4], x: 8, y: 11, cards: [], type: 'ai' }
+            ];
+
+            // 카드 배분
+            let pIdx = 0;
+            while(deck.length > 0) {
+                players[pIdx % players.length].cards.push(deck.pop());
+                pIdx++;
+            }
+
+            renderBoard();
+            renderNotebook();
+            renderMyCards();
+            updatePlayerPos();
+            
+            // 셀렉트 박스 옵션 채우기
+            const sSus = document.getElementById('select-suspect');
+            const sWea = document.getElementById('select-weapon');
+            const sRoo = document.getElementById('select-room');
+            
+            DATA.suspects.forEach(s => sSus.innerHTML += `<option value="${s}">${s}</option>`);
+            DATA.weapons.forEach(w => sWea.innerHTML += `<option value="${w}">${w}</option>`);
+            DATA.rooms.forEach(r => sRoo.innerHTML += `<option value="${r.name}">${r.name}</option>`);
+        }
+
+        // 보드 렌더링
+        function renderBoard() {
+            const boardEl = document.getElementById('board');
+            boardEl.innerHTML = '';
+            
+            for (let y = 0; y < 12; y++) {
+                for (let x = 0; x < 12; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+                    cell.onclick = () => handleCellClick(x, y);
+
+                    // 방 영역 체크
+                    const room = DATA.rooms.find(r => 
+                        x >= r.x[0] && x <= r.x[1] && y >= r.y[0] && y <= r.y[1]
+                    );
+
+                    if (room) {
+                        cell.classList.add('room');
+                        if (x === Math.floor((room.x[0] + room.x[1]) / 2) && 
+                            y === Math.floor((room.y[0] + room.y[1]) / 2)) {
+                            cell.innerText = room.name;
+                        }
+                    }
+
+                    boardEl.appendChild(cell);
+                }
+            }
+        }
+
+        // 추리 수첩 렌더링
+        function renderNotebook() {
+            const container = document.getElementById('notebook-content');
+            let html = `<table class="notebook-table w-full text-sm border-collapse">`;
+            
+            const categories = [
+                { title: "👥 용의자", items: DATA.suspects },
+                { title: "⚔️ 무기", items: DATA.weapons },
+                { title: "🏠 장소", items: DATA.rooms.map(r => r.name) }
+            ];
+
+            categories.forEach(cat => {
+                html += `<tr class="bg-slate-100 font-bold"><td colspan="2">${cat.title}</td></tr>`;
+                cat.items.forEach(item => {
+                    html += `
+                        <tr>
+                            <td class="w-8 text-center"><input type="checkbox" class="w-4 h-4 cursor-pointer"></td>
+                            <td>${item}</td>
+                        </tr>
+                    `;
+                });
+            });
+
+            html += `</table>`;
+            container.innerHTML = html;
+        }
+
+        // 내 카드 렌더링
+        function renderMyCards() {
+            const container = document.getElementById('my-cards');
+            players[0].cards.forEach(card => {
+                const cardEl = document.createElement('span');
+                cardEl.className = 'bg-slate-600 px-3 py-1 rounded-full text-xs border border-slate-500';
+                cardEl.innerText = card;
+                container.appendChild(cardEl);
+            });
+        }
+
+        // 플레이어 위치 업데이트
+        function updatePlayerPos() {
+            document.querySelectorAll('.player').forEach(p => p.remove());
+            players.forEach(p => {
+                const cell = document.querySelector(`.cell[data-x="${p.x}"][data-y="${p.y}"]`);
+                const token = document.createElement('div');
+                token.className = 'player';
+                token.style.backgroundColor = p.color;
+                token.title = p.name;
+                cell.appendChild(token);
+            });
+        }
+
+        // 주사위 굴리기
+        document.getElementById('roll-dice-btn').onclick = function() {
+            if (movesLeft > 0 || players[currentPlayerIndex].type !== 'human') return;
+
+            const die1 = Math.floor(Math.random() * 6) + 1;
+            const die2 = Math.floor(Math.random() * 6) + 1;
+            movesLeft = die1 + die2;
+
+            const diceRes = document.getElementById('dice-result');
+            diceRes.classList.remove('hidden');
+            document.getElementById('dice-value').innerText = movesLeft;
+            this.disabled = true;
+
+            log(`주사위 결과: ${movesLeft}. 보드를 클릭해 이동하세요.`);
+            highlightMovable();
+        };
+
+        function highlightMovable() {
+            const p = players[currentPlayerIndex];
+            document.querySelectorAll('.cell').forEach(cell => {
+                const cx = parseInt(cell.dataset.x);
+                const cy = parseInt(cell.dataset.y);
+                const dist = Math.abs(cx - p.x) + Math.abs(cy - p.y);
+                
+                if (dist <= movesLeft && dist > 0) {
+                    cell.classList.add('highlight');
+                } else {
+                    cell.classList.remove('highlight');
+                }
+            });
+        }
+
+        // 이동 처리
+        function handleCellClick(x, y) {
+            const p = players[currentPlayerIndex];
+            if (p.type !== 'human' || movesLeft <= 0) return;
+
+            const dist = Math.abs(x - p.x) + Math.abs(y - p.y);
+            if (dist <= movesLeft) {
+                p.x = x;
+                p.y = y;
+                movesLeft = 0;
+                
+                document.querySelectorAll('.cell').forEach(c => c.classList.remove('highlight'));
+                document.getElementById('roll-dice-btn').disabled = false;
+                document.getElementById('dice-result').classList.add('hidden');
+                
+                updatePlayerPos();
+                checkRoomEntry(x, y);
+            }
+        }
+
+        // 방 입장 체크
+        function checkRoomEntry(x, y) {
+            const room = DATA.rooms.find(r => 
+                x >= r.x[0] && x <= r.x[1] && y >= r.y[0] && y <= r.y[1]
+            );
+
+            const suggestBtn = document.getElementById('suggest-btn');
+            if (room) {
+                log(`${room.name}에 들어갔습니다. 제시를 할 수 있습니다.`);
+                suggestBtn.classList.remove('hidden');
+                suggestBtn.dataset.room = room.name;
+            } else {
+                suggestBtn.classList.add('hidden');
+                setTimeout(nextTurn, 1000);
+            }
+        }
+
+        // 제시하기 모달 열기
+        document.getElementById('suggest-btn').onclick = function() {
+            openModal("제시하기 (Suggestion)", false);
+        };
+
+        // 고발하기 모달 열기
+        document.getElementById('accuse-btn').onclick = function() {
+            if (players[currentPlayerIndex].type !== 'human') return;
+            openModal("최종 고발 (Accusation)", true);
+        };
+
+        function openModal(title, isAccuse) {
+            const modal = document.getElementById('action-modal');
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('room-selection-div').style.display = isAccuse ? 'block' : 'none';
+            modal.classList.remove('hidden');
+            modal.dataset.isAccuse = isAccuse;
+        }
+
+        document.getElementById('modal-close').onclick = () => {
+            document.getElementById('action-modal').classList.add('hidden');
+        };
+
+        // 제시/고발 실행
+        document.getElementById('modal-submit').onclick = function() {
+            const isAccuse = document.getElementById('action-modal').dataset.isAccuse === "true";
+            const suspect = document.getElementById('select-suspect').value;
+            const weapon = document.getElementById('select-weapon').value;
+            const room = isAccuse ? document.getElementById('select-room').value : document.getElementById('suggest-btn').dataset.room;
+
+            document.getElementById('action-modal').classList.add('hidden');
+            document.getElementById('suggest-btn').classList.add('hidden');
+
+            if (isAccuse) {
+                handleAccuse(suspect, weapon, room);
+            } else {
+                handleSuggest(suspect, weapon, room);
+            }
+        };
+
+        function handleSuggest(s, w, r) {
+            log(`[제시] ${s}가 ${r}에서 ${w}(으)로 범행을 저질렀을 것이다!`);
+            
+            // 다른 플레이어들이 반박할 카드가 있는지 순회
+            let refuted = false;
+            for (let i = 1; i < players.length; i++) {
+                const nextP = players[(currentPlayerIndex + i) % players.length];
+                const matchingCards = nextP.cards.filter(c => c === s || c === w || c === r);
+                
+                if (matchingCards.length > 0) {
+                    const shownCard = matchingCards[Math.floor(Math.random() * matchingCards.length)];
+                    log(`${nextP.name}이(가) 증거를 보여주었습니다: [${shownCard}]`);
+                    refuted = true;
+                    break;
+                }
+            }
+
+            if (!refuted) {
+                log("아무도 반박할 증거를 가지고 있지 않습니다!");
+            }
+            
+            setTimeout(nextTurn, 2000);
+        }
+
+        function handleAccuse(s, w, r) {
+            log(`[최종 고발] ${s}, ${r}, ${w}!!`);
+            
+            if (s === solution.suspect && w === solution.weapon && r === solution.room) {
+                alert(`승리! 정답을 맞혔습니다.\n\n범인: ${s}\n도구: ${w}\n장소: ${r}`);
+                location.reload();
+            } else {
+                alert(`틀렸습니다! 당신은 탈락했습니다.\n\n정답은 [${solution.suspect}, ${solution.room}, ${solution.weapon}] 였습니다.`);
+                location.reload();
+            }
+        }
+
+        // 턴 넘기기
+        function nextTurn() {
+            currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+            const p = players[currentPlayerIndex];
+            
+            document.getElementById('current-player-name').innerText = p.name;
+            document.getElementById('current-player-name').style.color = p.color;
+
+            if (p.type === 'ai') {
+                log(`${p.name}의 차례입니다...`);
+                document.getElementById('roll-dice-btn').disabled = true;
+                setTimeout(aiPlay, 1000);
+            } else {
+                log(`당신의 차례입니다. 주사위를 굴리세요.`);
+                document.getElementById('roll-dice-btn').disabled = false;
+            }
+        }
+
+        // 간단한 AI 행동
+        function aiPlay() {
+            const p = players[currentPlayerIndex];
+            const dice = Math.floor(Math.random() * 10) + 2;
+            
+            // 랜덤하게 방으로 이동하거나 근처로 이동
+            const targetRoom = DATA.rooms[Math.floor(Math.random() * DATA.rooms.length)];
+            const targetX = Math.floor((targetRoom.x[0] + targetRoom.x[1]) / 2);
+            const targetY = Math.floor((targetRoom.y[0] + targetRoom.y[1]) / 2);
+            
+            // 단순 이동 로직 (직선 이동)
+            for (let i = 0; i < dice; i++) {
+                if (p.x < targetX) p.x++;
+                else if (p.x > targetX) p.x--;
+                else if (p.y < targetY) p.y++;
+                else if (p.y > targetY) p.y--;
+            }
+            
+            updatePlayerPos();
+            
+            // 방에 도착했는지 확인
+            const inRoom = DATA.rooms.find(r => 
+                p.x >= r.x[0] && p.x <= r.x[1] && p.y >= r.y[0] && p.y <= r.y[1]
+            );
+
+            if (inRoom) {
+                const s = DATA.suspects[Math.floor(Math.random() * DATA.suspects.length)];
+                const w = DATA.weapons[Math.floor(Math.random() * DATA.weapons.length)];
+                handleSuggest(s, w, inRoom.name);
+            } else {
+                setTimeout(nextTurn, 1000);
+            }
+        }
+
+        function log(msg) {
+            const logEl = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.innerText = `> ${msg}`;
+            logEl.prepend(entry);
+        }
+
+        // 실행
+        window.onload = initGame;
+
+    </script>
+</body>
+</html>

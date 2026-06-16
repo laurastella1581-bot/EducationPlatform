@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>쿼카의 마법 그림 카드 · 양면 그림책</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+:root{
+  --night:#1d2340;
+  --paper:#fff9ec;
+  --paper-2:#fbf0d6;
+  --ink:#2f3350;
+  --ink-soft:#5b5f7d;
+  --gold:#f5c64f;
+  --gold-deep:#d99e22;
+  --coral:#f08a68;
+  --sage:#6f9d72;
+  --sage-deep:#4f7d55;
+  --line:#e8dcc0;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:'Gowun Dodum',sans-serif;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, #37406e 0%, transparent 60%),
+    radial-gradient(900px 500px at 5% 110%, #33305c 0%, transparent 55%),
+    var(--night);
+  color:var(--ink);
+  overflow:hidden;height:100dvh;
+  display:flex;align-items:center;justify-content:center;
+}
+.serif{font-family:'Gowun Batang',serif}
+
+/* 밤하늘 별 */
+.sky{position:fixed;inset:0;pointer-events:none;z-index:0}
+.sky i{position:absolute;border-radius:50%;background:#ffe9b0;opacity:.7;animation:twinkle 3.4s ease-in-out infinite}
+@keyframes twinkle{0%,100%{opacity:.12;transform:scale(.7)}50%{opacity:.85;transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.sky i,.float-star{animation:none!important}}
+
+/* ── 고정 비율 스테이지 (1280×720): 화면에 맞춰 통째로 스케일 → 스크롤 없음 ── */
+#stage{
+  position:relative;z-index:2;
+  width:1280px;height:720px;flex:0 0 auto;
+  transform-origin:center center;
+  display:flex;flex-direction:column;
+}
+
+/* 상단 바 */
+header{
+  height:52px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 26px;color:#f4ead0;
+}
+header .brand{font-size:17px;letter-spacing:.06em;display:flex;align-items:center;gap:9px}
+.score-chip{
+  display:none;align-items:center;gap:6px;font-size:15px;color:var(--night);
+  background:var(--gold);border-radius:999px;padding:5px 15px;font-weight:700;
+}
+.score-chip.show{display:inline-flex}
+header .count{font-size:15px;color:#c7bfa4;font-variant-numeric:tabular-nums}
+
+/* 트랙 */
+.deck{flex:1;min-height:0;position:relative;overflow:hidden}
+.deck-track{height:100%;display:flex}
+.slide{
+  flex:0 0 100%;height:100%;
+  display:flex;align-items:center;justify-content:center;
+  padding:6px 20px 8px;
+  transition:transform .45s cubic-bezier(.4,0,.2,1);
+}
+
+/* ── 양면 스프레드 카드 ─────────────────── */
+.spread{
+  width:100%;height:100%;
+  display:grid;grid-template-columns:472px 1fr;
+  background:linear-gradient(180deg,var(--paper) 0%,var(--paper-2) 100%);
+  border-radius:24px;
+  box-shadow:0 20px 55px rgba(8,10,30,.6), inset 0 0 0 1px rgba(255,255,255,.5);
+  overflow:hidden;position:relative;
+}
+/* 책 등(중앙 접힘선) */
+.spread::after{
+  content:"";position:absolute;top:0;bottom:0;left:472px;width:26px;
+  transform:translateX(-13px);
+  background:linear-gradient(90deg,transparent, rgba(90,70,20,.14) 38%, rgba(60,45,10,.22) 50%, rgba(90,70,20,.14) 62%, transparent);
+  pointer-events:none;
+}
+
+/* 왼쪽 · 회화 패널 (금박 액자) */
+.plate{
+  position:relative;padding:26px;
+  background:
+    radial-gradient(600px 400px at 30% 20%, #2f3763, transparent 70%),
+    #232a4e;
+  display:flex;
+}
+.frame{
+  flex:1;position:relative;border-radius:8px;overflow:hidden;
+  border:10px solid #caa24a;
+  box-shadow:
+    inset 0 0 0 3px #8a6a1f,
+    inset 0 0 0 6px #e8c877,
+    0 12px 30px rgba(0,0,0,.5);
+  background:#1a1f3a;
+}
+.frame::after{ /* 유리 빛 */
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(115deg, rgba(255,255,255,.13) 0%, transparent 28%);
+}
+.frame svg{position:absolute;inset:0;width:100%;height:100%}
+.caption{
+  position:absolute;left:50%;bottom:8px;transform:translateX(-50%);
+  background:#3a3157;color:#efe3c0;font-size:12.5px;letter-spacing:.1em;
+  padding:5px 16px;border-radius:999px;border:1px solid #caa24a;white-space:nowrap;
+}
+.float-star{animation:floaty 5s ease-in-out infinite}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+
+/* 오른쪽 · 내용 패널 */
+.page{
+  position:relative;padding:30px 34px 26px 40px;
+  display:flex;flex-direction:column;gap:13px;min-width:0;
+}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:13px;letter-spacing:.14em;color:var(--gold-deep);font-weight:700;
+}
+.eyebrow::before{content:"";width:24px;height:2px;background:var(--gold-deep);border-radius:2px}
+h1{font-size:40px;line-height:1.3;color:var(--ink)}
+h2{font-size:25px;line-height:1.4;color:var(--ink)}
+p.lead{font-size:16.5px;line-height:1.95;color:var(--ink-soft)}
+p.lead strong{color:var(--ink)}
+
+/* 표지 */
+.slide.cover .spread{background:linear-gradient(180deg,#232a4e,#1a1f3c)}
+.slide.cover .page{justify-content:center;gap:18px;color:#f6efdb}
+.slide.cover h1{color:#ffe9a8}
+.slide.cover p.lead{color:#cfc8ad}
+.badge{
+  align-self:flex-start;font-size:13px;letter-spacing:.22em;color:var(--night);
+  background:var(--gold);padding:7px 18px;border-radius:999px;font-weight:700;
+}
+
+/* 인물 3단 */
+.trio{display:grid;grid-template-columns:1fr;gap:9px}
+.trio .who{
+  background:#fff;border:1px solid var(--line);border-radius:14px;
+  padding:11px 14px;display:flex;gap:12px;align-items:center;text-align:left;
+}
+.trio .who svg{width:46px;height:46px;flex:0 0 auto}
+.trio .who b{color:var(--coral);font-size:15px;display:block;margin-bottom:2px}
+.trio .who span{font-size:13.5px;line-height:1.6;color:var(--ink-soft)}
+
+/* 딜레마 2단 */
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.duo .box{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px}
+.duo .box b{display:block;margin-bottom:6px;font-size:15px}
+.duo .box.easy b{color:var(--coral)}
+.duo .box.hard b{color:#4a5285}
+.duo .box span{font-size:13.5px;line-height:1.75;color:var(--ink-soft)}
+
+/* 3점 */
+.big3{display:flex;align-items:center;gap:20px}
+.big3 .num{font-family:'Gowun Batang',serif;font-size:88px;font-weight:700;color:var(--coral);line-height:1;flex:0 0 auto}
+.big3 .num small{font-size:30px}
+
+/* 명언 */
+.slide.quote .spread{background:linear-gradient(180deg,#232a4e,#181d38)}
+.slide.quote .page{justify-content:center}
+.slide.quote blockquote{
+  font-family:'Gowun Batang',serif;font-size:27px;line-height:2;
+  color:#ffe9a8;text-align:center;
+}
+.slide.quote figcaption{text-align:center;color:var(--coral);font-size:16px;margin-top:16px;letter-spacing:.06em}
+
+/* ── 퀴즈 페이지 ─────────────────── */
+.q-head{display:flex;gap:14px;align-items:flex-start}
+.q-no{
+  flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
+  min-width:52px;height:52px;border-radius:14px;
+  background:var(--night);color:var(--gold);font-family:'Gowun Batang',serif;
+  font-weight:700;font-size:20px;padding:0 12px;
+}
+.q-head h2{font-size:21px;line-height:1.6}
+.q-zone{position:relative;flex:1;display:flex;flex-direction:column;min-height:0}
+.opts{display:flex;flex-direction:column;gap:10px;flex:1;justify-content:center}
+.opt{
+  text-align:left;font:inherit;font-size:15.5px;line-height:1.55;color:var(--ink);
+  background:#fff;border:1.5px solid var(--line);border-radius:13px;
+  padding:12px 15px;cursor:pointer;display:flex;gap:11px;align-items:center;
+  transition:border-color .15s, background .15s, transform .1s;
+}
+.opt .n{
+  flex:0 0 auto;width:26px;height:26px;border-radius:50%;
+  border:1.5px solid var(--gold-deep);color:var(--gold-deep);
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;
+}
+.opt:not(.locked):hover{border-color:var(--gold-deep);transform:translateY(-1px)}
+.opt:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.opt.correct{background:#eef6ec;border-color:var(--sage-deep)}
+.opt.correct .n{background:var(--sage-deep);border-color:var(--sage-deep);color:#fff}
+.opt.wrong{background:#fdeeea;border-color:var(--coral)}
+.opt.wrong .n{background:var(--coral);border-color:var(--coral);color:#fff}
+.opt.dim{opacity:.45}
+
+/* 해설: 보기 영역 위 양피지 오버레이 → 스크롤 없이 그 자리에서 표시 */
+.reveal{
+  position:absolute;inset:0;display:none;flex-direction:column;gap:10px;
+  background:linear-gradient(180deg,#fff8e6,#fdf0cf);
+  border:1.5px dashed var(--gold-deep);border-radius:16px;
+  padding:20px 22px;
+}
+.reveal.show{display:flex;animation:pop .3s ease}
+@keyframes pop{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.reveal .verdict{font-size:18px;font-weight:700}
+.reveal .verdict.ok{color:var(--sage-deep)}
+.reveal .verdict.no{color:var(--coral)}
+.reveal .ans{font-size:15px;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 14px;line-height:1.6}
+.reveal .tag{font-size:13.5px;font-weight:700;color:var(--gold-deep);letter-spacing:.08em}
+.reveal p{font-size:15px;line-height:1.9;color:var(--ink-soft)}
+.reveal .back{
+  align-self:flex-end;margin-top:auto;font:inherit;font-size:13.5px;color:var(--ink-soft);
+  background:none;border:1px solid var(--line);border-radius:999px;padding:7px 16px;cursor:pointer;
+}
+.reveal .back:hover{border-color:var(--gold-deep);color:var(--gold-deep)}
+
+/* 결과 */
+.result-num{font-family:'Gowun Batang',serif;font-size:74px;font-weight:700;color:var(--gold-deep);text-align:center}
+.result-num small{font-size:28px;color:var(--ink-soft)}
+.result-msg{text-align:center;font-size:17px;line-height:1.9;color:var(--ink-soft)}
+.restart{
+  align-self:center;font:inherit;font-weight:700;font-size:16px;color:var(--night);
+  background:var(--gold);border:none;border-radius:999px;padding:13px 32px;cursor:pointer;
+  box-shadow:0 6px 16px rgba(224,164,40,.35);transition:transform .12s;
+}
+.restart:hover{transform:translateY(-2px)}
+
+/* 하단 내비 */
+nav.deck-nav{height:64px;display:flex;align-items:center;justify-content:center;gap:16px;padding:0 20px}
+.nav-btn{
+  width:46px;height:46px;border-radius:50%;border:1.5px solid rgba(245,198,79,.55);
+  background:rgba(255,249,236,.08);color:var(--gold);font-size:22px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:background .15s,opacity .15s;
+}
+.nav-btn:hover{background:rgba(245,198,79,.18)}
+.nav-btn:disabled{opacity:.25;cursor:default}
+.nav-btn:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.dots{display:flex;gap:7px;align-items:center}
+.dots i{width:8px;height:8px;border-radius:50%;background:rgba(244,234,208,.28);transition:all .25s;cursor:pointer}
+.dots i.on{background:var(--gold);width:22px;border-radius:99px}
+.dots i.quiz-dot{border:1px solid rgba(245,198,79,.5);background:transparent}
+.dots i.quiz-dot.done{background:var(--sage);border-color:var(--sage)}
+.dots i.quiz-dot.on{background:var(--gold);border-color:var(--gold)}
+</style>
+</head>
+<body>
+<div class="sky" id="sky" aria-hidden="true"></div>
+
+<div id="stage">
+  <header>
+    <div class="brand serif">🌰 <b>쿼카의 마법 그림 카드</b> · 양면 그림책</div>
+    <span class="score-chip" id="scoreChip">⭐ <span id="scoreVal">0</span>/10</span>
+    <div class="count" id="pageCount">1 / 20</div>
+  </header>
+
+  <main class="deck">
+    <div class="deck-track" id="track" aria-label="양면 슬라이드. 좌우 버튼, 화살표 키, 스와이프로 넘겨보세요"></div>
+  </main>
+
+  <nav class="deck-nav" aria-label="슬라이드 이동">
+    <button class="nav-btn" id="prevBtn" aria-label="이전 페이지">‹</button>
+    <div class="dots" id="dots"></div>
+    <button class="nav-btn" id="nextBtn" aria-label="다음 페이지">›</button>
+  </nav>
+</div>
+
+<script>
+/* ─────────────────────────────────────────
+   회화 일러스트 (인라인 SVG · 수채 감성)
+   preserveAspectRatio slice → 액자를 가득 채움
+────────────────────────────────────────── */
+function framed(inner){
+  return `<svg viewBox="0 0 600 300" preserveAspectRatio="xMidYMid slice" role="img">${inner}</svg>`;
+}
+const ART = {};
+
+/* 별빛 내리는 숲 + 등불 */
+ART.forest = framed(`
+ <defs>
+  <linearGradient id="fSky" x1="0" y1="0" x2="0" y2="1">
+   <stop offset="0" stop-color="#222a52"/><stop offset=".6" stop-color="#3a4478"/><stop offset="1" stop-color="#f2a75e"/>
+  </linearGradient>
+  <radialGradient id="glow" cx=".5" cy=".5" r=".5">
+   <stop offset="0" stop-color="#ffe08a" stop-opacity=".95"/><stop offset="1" stop-color="#ffb057" stop-opacity="0"/>
+  </radialGradient>
+ </defs>
+ <rect width="600" height="300" fill="url(#fSky)"/>
+ <g fill="#ffedb3">
+  <circle cx="60" cy="40" r="2"/><circle cx="140" cy="70" r="1.6"/><circle cx="230" cy="35" r="2.2"/>
+  <circle cx="330" cy="60" r="1.7"/><circle cx="430" cy="30" r="2"/><circle cx="520" cy="65" r="1.8"/>
+  <circle cx="560" cy="120" r="1.5"/><circle cx="90" cy="110" r="1.5"/>
+ </g>
+ <g class="float-star">
+  <circle cx="180" cy="140" r="26" fill="url(#glow)"/><circle cx="180" cy="140" r="6" fill="#ffdd7a"/>
+  <circle cx="300" cy="105" r="30" fill="url(#glow)"/><circle cx="300" cy="105" r="7" fill="#ffdd7a"/>
+  <circle cx="420" cy="150" r="24" fill="url(#glow)"/><circle cx="420" cy="150" r="5.5" fill="#ffdd7a"/>
+  <circle cx="510" cy="115" r="20" fill="url(#glow)"/><circle cx="510" cy="115" r="5" fill="#ffdd7a"/>
+  <circle cx="100" cy="170" r="20" fill="url(#glow)"/><circle cx="100" cy="170" r="5" fill="#ffdd7a"/>
+ </g>
+ <path d="M0 300 L0 235 Q40 200 60 235 L75 190 Q95 160 112 190 L128 235 Q160 205 178 235 L195 175 Q215 140 233 175 L250 235 Q280 208 298 235 L318 185 Q338 152 356 185 L372 235 Q402 205 420 235 L438 178 Q458 145 476 178 L492 235 Q522 208 540 235 L558 195 Q578 165 600 195 L600 300 Z" fill="#1a1f3a"/>
+ <path d="M0 300 L0 262 Q70 240 140 262 Q220 240 300 262 Q380 238 460 262 Q540 242 600 262 L600 300 Z" fill="#141830"/>
+ <ellipse cx="300" cy="292" rx="330" ry="26" fill="#0f1328"/>`);
+
+/* 민들레 = 땅에 내려앉은 별빛 */
+ART.dandelion = framed(`
+ <defs>
+  <linearGradient id="dSky" x1="0" y1="0" x2="0" y2="1">
+   <stop offset="0" stop-color="#1f2648"/><stop offset="1" stop-color="#454f86"/>
+  </linearGradient>
+  <radialGradient id="dGlow" cx=".5" cy=".5" r=".5">
+   <stop offset="0" stop-color="#ffe37f" stop-opacity=".9"/><stop offset="1" stop-color="#ffd23e" stop-opacity="0"/>
+  </radialGradient>
+ </defs>
+ <rect width="600" height="300" fill="url(#dSky)"/>
+ <g fill="#fff3c4"><circle cx="80" cy="50" r="2"/><circle cx="200" cy="30" r="1.7"/><circle cx="320" cy="55" r="2.1"/><circle cx="450" cy="35" r="1.8"/><circle cx="545" cy="70" r="2"/></g>
+ <g stroke="#ffe9a0" stroke-width="1" opacity=".55">
+  <path d="M120 60 L135 150" stroke-dasharray="3 6"/><path d="M380 45 L360 140" stroke-dasharray="3 6"/><path d="M500 80 L480 165" stroke-dasharray="3 6"/>
+ </g>
+ <path d="M0 300 L0 210 Q150 180 300 205 Q450 182 600 208 L600 300 Z" fill="#28315b"/>
+ <path d="M0 300 L0 245 Q160 222 300 242 Q460 220 600 246 L600 300 Z" fill="#1d2444"/>
+ <g class="float-star">
+  ${[ [90,215],[170,235],[250,210],[335,238],[420,214],[505,236],[560,212] ].map(([x,y])=>`
+   <g>
+    <circle cx="${x}" cy="${y}" r="22" fill="url(#dGlow)"/>
+    <line x1="${x}" y1="${y+8}" x2="${x}" y2="${y+34}" stroke="#5d7a4f" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="${x}" cy="${y}" r="9" fill="#ffd23e"/>
+    <circle cx="${x}" cy="${y}" r="4.5" fill="#f5a623"/>
+   </g>`).join('')}
+ </g>`);
+
+/* 모닥불 숲 친구들 */
+ART.campfire = framed(`
+ <defs>
+  <linearGradient id="cSky" x1="0" y1="0" x2="0" y2="1">
+   <stop offset="0" stop-color="#232a4f"/><stop offset="1" stop-color="#3c3a5e"/>
+  </linearGradient>
+  <radialGradient id="fireGlow" cx=".5" cy=".55" r=".55">
+   <stop offset="0" stop-color="#ffb35c" stop-opacity=".85"/><stop offset="1" stop-color="#ffb35c" stop-opacity="0"/>
+  </radialGradient>
+ </defs>
+ <rect width="600" height="300" fill="url(#cSky)"/>
+ <g fill="#ffedb3"><circle cx="70" cy="45" r="2"/><circle cx="180" cy="28" r="1.6"/><circle cx="470" cy="40" r="2"/><circle cx="545" cy="75" r="1.6"/></g>
+ <g fill="#1a2038">
+  <path d="M40 300 L60 90 L80 300 Z"/><path d="M120 300 L138 60 L156 300 Z"/>
+  <path d="M470 300 L488 70 L506 300 Z"/><path d="M545 300 L562 100 L579 300 Z"/>
+ </g>
+ <ellipse cx="300" cy="286" rx="320" ry="26" fill="#161a30"/>
+ <circle cx="300" cy="215" r="120" fill="url(#fireGlow)"/>
+ <g stroke="#7a4b2c" stroke-width="9" stroke-linecap="round">
+  <line x1="268" y1="252" x2="332" y2="238"/><line x1="270" y1="238" x2="330" y2="252"/>
+ </g>
+ <g class="float-star">
+  <path d="M300 178 C288 200 288 214 300 226 C312 214 312 198 300 178Z" fill="#ff9d3e"/>
+  <path d="M300 192 C293 206 293 214 300 221 C307 214 307 204 300 192Z" fill="#ffd23e"/>
+ </g>
+ <g transform="translate(180 200)">
+  <ellipse cx="0" cy="30" rx="26" ry="30" fill="#e8d6bd"/>
+  <circle cx="0" cy="-6" r="19" fill="#efe0ca"/>
+  <path d="M-12 -20 Q-16 -52 -6 -52 Q0 -50 -4 -20Z" fill="#efe0ca"/>
+  <path d="M12 -20 Q16 -52 6 -52 Q0 -50 4 -20Z" fill="#efe0ca"/>
+  <circle cx="-6" cy="-8" r="2.4" fill="#3a3550"/><circle cx="6" cy="-8" r="2.4" fill="#3a3550"/>
+  <path d="M-3 0 Q0 3 3 0" stroke="#3a3550" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+ </g>
+ <g transform="translate(300 128)">
+  <ellipse cx="0" cy="18" rx="24" ry="27" fill="#a58a6d"/>
+  <ellipse cx="0" cy="24" rx="14" ry="18" fill="#e9d8bd"/>
+  <circle cx="-8" cy="2" r="8" fill="#f6ecd8"/><circle cx="8" cy="2" r="8" fill="#f6ecd8"/>
+  <circle cx="-8" cy="2" r="3" fill="#3a3550"/><circle cx="8" cy="2" r="3" fill="#3a3550"/>
+  <path d="M0 6 L-4 12 L4 12 Z" fill="#e0a428"/>
+  <path d="M-16 -8 L-8 -14 M16 -8 L8 -14" stroke="#a58a6d" stroke-width="5" stroke-linecap="round"/>
+ </g>
+ <g transform="translate(420 202)">
+  <ellipse cx="0" cy="30" rx="27" ry="29" fill="#e58a54"/>
+  <circle cx="0" cy="-4" r="19" fill="#ef9a63"/>
+  <path d="M-14 -14 L-20 -36 L-2 -22Z" fill="#ef9a63"/><path d="M14 -14 L20 -36 L2 -22Z" fill="#ef9a63"/>
+  <ellipse cx="0" cy="4" rx="9" ry="7" fill="#fbe9d6"/>
+  <circle cx="-7" cy="-6" r="2.4" fill="#3a3550"/><circle cx="7" cy="-6" r="2.4" fill="#3a3550"/>
+  <circle cx="0" cy="2" r="2.4" fill="#3a3550"/>
+  <path d="M24 34 Q46 26 42 8 Q52 26 30 42Z" fill="#e58a54"/>
+ </g>`);
+
+/* 마음의 온도계 */
+ART.thermo = framed(`
+ <defs>
+  <linearGradient id="tSky" x1="0" y1="0" x2="0" y2="1">
+   <stop offset="0" stop-color="#28305a"/><stop offset="1" stop-color="#46406e"/>
+  </linearGradient>
+  <linearGradient id="tFill" x1="0" y1="1" x2="0" y2="0">
+   <stop offset="0" stop-color="#f08a68"/><stop offset="1" stop-color="#f5c64f"/>
+  </linearGradient>
+ </defs>
+ <rect width="600" height="300" fill="url(#tSky)"/>
+ <g fill="#ffedb3"><circle cx="90" cy="50" r="2"/><circle cx="500" cy="45" r="2"/><circle cx="420" cy="90" r="1.6"/><circle cx="160" cy="100" r="1.6"/></g>
+ <g transform="translate(300 150)">
+  <rect x="-16" y="-105" width="32" height="170" rx="16" fill="#fff9ec" stroke="#e0a428" stroke-width="3"/>
+  <circle cx="0" cy="86" r="34" fill="#fff9ec" stroke="#e0a428" stroke-width="3"/>
+  <rect x="-8" y="-30" width="16" height="100" rx="8" fill="url(#tFill)"/>
+  <circle cx="0" cy="86" r="24" fill="#f08a68"/>
+  <g stroke="#c9b485" stroke-width="2.4" stroke-linecap="round">
+   <line x1="20" y1="-84" x2="34" y2="-84"/><line x1="20" y1="-54" x2="34" y2="-54"/>
+   <line x1="20" y1="-24" x2="40" y2="-24"/><line x1="20" y1="6" x2="34" y2="6"/><line x1="20" y1="36" x2="34" y2="36"/>
+  </g>
+ </g>
+ <g class="float-star" fill="#f5a0a0">
+  <path d="M150 190 c-14 -16 8 -34 18 -18 c10 -16 32 2 18 18 c-8 9 -18 15 -18 15 s-10 -6 -18 -15Z"/>
+  <path d="M416 170 c-14 -16 8 -34 18 -18 c10 -16 32 2 18 18 c-8 9 -18 15 -18 15 s-10 -6 -18 -15Z" opacity=".85"/>
+  <path d="M450 230 c-10 -12 6 -25 13 -13 c7 -12 23 1 13 13 c-6 7 -13 11 -13 11 s-7 -4 -13 -11Z" opacity=".7"/>
+ </g>`);
+
+/* 3점 = 너와 나의 교감 */
+ART.threepoints = framed(`
+ <rect width="600" height="300" fill="#242b52"/>
+ <g fill="#ffedb3"><circle cx="70" cy="60" r="2"/><circle cx="530" cy="50" r="2"/><circle cx="300" cy="35" r="2.4"/><circle cx="180" cy="42" r="1.5"/><circle cx="420" cy="70" r="1.5"/></g>
+ <g class="float-star">
+  <path d="M175 150 Q300 70 425 150" stroke="#f5c64f" stroke-width="3" stroke-dasharray="2 10" fill="none" stroke-linecap="round"/>
+  <path d="M300 96 l5 11 12 2 -9 9 2 12 -10 -6 -10 6 2 -12 -9 -9 12 -2Z" fill="#ffd23e"/>
+ </g>
+ <g transform="translate(175 190)">
+  <circle r="46" fill="#efe0ca"/>
+  <path d="M-20 -38 Q-26 -70 -12 -68 Q-4 -64 -10 -36Z" fill="#efe0ca"/>
+  <path d="M20 -38 Q26 -70 12 -68 Q4 -64 10 -36Z" fill="#efe0ca"/>
+  <circle cx="-14" cy="-4" r="4" fill="#3a3550"/><circle cx="14" cy="-4" r="4" fill="#3a3550"/>
+  <path d="M-6 10 Q0 15 6 10" stroke="#3a3550" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+  <circle cx="-26" cy="8" r="7" fill="#f5a0a0" opacity=".7"/><circle cx="26" cy="8" r="7" fill="#f5a0a0" opacity=".7"/>
+ </g>
+ <g transform="translate(425 190)">
+  <circle r="46" fill="#c9a276"/>
+  <circle cx="0" cy="6" r="26" fill="#e9d3ae"/>
+  <circle cx="-14" cy="-8" r="4" fill="#3a3550"/><circle cx="14" cy="-8" r="4" fill="#3a3550"/>
+  <path d="M-6 6 Q0 11 6 6" stroke="#3a3550" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+  <circle cx="-34" cy="-30" r="10" fill="#c9a276"/><circle cx="34" cy="-30" r="10" fill="#c9a276"/>
+ </g>`);
+
+/* 비 내리는 보라색 등대 */
+ART.lighthouse = framed(`
+ <defs>
+  <linearGradient id="lSky" x1="0" y1="0" x2="0" y2="1">
+   <stop offset="0" stop-color="#332a58"/><stop offset="1" stop-color="#585085"/>
+  </linearGradient>
+  <radialGradient id="beam" cx=".5" cy=".5" r=".5">
+   <stop offset="0" stop-color="#ffe9a0" stop-opacity=".9"/><stop offset="1" stop-color="#ffe9a0" stop-opacity="0"/>
+  </radialGradient>
+ </defs>
+ <rect width="600" height="300" fill="url(#lSky)"/>
+ <g stroke="#b9aee0" stroke-width="2" stroke-linecap="round" opacity=".75">
+  ${[40,95,150,205,260,340,395,450,505,560].map((x,i)=>`<line x1="${x}" y1="${30+(i%3)*22}" x2="${x-8}" y2="${62+(i%3)*22}"/>`).join('')}
+ </g>
+ <circle cx="300" cy="92" r="70" fill="url(#beam)" class="float-star"/>
+ <g transform="translate(300 0)">
+  <path d="M-26 92 L26 92 L18 250 L-18 250 Z" fill="#7a6fb0"/>
+  <path d="M-26 92 L26 92 L23 140 L-23 140 Z" fill="#a89ad6" opacity=".55"/>
+  <rect x="-20" y="66" width="40" height="26" rx="4" fill="#4c4276"/>
+  <rect x="-12" y="70" width="24" height="18" rx="3" fill="#ffd23e"/>
+  <path d="M-24 66 L24 66 L0 44 Z" fill="#4c4276"/>
+  <rect x="-6" y="160" width="12" height="18" rx="6" fill="#ffe9a0"/>
+ </g>
+ <path d="M0 300 L0 252 Q100 232 200 250 Q300 268 400 248 Q500 232 600 254 L600 300Z" fill="#2b2450"/>
+ <path d="M120 262 Q300 246 480 262" stroke="#8f83c4" stroke-width="3" fill="none" opacity=".5"/>`);
+
+/* 84장의 카드 부채 */
+ART.cards84 = framed(`
+ <rect width="600" height="300" fill="#262d54"/>
+ <g fill="#ffedb3"><circle cx="80" cy="45" r="2"/><circle cx="520" cy="55" r="2"/><circle cx="300" cy="28" r="1.7"/></g>
+ <g class="float-star">
+ ${[-32,-16,0,16,32].map((deg,i)=>{
+   const cols=['#f08a68','#f5c64f','#6f9d72','#7a6fb0','#5aa7c7'];
+   const icons=[
+     '<circle cx="0" cy="-8" r="14" fill="#ffe9a0"/><path d="M-14 16 Q0 2 14 16" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round"/>',
+     '<path d="M0 -20 l6 12 13 2 -9 9 2 13 -12 -6 -12 6 2 -13 -9 -9 13 -2Z" fill="#fff"/>',
+     '<path d="M0 18 C-16 2 -10 -18 0 -8 C10 -18 16 2 0 18Z" fill="#fff"/>',
+     '<circle cx="-6" cy="-6" r="9" fill="#ffe9a0"/><circle cx="7" cy="4" r="12" fill="#fff" opacity=".9"/>',
+     '<path d="M-14 10 Q0 -18 14 10 Z" fill="#fff"/><circle cx="0" cy="-14" r="4" fill="#ffe9a0"/>'
+   ];
+   return `<g transform="translate(300 210) rotate(${deg}) translate(0 -78)">
+     <rect x="-42" y="-62" width="84" height="124" rx="12" fill="#fff9ec" stroke="${cols[i]}" stroke-width="4"/>
+     <g transform="translate(0 -6)">${icons[i]}</g>
+     <rect x="-28" y="34" width="56" height="7" rx="3.5" fill="${cols[i]}" opacity=".55"/>
+   </g>`;
+ }).join('')}
+ </g>`);
+
+/* 마음의 은하수가 창가에 닿다 */
+ART.galaxy = framed(`
+ <defs>
+  <linearGradient id="gSky" x1="0" y1="0" x2="1" y2="1">
+   <stop offset="0" stop-color="#1c2245"/><stop offset="1" stop-color="#3d3566"/>
+  </linearGradient>
+ </defs>
+ <rect width="600" height="300" fill="url(#gSky)"/>
+ <g class="float-star">
+  <path d="M60 90 Q220 30 360 110 Q460 165 520 200" stroke="#f5c64f" stroke-width="4" fill="none" opacity=".5" stroke-linecap="round"/>
+  <path d="M60 110 Q225 55 365 130 Q455 180 512 212" stroke="#f08a68" stroke-width="2.6" fill="none" opacity=".45" stroke-linecap="round"/>
+  <g fill="#ffe9a0">
+   <circle cx="110" cy="86" r="3.4"/><circle cx="185" cy="62" r="2.6"/><circle cx="262" cy="66" r="3.6"/>
+   <circle cx="340" cy="100" r="2.8"/><circle cx="415" cy="140" r="3.4"/><circle cx="475" cy="175" r="2.6"/>
+  </g>
+  <path d="M262 40 l4 9 10 1.6 -7 7 1.6 10 -8.6 -4.6 -8.6 4.6 1.6 -10 -7 -7 10 -1.6Z" fill="#ffd23e"/>
+ </g>
+ <g transform="translate(440 130)">
+  <rect x="0" y="0" width="130" height="170" rx="10" fill="#3a3157"/>
+  <rect x="18" y="22" width="94" height="104" rx="8" fill="#ffd77a"/>
+  <line x1="65" y1="22" x2="65" y2="126" stroke="#3a3157" stroke-width="6"/>
+  <line x1="18" y1="74" x2="112" y2="74" stroke="#3a3157" stroke-width="6"/>
+  <path d="M46 108 C38 100 42 90 50 94 C54 86 64 92 58 102 C54 107 50 110 50 110Z" fill="#f08a68"/>
+  <rect x="12" y="134" width="106" height="10" rx="5" fill="#2b2445"/>
+ </g>
+ <ellipse cx="300" cy="292" rx="340" ry="22" fill="#161a32"/>`);
+
+/* 성장 그래프 92% */
+ART.growth = framed(`
+ <rect width="600" height="300" fill="#fff9ec"/>
+ <g stroke="#eadfc2" stroke-width="1.5">
+  <line x1="80" y1="60" x2="540" y2="60"/><line x1="80" y1="115" x2="540" y2="115"/>
+  <line x1="80" y1="170" x2="540" y2="170"/><line x1="80" y1="225" x2="540" y2="225"/>
+ </g>
+ <line x1="80" y1="40" x2="80" y2="248" stroke="#c9b485" stroke-width="2.4"/>
+ <line x1="80" y1="248" x2="548" y2="248" stroke="#c9b485" stroke-width="2.4"/>
+ <g font-family="Gowun Dodum" font-size="13" fill="#8b7f5f">
+  <text x="120" y="272">암기</text><text x="228" y="272">수리</text><text x="336" y="272">공간</text><text x="452" y="272">비유적 표현</text>
+ </g>
+ <g class="float-star">
+  <rect x="104" y="188" width="58" height="60" rx="8" fill="#c9c0e8"/>
+  <rect x="212" y="164" width="58" height="84" rx="8" fill="#9fc2d8"/>
+  <rect x="320" y="140" width="58" height="108" rx="8" fill="#a8c6a0"/>
+  <rect x="440" y="66" width="58" height="182" rx="8" fill="#f5c64f" stroke="#e0a428" stroke-width="2.5"/>
+  <text x="469" y="52" text-anchor="middle" font-family="Gowun Batang" font-weight="700" font-size="22" fill="#e0a428">92%</text>
+  <path d="M469 26 l4 8 9 1.4 -6.5 6.4 1.5 9 -8 -4.2 -8 4.2 1.5 -9 -6.5 -6.4 9 -1.4Z" fill="#f08a68"/>
+ </g>`);
+
+/* 쿼카 초상 */
+ART.quokka = framed(`
+ <defs>
+  <radialGradient id="qBg" cx=".5" cy=".4" r=".8">
+   <stop offset="0" stop-color="#4a5285"/><stop offset="1" stop-color="#242b52"/>
+  </radialGradient>
+ </defs>
+ <rect width="600" height="300" fill="url(#qBg)"/>
+ <g fill="#ffedb3"><circle cx="90" cy="55" r="2"/><circle cx="510" cy="45" r="2"/><circle cx="440" cy="100" r="1.6"/><circle cx="150" cy="110" r="1.6"/></g>
+ <g transform="translate(432 158) rotate(9)" class="float-star">
+  <rect x="-52" y="-72" width="104" height="144" rx="12" fill="#fff9ec" stroke="#e0a428" stroke-width="4"/>
+  <path d="M-30 30 Q0 -26 30 30 Z" fill="#6f9d72"/>
+  <circle cx="18" cy="-30" r="12" fill="#ffd23e"/>
+  <path d="M-30 -46 l3.4 7 7.8 1.2 -5.6 5.5 1.3 7.8 -6.9 -3.6 -6.9 3.6 1.3 -7.8 -5.6 -5.5 7.8 -1.2Z" fill="#f08a68"/>
+ </g>
+ <g transform="translate(240 170)">
+  <ellipse cx="0" cy="70" rx="86" ry="62" fill="#b58e5f"/>
+  <ellipse cx="0" cy="76" rx="56" ry="44" fill="#d9bd93"/>
+  <circle cx="0" cy="-16" r="66" fill="#c29a68"/>
+  <path d="M-46 -58 Q-58 -84 -36 -80 Q-26 -76 -30 -54Z" fill="#c29a68"/>
+  <path d="M46 -58 Q58 -84 36 -80 Q26 -76 30 -54Z" fill="#c29a68"/>
+  <circle cx="-46" cy="-64" r="7" fill="#8f6c42" opacity=".6"/>
+  <circle cx="46" cy="-64" r="7" fill="#8f6c42" opacity=".6"/>
+  <ellipse cx="0" cy="6" rx="30" ry="24" fill="#e5cda4"/>
+  <circle cx="-24" cy="-24" r="7" fill="#33304e"/><circle cx="24" cy="-24" r="7" fill="#33304e"/>
+  <circle cx="-21.6" cy="-26.5" r="2.2" fill="#fff"/><circle cx="26.4" cy="-26.5" r="2.2" fill="#fff"/>
+  <ellipse cx="0" cy="-4" rx="7" ry="5.4" fill="#5c4630"/>
+  <path d="M0 2 Q0 10 -12 13 M0 2 Q0 10 12 13" stroke="#5c4630" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M-12 13 Q0 24 12 13" stroke="#5c4630" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <ellipse cx="66" cy="52" rx="18" ry="14" fill="#c29a68" transform="rotate(24 66 52)"/>
+ </g>`);
+
+/* 표지: 마법 카드 */
+ART.cover = framed(`
+ <rect width="600" height="300" fill="#20264a"/>
+ <g fill="#ffedb3"><circle cx="70" cy="50" r="2"/><circle cx="530" cy="60" r="2"/><circle cx="160" cy="220" r="2"/><circle cx="470" cy="230" r="2"/></g>
+ <g class="float-star">
+  <g transform="translate(300 150) rotate(-6)">
+   <rect x="-70" y="-100" width="140" height="200" rx="16" fill="#fff9ec" stroke="#f5c64f" stroke-width="5"/>
+   <path d="M-46 52 Q0 -32 46 52 Z" fill="#6f9d72"/>
+   <path d="M-46 52 Q-14 -4 12 52Z" fill="#5b8a60"/>
+   <circle cx="30" cy="-46" r="17" fill="#ffd23e"/>
+   <path d="M-36 -66 l4.4 9 10 1.6 -7.2 7 1.7 10 -8.9 -4.7 -8.9 4.7 1.7 -10 -7.2 -7 10 -1.6Z" fill="#f08a68"/>
+   <rect x="-46" y="66" width="92" height="9" rx="4.5" fill="#e0a428" opacity=".5"/>
+  </g>
+  <path d="M140 80 l4 8 9 1.4 -6.5 6.3 1.5 9 -8 -4.2 -8 4.2 1.5 -9 -6.5 -6.3 9 -1.4Z" fill="#ffd23e"/>
+  <path d="M462 94 l3.4 7 7.8 1.2 -5.6 5.5 1.3 7.8 -6.9 -3.6 -6.9 3.6 1.3 -7.8 -5.6 -5.5 7.8 -1.2Z" fill="#f08a68"/>
+ </g>`);
+
+/* ─────────────────────────────────────────
+   콘텐츠 데이터
+────────────────────────────────────────── */
+const QUIZ = [
+ {no:1, art:'forest', cap:"작품 1 · 별빛이 내리는 숲",
+  q:"동화 속 쿼카가 사용한 '마법 그림 카드'의 가장 특별한 성질은 무엇인가요?",
+  opts:["마음속 감정과 생각에 따라 형태가 부드럽게 변한다.",
+        "카드를 비비면 향긋한 민들레 향이 숲속에 번져나간다.",
+        "한 번 그리면 지워지지 않는 단 하나의 해답만 고집한다.",
+        "숲속의 잃어버린 보물이 숨겨진 위치를 표시해준다."],
+  a:0,
+  exp:"쿼카의 그림 카드는 고정된 답을 주지 않고, 바라보는 이의 마음과 눈빛에 따라 부드럽게 형태가 변해요. 이는 우리 마음을 비추는 다채로운 언어와 꼭 닮아 있답니다."},
+ {no:2, art:'dandelion', cap:"작품 2 · 땅에 내려앉은 별빛, 민들레",
+  q:"쿼카의 힌트 '별빛이 내리는 숲'에 아기 토끼가 황금빛 카드를 고른 이유는 무엇인가요?",
+  opts:["카드 테두리에 반짝거리는 보석들이 붙어 있었기 때문에",
+        "노란 민들레가 마치 땅에 내려앉은 별빛처럼 느껴졌기 때문에",
+        "누구보다도 빠르게 정답 카드를 맞추어 영웅이 되고 싶어서",
+        "어두컴컴한 숲속에 거대한 유성이 쿵 하고 떨어졌기 때문에"],
+  a:1,
+  exp:"아기 토끼는 다정한 상상력을 발휘했어요. 밤하늘의 별빛이 어두운 땅 위로 쏟아져 내려와 활짝 피어난 '노란 민들레'가 되었다고 비유적으로 연결해 낸 거랍니다."},
+ {no:3, art:'campfire', cap:"작품 3 · 모닥불의 수수께끼 시간",
+  q:"이야기꾼이 힌트를 '너무 노골적이고 쉽게' 주었을 때 발생하는 결과는 무엇인가요?",
+  opts:["모두가 가뿐히 알아차려 상상할 여지가 사라져서 0점을 받는다.",
+        "참신함을 인정받아 숲속 화가들로부터 특별 보너스를 얻는다.",
+        "이야기꾼의 마법 카드가 검게 그을려 무용지물이 되어 버린다.",
+        "친구들이 시시하다며 더 이상 동화 퀴즈를 풀려 하지 않는다."],
+  a:0,
+  exp:"지나치게 뻔하고 쉬운 표현은 듣는 이들의 상상력과 생각의 즐거움을 앗아가요. 딕싯의 마음 법칙처럼, 모두가 한 번에 맞힐 만큼 쉬운 힌트에는 0점이라는 패널티가 주어진답니다."},
+ {no:4, art:'thermo', cap:"작품 4 · 마음의 온도계",
+  q:"쿼카가 말하는 '알맞은 소통의 온도'를 유지하기 위해 가장 필요한 능력은 무엇인가요?",
+  opts:["우렁찬 목소리로 숲속 모두를 뒤덮을 만큼 강력한 지휘력",
+        "백과사전에 나오는 과학적 지식을 한 치 오차도 없이 읊는 실력",
+        "상대방이 편안하게 공감할 '적절한 틈'을 만드는 은유적 능력",
+        "눈을 질끈 감아도 친구들의 손을 모조리 꿰뚫어 보는 투시력"],
+  a:2,
+  exp:"마음이 진정으로 만나려면 일방적인 소리침보다, 상대의 경험과 내 생각이 맞물려 흘러갈 '적절한 여백과 틈'을 선물해야 해요. 그것이 다정한 소통 온도를 켜는 은유의 힘이에요."},
+ {no:5, art:'threepoints', cap:"작품 5 · 너와 나, 별빛의 교감",
+  q:"딕싯에서 완벽한 '3점'을 얻기 위한 조건은 무엇을 의미하나요?",
+  opts:["최소 한 명 이상, 하지만 전부는 아니게 내 생각을 전해야 한다.",
+        "숲속의 모든 친구가 내 수수께끼의 정답을 가볍게 맞혀야 한다.",
+        "아무도 내 뜻을 헤아리지 못해 모두가 오답을 헤매야만 한다.",
+        "가장 빨리 숲속 우체통의 깃발을 치며 정답을 외쳐야만 한다."],
+  a:0,
+  exp:"모두가 알아맞히는 뻔함도, 모두를 속여 소외되게 만드는 불통도 아닌 상태. 나의 은유에 주파수를 맞춰준 단 한 사람과의 긴밀한 눈빛 교환이 있을 때 진정한 교감인 '3점'이 찾아와요."},
+ {no:6, art:'galaxy', cap:"작품 6 · 창가에 닿은 은하수",
+  q:"쿼카의 가르침 중 '언어 지능이 빛나는 순간'이 아닌 것은 무엇인가요?",
+  opts:["감정을 비 내리는 보라색 등대처럼 단어의 그림으로 그릴 때",
+        "단순히 건조한 사실만을 일방적으로 나열하며 나를 뽐낼 때",
+        "상대방의 마음에 조심스럽게 내 마음의 디딤돌을 놓아줄 때",
+        "그림 카드 속 상징과 친구들의 다정한 눈빛을 함께 읽어낼 때"],
+  a:1,
+  exp:"언어의 최고 차원 지능은 암기 지식이나 어휘 자랑에 있지 않아요. 감정이 실린 비유를 짓고, 타인의 시선과 입장에 서서 공감의 다리를 놓을 때 언어 지능은 진정으로 빛나기 시작해요."},
+ {no:7, art:'cards84', cap:"작품 7 · 단 한 장도 같지 않은 84장",
+  q:"딕싯 카드가 84장이나 되지만 단 한 장도 똑같지 않은 이유는 무엇을 강조하기 위함인가요?",
+  opts:["카드를 다채롭게 만드는 숲속 화가들의 수고로움을 자랑하려고",
+        "장난꾸러기 친구들이 실수로 흘려 카드가 바뀔까 걱정되어서",
+        "매번 새로운 이야기를 자유롭게 피워내고 정답이 없음을 보여주려고",
+        "수많은 장식들로 퀴즈를 푸는 이들의 생각을 복잡하게 흐리려고"],
+  a:2,
+  exp:"우리의 생각과 이야기에는 '하나의 고정된 정답'이 존재하지 않아요. 84장의 카드가 매번 다르고 독창적인 만큼, 우리가 나누는 이야기와 비유도 무한한 방향으로 뻗어나갈 수 있답니다."},
+ {no:8, art:'galaxy', cap:"작품 8 · 따뜻한 별빛의 언어",
+  q:"동화 마지막에서 쿼카가 정의한 '언어'의 의미로 가장 적절한 표현은 무엇인가요?",
+  opts:["내 마음속 은하수를 상대의 마음에 닿게 만드는 따뜻한 별빛",
+        "상대를 굴복시키고 더 완벽하게 이기도록 돕는 매서운 무기",
+        "내 솔직한 감정을 타인이 결코 눈치채지 못하게 보호해주는 상자",
+        "기계처럼 명령을 소리 내어 전달해 주는 편리한 금속 우체통"],
+  a:0,
+  exp:"가슴속에 가득 들어찬 은하수 같은 마음의 무리를, 언어라는 정겹고 부드러운 빛을 빌려 상대의 눈빛과 창가에 닿게 하는 것 — 쿼카가 들려준 최고의 소통의 은유예요."},
+ {no:9, art:'lighthouse', cap:"작품 9 · 비 내리는 보라색 등대",
+  q:"멋진 이야기꾼이 되기 위해 '감정의 풍경을 단어로 그린다'는 것은 무엇을 뜻하나요?",
+  opts:["커다란 도화지 카드를 실제로 꺼내 수채 물감으로 그림을 그리는 것",
+        "슬프다 대신 '비 내리는 보라색 등대 아래 서 있는 기분'처럼 쓰는 것",
+        "슬픈 마음이 생겼을 때 온종일 말을 잃고 숲길을 하염없이 걷는 것",
+        "숲속 학교에서 알려준 유용한 수만 가지 단어들을 공책에 옮기는 것"],
+  a:1,
+  exp:"딱딱한 형용사 하나('슬프다', '기쁘다')에 갇히지 않고, 은유적이고 몽환적인 밤 등대의 비 오는 풍경을 그려 상대가 그 감정의 정취를 함께 걷게 만드는 것 — 최고의 스토리텔링이자 묘사예요."},
+ {no:10, art:'growth', cap:"작품 10 · 92%까지 자라난 마음",
+  q:"딕싯 게임을 통해 성장하는 영역 중 그래프에서 가장 높게(92%) 달성된 부분은 어디인가요?",
+  opts:["풍부한 표현과 부드러운 교감을 꽃피우는 [비유적 표현력]",
+        "숲속의 숨겨진 지름길을 영리하게 계산해내는 [공간 탐색력]",
+        "과일을 세어 물건 값을 지혜롭게 흥정하는 [수리 연산력]",
+        "사실적인 고대 유적의 역사를 정확하게 복사해내는 [암기 기억력]"],
+  a:0,
+  exp:"딕싯의 가장 위대한 성과 지표는 추상적인 이미지 카드를 한 줄의 비유적 이야기로 재구성해 전하는 [비유적 표현력]이에요. 소통 지능이 92%나 자라나며 아기 토끼처럼 맑게 도약하게 됩니다."}
+];
+const CIRC = ["①","②","③","④"];
+const ORD = ["첫","두","세","네","다섯","여섯","일곱","여덟","아홉","열"];
+
+/* ─────────────────────────────────────────
+   슬라이드 렌더링 (양면 스프레드)
+────────────────────────────────────────── */
+const track = document.getElementById('track');
+const slides = [];
+
+function addSlide(cls, art, cap, pageHtml){
+  const s = document.createElement('section');
+  s.className = 'slide' + (cls ? ' ' + cls : '');
+  s.innerHTML = `
+   <article class="spread">
+    <div class="plate">
+      <div class="frame">${art}<div class="caption serif">${cap}</div></div>
+    </div>
+    <div class="page">${pageHtml}</div>
+   </article>`;
+  track.appendChild(s);
+  slides.push(s);
+  return s;
+}
+
+/* 1 · 표지 */
+addSlide('cover', ART.cover, "마법 그림 카드", `
+  <span class="badge">딕싯 마음 동화</span>
+  <h1 class="serif">쿼카의 마법 그림 카드</h1>
+  <p class="lead">딕싯(Dixit) 게임으로 떠나는 흥미진진한 <strong style="color:#ffd23e">언어 지능 동화 여행</strong>.<br>
+  왼쪽 페이지의 그림 작품을 감상하고, 오른쪽 페이지에서 이야기를 읽고 수수께끼를 풀어보세요.</p>
+  <p class="lead" style="font-size:14px;color:#a79d80">← 좌우 버튼 · 키보드 화살표 · 스와이프로 책장을 넘길 수 있어요 →</p>`);
+
+/* 2 · 이야기꾼 쿼카 */
+addSlide('', ART.quokka, "초상 · 숲속의 이야기꾼", `
+  <span class="eyebrow">첫 번째 이야기 · 숲속의 이야기꾼</span>
+  <h2 class="serif">사랑스러운 이야기꾼, 쿼카</h2>
+  <p class="lead">쿼카는 숲속에서 가장 인기 있는 이야기꾼이에요. 쿼카에게는 특별한 <strong>마법 그림 카드</strong>가 있답니다.</p>
+  <p class="lead">이 신비로운 카드는 마음속에 떠올린 감정과 생각에 따라 형태와 색채가 부드럽게 흘러내리며 계속 변하지요.</p>
+  <p class="lead">쿼카는 오늘도 친구들에게 어떤 수수께끼를 낼지 들뜬 표정으로 고민하고 있어요.</p>`);
+
+/* 3 · 별빛이 내리는 숲 */
+addSlide('', ART.forest, "풍경 · 별빛이 내리는 숲", `
+  <span class="eyebrow">쿼카가 건넨 오묘한 속삭임</span>
+  <h2 class="serif">"별빛이 내리는 숲…"</h2>
+  <p class="lead">쿼카는 잠시 생각에 잠기더니 조용히 눈을 감고 말했어요. <strong>"별빛이 내리는 숲…"</strong></p>
+  <p class="lead">그것은 쿼카가 고른 비밀 그림 카드의 힌트였답니다. 친구들은 과연 어떤 카드를 들었을지 저마다 다른 마음의 그림을 그리기 시작했어요.</p>`);
+
+/* 4 · 각자의 카드 */
+addSlide('', ART.dandelion, "풍경 · 아기 토끼의 민들레 별밭", `
+  <span class="eyebrow">저마다 다른 마음의 그림</span>
+  <h2 class="serif">각자의 생각을 담은 카드들</h2>
+  <div class="trio">
+   <div class="who">
+    <svg viewBox="0 0 60 60"><ellipse cx="30" cy="36" rx="17" ry="19" fill="#a58a6d"/><ellipse cx="30" cy="41" rx="10" ry="12" fill="#e9d8bd"/><circle cx="24" cy="26" r="6" fill="#f6ecd8"/><circle cx="36" cy="26" r="6" fill="#f6ecd8"/><circle cx="24" cy="26" r="2.4" fill="#3a3550"/><circle cx="36" cy="26" r="2.4" fill="#3a3550"/><path d="M30 30 L27 34 L33 34Z" fill="#e0a428"/></svg>
+    <div><b>지혜로운 부엉이</b><span>"은은한 별빛이라면, 어두우면서도 따스해야 해." 사색하며 푸른 밤 달빛 카드를 골랐어요.</span></div>
+   </div>
+   <div class="who">
+    <svg viewBox="0 0 60 60"><circle cx="30" cy="36" r="15" fill="#efe0ca"/><path d="M23 24 Q19 4 27 6 Q31 8 27 24Z" fill="#efe0ca"/><path d="M37 24 Q41 4 33 6 Q29 8 33 24Z" fill="#efe0ca"/><circle cx="25" cy="34" r="2.2" fill="#3a3550"/><circle cx="35" cy="34" r="2.2" fill="#3a3550"/><path d="M27 40 Q30 43 33 40" stroke="#3a3550" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>
+    <div><b>날쌘돌이 아기토끼</b><span>"내 카드 속 노란 민들레가 내려앉은 별빛 같아!" 직관력으로 황금빛 카드를 골랐어요.</span></div>
+   </div>
+   <div class="who">
+    <svg viewBox="0 0 60 60"><circle cx="30" cy="36" r="16" fill="#c9a276"/><circle cx="18" cy="24" r="6" fill="#c9a276"/><circle cx="42" cy="24" r="6" fill="#c9a276"/><ellipse cx="30" cy="40" rx="9" ry="8" fill="#e9d3ae"/><circle cx="25" cy="32" r="2.2" fill="#3a3550"/><circle cx="35" cy="32" r="2.2" fill="#3a3550"/><circle cx="30" cy="38" r="2.2" fill="#3a3550"/></svg>
+    <div><b>다정한 꼬마곰</b><span>"친구들과 캠핑하며 바라봤던 밤하늘이야!" 추억이 깃든 오두막 카드를 꺼냈습니다.</span></div>
+   </div>
+  </div>
+  <p class="lead" style="font-size:14.5px">같은 한 마디의 힌트가, 세 친구의 마음속에서는 <strong>세 가지 서로 다른 풍경</strong>으로 피어났어요.</p>`);
+
+/* 5 · 딜레마 */
+addSlide('', ART.campfire, "풍경 · 모닥불 곁의 고민", `
+  <span class="eyebrow">두 번째 이야기 · 알맞은 소통의 깊이</span>
+  <h2 class="serif">이야기꾼 쿼카의 깊은 딜레마</h2>
+  <div class="duo">
+   <div class="box easy"><b>너무 노골적이고 쉬운 힌트</b><span>"텐트 앞에 예쁜 전등이 켜져 있고 노란 꽃이 있어!"라고 설명하면 모두가 맞혀버려서 쿼카는 0점을 얻게 돼요.</span></div>
+   <div class="box hard"><b>너무 엉뚱하고 난해한 힌트</b><span>"우주의 시초와 카오스의 경계" 같은 난해한 설명은 아무도 쿼카의 마음을 맞히지 못해 결국 0점이 되고 말아요.</span></div>
+  </div>
+  <p class="lead">두 극단 사이 어딘가에, 마음이 만나는 <strong>딱 알맞은 지점</strong>이 숨어 있답니다.</p>`);
+
+/* 6 · 알맞은 온도 */
+addSlide('', ART.thermo, "정물 · 마음의 온도계", `
+  <span class="eyebrow">너무 쉽지도, 너무 어렵지도 않게</span>
+  <h2 class="serif">마음을 맞추는 알맞은 온도</h2>
+  <p class="lead"><strong>"별빛이 내리는 숲…"</strong>은 마음을 은유적으로 울리는 아주 훌륭한 힌트예요. 듣는 이의 기억을 소환해 마음을 이어줄 풍부한 단어와 상상력을 끌어내기 때문이지요.</p>
+  <p class="lead">직설적 묘사를 넘어 <strong>'상대가 공감할 알맞은 선'</strong>을 고를 때 언어 능력이 크게 성장합니다.</p>`);
+
+/* 7 · 3점 */
+addSlide('', ART.threepoints, "풍경 · 너와 나의 교감", `
+  <span class="eyebrow">공감의 보상</span>
+  <h2 class="serif">진정한 대화가 완성되는 점수</h2>
+  <div class="big3">
+   <div class="num">3<small>점</small></div>
+   <p class="lead" style="font-size:15.5px">딕싯에서는 <strong>한 명 이상, 하지만 모두는 아니게</strong> 내 생각이 전해져야 완벽한 3점을 얻어요.</p>
+  </div>
+  <p class="lead">일방적인 외침도, 다수를 향한 뻔한 정답도 아닌 '누군가 한 사람에게 깊숙이 닿는 공감의 언어'를 쓸 때, 우리는 가장 훌륭하게 대화하고 있는 것입니다.</p>`);
+
+/* 8 · 명언 */
+addSlide('quote', ART.galaxy, "야경 · 창가에 닿은 은하수", `
+  <figure>
+   <blockquote>"언어란 마음속에 가득 찬 은하수를,<br>상대방의 마음 창가에 부드럽게 닿게 만드는<br>따뜻한 별빛과 같습니다."</blockquote>
+   <figcaption>— 숲속의 이야기꾼, 행복한 쿼카</figcaption>
+  </figure>`);
+
+/* 9 · 퀴즈 규칙 */
+addSlide('', ART.cards84, "정물 · 84장의 그림 카드", `
+  <span class="eyebrow">두근두근 퀴즈 여행</span>
+  <h2 class="serif">10개의 마음 수수께끼가 기다려요</h2>
+  <p class="lead">동화 속 쿼카와 아기 토끼가 나누었던 따스한 소통을 떠올리며 답을 골라보세요.</p>
+  <p class="lead">보기를 누르면 그 자리에서 <strong>정답과 친절한 해설 카드</strong>가 펼쳐지고, 상단에 별점이 쌓입니다. 매 페이지 왼쪽에는 서로 다른 감성 수채화 작품이 걸려 있어요.</p>
+  <p class="lead">준비되었다면, 다음 책장으로!</p>`);
+
+/* 10~19 · 퀴즈 */
+QUIZ.forEach((qz, qi)=>{
+  const s = addSlide('quiz-slide', ART[qz.art], qz.cap, `
+    <span class="eyebrow">${ORD[qi]} 번째 수수께끼</span>
+    <div class="q-head">
+     <span class="q-no serif">Q${qz.no}</span>
+     <h2>${qz.q}</h2>
+    </div>
+    <div class="q-zone">
+      <div class="opts" role="group" aria-label="보기">
+       ${qz.opts.map((o,i)=>`<button class="opt" data-i="${i}"><span class="n">${i+1}</span><span>${o}</span></button>`).join('')}
+      </div>
+      <div class="reveal" aria-live="polite">
+        <div class="verdict"></div>
+        <div class="ans">정답 ${CIRC[qz.a]} — ${qz.opts[qz.a]}</div>
+        <div class="tag">🕯️ 수수께끼 해설</div>
+        <p>${qz.exp}</p>
+        <button class="back">보기 다시 보기</button>
+      </div>
+    </div>`);
+  s.dataset.quiz = qi;
+});
+
+/* 20 · 마무리 + 결과 */
+addSlide('', ART.forest, "종장 · 별빛이 내리는 숲", `
+  <span class="eyebrow">여행의 끝에서</span>
+  <h2 class="serif">"대화는 마음을 비추는 따뜻한 거울"</h2>
+  <div class="result-num"><span id="finalScore">0</span><small> / 10</small></div>
+  <p class="result-msg" id="finalMsg">퀴즈 여행을 정답게 동참해 주셔서 깊이 감사드립니다.</p>
+  <p class="lead" style="font-size:14.5px;text-align:center">오늘 쿼카와 아기 토끼와 함께 성장한 비유적이고 다정한 마음의 힘은 세상 그 어느 이야기꽃보다 화사했어요. 함께 얻은 지혜를 소중한 이들에게 다정한 문장으로 나누어 보세요.</p>
+  <button class="restart" id="restartBtn">↺ 처음부터 다시 여행하기</button>
+  <p class="lead" style="font-size:12.5px;color:#a79d80;text-align:center">딕싯 마음 동화 연구소 | 소통과 공감을 넓히는 은유 놀이터</p>`);
+
+/* ─────────────────────────────────────────
+   내비게이션 준비 (dots를 먼저 만들어 퀴즈 로직에서 사용)
+────────────────────────────────────────── */
+const dotsWrap = document.getElementById('dots');
+slides.forEach((s,i)=>{
+  const d = document.createElement('i');
+  if (s.classList.contains('quiz-slide')) d.classList.add('quiz-dot');
+  d.addEventListener('click', ()=>goTo(i));
+  dotsWrap.appendChild(d);
+});
+const dots = [...dotsWrap.children];
+
+/* ─────────────────────────────────────────
+   퀴즈 상호작용
+────────────────────────────────────────── */
+let score = 0;
+const answered = new Set();
+const scoreChip = document.getElementById('scoreChip');
+const scoreVal = document.getElementById('scoreVal');
+
+document.querySelectorAll('.quiz-slide').forEach(slide=>{
+  const qi = +slide.dataset.quiz;
+  const qz = QUIZ[qi];
+  const opts = slide.querySelectorAll('.opt');
+  const reveal = slide.querySelector('.reveal');
+  const verdict = reveal.querySelector('.verdict');
+  reveal.querySelector('.back').addEventListener('click', ()=>reveal.classList.remove('show'));
+  opts.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      if (answered.has(qi)) { reveal.classList.add('show'); return; }
+      answered.add(qi);
+      const pick = +btn.dataset.i;
+      const ok = pick === qz.a;
+      if (ok) score++;
+      scoreVal.textContent = score;
+      scoreChip.classList.add('show');
+      opts.forEach((b,i)=>{
+        b.classList.add('locked');
+        if (i === qz.a) b.classList.add('correct');
+        else if (i === pick) b.classList.add('wrong');
+        else b.classList.add('dim');
+      });
+      verdict.textContent = ok
+        ? "🎉 정답이에요! 훌륭한 교감이었어요."
+        : "💫 아쉬워요! 정답을 확인해 보세요.";
+      verdict.className = 'verdict ' + (ok ? 'ok' : 'no');
+      reveal.classList.add('show');
+      const dot = dots[slides.indexOf(slide)];
+      if (dot) dot.classList.add('done');
+      updateFinal();
+    });
+  });
+});
+
+function updateFinal(){
+  document.getElementById('finalScore').textContent = score;
+  const msg = document.getElementById('finalMsg');
+  if (answered.size === 0) return;
+  if (score >= 9) msg.textContent = "완벽한 이야기꾼의 탄생! 쿼카가 가장 아끼는 마법 카드를 선물하고 싶어 해요. ⭐";
+  else if (score >= 6) msg.textContent = "따스한 은유의 별빛이 마음에 스며들었어요. 멋진 교감이었습니다!";
+  else if (score >= 3) msg.textContent = "좋은 출발이에요! 동화 책장을 다시 넘겨보면 별빛 힌트가 더 선명해질 거예요.";
+  else msg.textContent = "괜찮아요, 수수께끼는 여러 번 여행할수록 빛나요. 처음부터 다시 함께 걸어볼까요?";
+}
+
+document.getElementById('restartBtn').addEventListener('click', ()=>{
+  score = 0; answered.clear();
+  scoreVal.textContent = 0; scoreChip.classList.remove('show');
+  document.querySelectorAll('.quiz-slide').forEach(slide=>{
+    slide.querySelectorAll('.opt').forEach(b=>b.classList.remove('correct','wrong','dim','locked'));
+    slide.querySelector('.reveal').classList.remove('show');
+  });
+  dots.forEach(d=>d.classList.remove('done'));
+  document.getElementById('finalScore').textContent = 0;
+  updateFinalReset();
+  goTo(0);
+});
+function updateFinalReset(){
+  document.getElementById('finalMsg').textContent = "퀴즈 여행을 정답게 동참해 주셔서 깊이 감사드립니다.";
+}
+
+/* ─────────────────────────────────────────
+   페이지 이동 (트랙은 transform 이동 · 스크롤 없음)
+────────────────────────────────────────── */
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const pageCount = document.getElementById('pageCount');
+let cur = 0;
+
+function goTo(i){
+  cur = Math.max(0, Math.min(slides.length-1, i));
+  slides.forEach(s=>s.style.transform = `translateX(${-cur*100}%)`);
+  dots.forEach((d,j)=>d.classList.toggle('on', j===cur));
+  pageCount.textContent = `${cur+1} / ${slides.length}`;
+  prevBtn.disabled = cur === 0;
+  nextBtn.disabled = cur === slides.length - 1;
+}
+prevBtn.addEventListener('click', ()=>goTo(cur-1));
+nextBtn.addEventListener('click', ()=>goTo(cur+1));
+document.addEventListener('keydown', e=>{
+  if (e.key === 'ArrowRight') goTo(cur+1);
+  if (e.key === 'ArrowLeft') goTo(cur-1);
+});
+
+/* 스와이프 */
+let sx=null, sy=null;
+const stage = document.getElementById('stage');
+stage.addEventListener('touchstart', e=>{
+  sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+}, {passive:true});
+stage.addEventListener('touchend', e=>{
+  if (sx===null) return;
+  const dx = e.changedTouches[0].clientX - sx;
+  const dy = e.changedTouches[0].clientY - sy;
+  if (Math.abs(dx) > 46 && Math.abs(dx) > Math.abs(dy)*1.4){
+    goTo(cur + (dx < 0 ? 1 : -1));
+  }
+  sx = sy = null;
+}, {passive:true});
+
+/* ─────────────────────────────────────────
+   스테이지 스케일링: 1280×720을 화면에 꽉 맞춤 → 스크롤 없음
+────────────────────────────────────────── */
+function fit(){
+  const s = Math.min(window.innerWidth / 1280, window.innerHeight / 720) * 0.985;
+  stage.style.transform = `scale(${s})`;
+}
+window.addEventListener('resize', fit);
+fit();
+
+/* 밤하늘 별 */
+const sky = document.getElementById('sky');
+for (let i=0;i<42;i++){
+  const st = document.createElement('i');
+  st.style.left = Math.random()*100 + 'vw';
+  st.style.top = Math.random()*100 + 'vh';
+  st.style.animationDelay = (Math.random()*3.4).toFixed(2) + 's';
+  st.style.width = st.style.height = (1.6 + Math.random()*2.2).toFixed(1) + 'px';
+  sky.appendChild(st);
+}
+
+goTo(0);
+</script>
+</body>
+</html>

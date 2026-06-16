@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>쿼카와 친구들의 세상 탐험 놀이터</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;800&display=swap');
+        
+        :root {
+            --quokka-brown: #E6C8A4;
+            --forest-green: #2D5A27;
+            --sunny-yellow: #FFD93D;
+            --soft-gray: #FAFAFA;
+        }
+
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: var(--soft-gray);
+            color: #333;
+            scroll-behavior: smooth;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            border: 2px solid #fff;
+            box-shadow: 0 10px 25px -5px rgba(230, 200, 164, 0.2);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border-radius: 2rem;
+        }
+
+        .section-title { @apply text-3xl font-extrabold text-slate-900 mb-2; }
+        .section-desc { @apply text-slate-500 font-medium mb-10; }
+
+        /* 5단계 숫자 레이팅 스타일 */
+        .rating-container {
+            display: flex;
+            gap: 0.6rem;
+            justify-content: center;
+        }
+
+        .rating-dot { 
+            appearance: none; 
+            width: 2.2rem; 
+            height: 2.2rem; 
+            border: 3px solid #e2e8f0; 
+            border-radius: 50%; 
+            outline: none; 
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            cursor: pointer;
+            position: relative;
+            background: white;
+        }
+
+        .rating-dot:checked { 
+            border-color: var(--forest-green); 
+            background-color: var(--forest-green); 
+            box-shadow: 0 0 12px rgba(45, 90, 39, 0.4);
+            transform: scale(1.15);
+        }
+
+        /* 체크 시 별 반짝임 효과 */
+        .rating-dot:checked::before {
+            content: '✨';
+            position: absolute;
+            top: -24px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 14px;
+        }
+
+        .mission-card {
+            transition: all 0.3s ease;
+        }
+        
+        .mission-card:focus-within {
+            @apply border-emerald-300 bg-white shadow-lg;
+        }
+
+        .ai-glow {
+            position: relative;
+        }
+        .ai-glow::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            background: linear-gradient(45deg, #2D5A27, #FFD93D, #2D5A27);
+            border-radius: 2.2rem;
+            z-index: -1;
+            filter: blur(8px);
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <header class="bg-white/80 border-b border-orange-100 sticky top-0 z-50 backdrop-blur-lg">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-[#E6C8A4] rounded-xl flex items-center justify-center p-1 text-2xl">🐨</div>
+                <!-- '쿼카 놀이터' 및 내비게이션 메뉴가 삭제된 깔끔한 헤더 -->
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 py-12 space-y-24">
+
+        <!-- 쿼카의 오늘 미션 섹션 -->
+        <section id="mission-corner" class="scroll-mt-24">
+            <div class="text-center mb-10">
+                <h2 class="section-title">📋 쿼카와 함께하는 오늘의 미션</h2>
+                <p class="section-desc">우리 친구들, 가이드를 보고 오늘 얼마나 잘했는지 숫자를 꾹 눌러보세요!</p>
+            </div>
+
+            <div class="max-w-3xl mx-auto glass-card p-8 md:p-12 border-2 border-emerald-100 relative overflow-hidden">
+                <div class="absolute -top-10 -right-10 text-8xl opacity-10">🌿</div>
+                
+                <!-- 점수 가이드 영역 -->
+                <div class="mb-12 bg-white/50 border-2 border-dashed border-emerald-100 rounded-3xl p-6 relative z-10">
+                    <h5 class="text-center text-xs font-black text-emerald-700 uppercase tracking-widest mb-4">점수 가이드 읽어보기</h5>
+                    <div class="grid grid-cols-5 gap-2">
+                        <div class="flex flex-col items-center text-center">
+                            <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-sm mb-2 font-bold text-slate-400">1</div>
+                            <span class="text-[10px] font-bold text-slate-400 leading-tight">전혀<br/>아니다</span>
+                        </div>
+                        <div class="flex flex-col items-center text-center border-l border-slate-100">
+                            <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-sm mb-2 font-bold text-slate-400">2</div>
+                            <span class="text-[10px] font-bold text-slate-400 leading-tight">별로<br/>아니다</span>
+                        </div>
+                        <div class="flex flex-col items-center text-center border-l border-slate-100">
+                            <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-sm mb-2 font-bold text-slate-500">3</div>
+                            <span class="text-[10px] font-bold text-slate-500 leading-tight">보통이다</span>
+                        </div>
+                        <div class="flex flex-col items-center text-center border-l border-slate-100">
+                            <div class="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-sm mb-2 text-emerald-600 font-bold border-2 border-emerald-200">4</div>
+                            <span class="text-[10px] font-bold text-emerald-600 leading-tight">대체로<br/>그렇다</span>
+                        </div>
+                        <div class="flex flex-col items-center text-center border-l border-slate-100">
+                            <div class="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-sm mb-2 text-white font-bold shadow-md shadow-emerald-200">5</div>
+                            <span class="text-[10px] font-black text-emerald-700 leading-tight">매우<br/>그렇다</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="space-y-8 relative z-10">
+                    
+                    <!-- 미션 1 -->
+                    <div class="mission-card p-6 bg-slate-50 rounded-[2.5rem] border-2 border-transparent transition-all">
+                        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                            <div class="flex-1">
+                                <div class="flex gap-2 mb-2">
+                                    <span class="text-[10px] font-black text-emerald-600 bg-emerald-100/50 px-2 py-0.5 rounded-full">#논리수학</span>
+                                    <span class="text-[10px] font-black text-amber-600 bg-amber-100/50 px-2 py-0.5 rounded-full">#생각하는힘</span>
+                                </div>
+                                <h4 class="text-lg md:text-xl font-bold text-slate-700 leading-tight">스스로 정답을 찾아보려고 노력했어요!</h4>
+                            </div>
+                            <div class="rating-container">
+                                <label class="relative flex items-center justify-center cursor-pointer group">
+                                    <input type="radio" name="m1" class="rating-dot peer">
+                                    <span class="absolute pointer-events-none text-sm font-bold text-slate-400 peer-checked:text-white transition-colors">1</span>
+                                </label>
+                                <label class="relative flex items-center justify-center cursor-pointer group">
+                                    <input type="radio" name="m1" class="rating-dot peer">
+                                    <span class="absolute pointer-events-none text-sm font-bold text-slate-400 peer-checked:text-white transition-colors">2</span>
+                                </label>
+                                <label class="relative flex items-center justify-center cursor-pointer group">
+                                    <input type="radio" name="m1" class="rating-dot peer">
+                                    <span class="absolute pointer-events-none text-sm font-bold text-slate-400 peer-checked:text-white transition-colors">3</span>
+                                </label>
+                                <label class="relative flex items-center justify-center cursor-pointer group">
+                                    <input type="radio" name="m1" class="rating-dot peer">
+                                    <span class="absolute pointer-events-none text-sm font-bold text-slate-400 peer-checked:text-white transition-colors">4</span>
+                                </label>
+                                <label class="relative flex items-center justify-center cursor-pointer group">
+                                    <input type="radio" name="m1" class="rating-dot peer">
+                                    <span class="absolute pointer-events-none text-sm font-bold text-slate-400 peer-checked:text-white transition-colors">5</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 미션 2 -->
+                    <div class="mission-card p-6 bg-slate-50 rounded-[2.5rem] border-2 border-transparent transition-all">
+                        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                            <div class="flex-1">
+                                <div class="flex gap-2 mb-2">
+                                    <span class="text-[10px] font-black text-blue-600 bg-blue-100/50 px-2 py-0.5 rounded-full">#대인관계</span>
+                                    <span class="text-[10px] font-black text-rose-600 bg-rose-100/50 px-2 py-0.5 rounded-full">#다정함</span>
+                                </div>
+                                <h4 class="text-lg md:text-xl font-bold text-slate-700 leading-tight">친구의 이야기를 잘 듣고 도와주었어요!</h4>
+                            </div>
+                            <div class="rating-container">
+                                <label class="relative flex items-center justify-center cursor-pointer group">
+                                    <input type="radio" name="m2" class="rating-dot peer">
+                                    <span class="absolute pointer-events-none text-sm font-bold text-slate-400 peer-checked:text-white transition-colors">1</span>
+                                </label>
+                                <label class="relative flex items-center justify-center cursor-pointer group">
+                                    <input type="radio" name="m2" class="rating-dot peer">
+                                    <span class="absolute pointer-events-none text-sm font-bold text-slate-400 peer-checked:text-white transition-colors">2</span>
+                                </label>
+                                <label class="relative flex items-center justify-center cursor-pointer group">
+                                    <input type="radio" name="m2" class="rating-dot peer">
+                                    <span class="absolute pointer-events-none text-sm font-bold text-slate-400 peer-checked:text-white transition-colors">3</span>
+                                </label>
+                                <label class="relative flex items-center justify-center cursor-pointer group">
+                                    <input type="radio" name="m2" class="rating-dot peer">
+                                    <span class="absolute pointer-events-none text-sm font-bold text-slate-400 peer-checked:text-white transition-colors">4</span>
+                                </label>
+                                <label class="relative flex items-center justify-center cursor-pointer group">
+                                    <input type="radio" name="m2" class="rating-dot peer">
+                                    <span class="absolute pointer-events-none text-sm font-bold text-slate-400 peer-checked:text-white transition-colors">5</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 미션 3 -->
+                    <div class="mission-card p-6 bg-slate-50 rounded-[2.5rem] border-2 border-transparent transition-all">
+                        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                            <div class="flex-1">
+                                <div class="flex gap-2 mb-2">
+                                    <span class="text-[10px] font-black text-purple-600 bg-purple-100/50 px-2 py-0.5 rounded-full">#자기이해</span>
+                                    <span class="text-[10px] font-black text-orange-600 bg-orange-100/50 px-2 py-0.5 rounded-full">#끈기팡팡</span>
+                                </div>
+                                <h4 class="text-lg md:text-xl font-bold text-slate-700 leading-tight">어려워도 포기하지 않고 끝까지 마쳤어요!</h4>
+                            </div>
+                            <div class="rating-container">
+                                <label class="relative flex items-center justify-center cursor-pointer group">
+                                    <input type="radio" name="m3" class="rating-dot peer">
+                                    <span class="absolute pointer-events-none text-sm font-bold text-slate-400 peer-checked:text-white transition-colors">1</span>
+                                </label>
+                                <label class="relative flex items-center justify-center cursor-pointer group">
+                                    <input type="radio" name="m3" class="rating-dot peer">
+                                    <span class="absolute pointer-events-none text-sm font-bold text-slate-400 peer-checked:text-white transition-colors">2</span>
+                                </label>
+                                <label class="relative flex items-center justify-center cursor-pointer group">
+                                    <input type="radio" name="m3" class="rating-dot peer">
+                                    <span class="absolute pointer-events-none text-sm font-bold text-slate-400 peer-checked:text-white transition-colors">3</span>
+                                </label>
+                                <label class="relative flex items-center justify-center cursor-pointer group">
+                                    <input type="radio" name="m3" class="rating-dot peer">
+                                    <span class="absolute pointer-events-none text-sm font-bold text-slate-400 peer-checked:text-white transition-colors">4</span>
+                                </label>
+                                <label class="relative flex items-center justify-center cursor-pointer group">
+                                    <input type="radio" name="m3" class="rating-dot peer">
+                                    <span class="absolute pointer-events-none text-sm font-bold text-slate-400 peer-checked:text-white transition-colors">5</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- 칭찬 메시지 -->
+                <div class="mt-12 p-6 bg-[#FFD93D]/10 rounded-2xl border-2 border-dashed border-[#FFD93D] text-center">
+                    <p class="text-[#2D5A27] font-extrabold text-lg">
+                        숫자가 커질수록 쿼카의 숲이 더 푸르러져요! 🐨🌳 <br/>
+                        <span class="text-sm text-slate-500 font-medium">오늘 점수가 낮아도 괜찮아요. 내일은 더 잘할 수 있거든요!</span>
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 선생님의 관찰 노트 섹션 -->
+        <section id="observation" class="scroll-mt-24">
+            <div class="mb-10 text-center md:text-left">
+                <h2 class="section-title">🔍 선생님의 관찰 노트</h2>
+                <p class="text-slate-500 font-medium">아이들의 자가 진단과 선생님의 관찰을 한곳에 모아요.</p>
+            </div>
+
+            <div class="glass-card overflow-hidden">
+                <div class="bg-gradient-to-r from-[#2D5A27] to-[#4A7c44] p-8 text-white flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center text-3xl">📝</div>
+                        <div>
+                            <h3 class="text-2xl font-extrabold">통합 성장 리포트</h3>
+                            <p class="text-sm opacity-80 mt-1">입체적인 데이터로 확인하는 우리 아이의 가능성</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-8 md:p-12 space-y-10">
+                    <div class="bg-slate-50 rounded-[2.5rem] p-8 border border-slate-200">
+                        <label class="text-xl font-bold text-slate-800 flex items-center gap-3 mb-4">
+                            <span class="w-2 h-6 bg-[#2D5A27] rounded-full"></span>
+                            선생님의 관찰 기록
+                        </label>
+                        <textarea class="w-full h-32 bg-white rounded-2xl p-6 border border-slate-200 focus:ring-4 focus:ring-[#2D5A27]/5 focus:border-[#2D5A27] transition-all text-sm text-slate-600 resize-none" placeholder="아이의 미션 참여 태도나 특별했던 순간을 기록해주세요..."></textarea>
+                    </div>
+
+                    <!-- AI 분석 영역 -->
+                    <div class="ai-glow bg-white rounded-[2.5rem] p-8 md:p-10 border border-[#2D5A27]/20 shadow-xl">
+                        <div class="flex items-center justify-between mb-8">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 bg-gradient-to-br from-[#2D5A27] to-[#80B27A] rounded-2xl flex items-center justify-center text-2xl shadow-lg">🤖</div>
+                                <div>
+                                    <h4 class="text-xl font-black text-slate-800">AI 쿼카의 데이터 분석</h4>
+                                    <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">Digital Portfolio Analysis</p>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-slate-600 leading-relaxed font-medium">
+                            선생님의 텍스트 기록과 아이의 숫자 점수를 결합하여 다중지능 발달 곡선을 생성합니다.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-white border-t border-slate-100 py-16 text-center text-slate-300 text-[10px]">
+        © 2024 쿼카의 숲속 탐험대. 아이들이 스스로 성장하는 공간.
+    </footer>
+
+</body>
+</html>

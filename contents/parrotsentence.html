@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LingoRead.ai - Standalone Edition</title>
+    <!-- Tailwind CSS v4 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style type="text/tailwindcss">
+        @theme {
+            --color-vibrant-bg: #E0F2FE;
+            --color-vibrant-ink: #1E1B4B;
+            --color-vibrant-primary: #4F46E5;
+            --color-vibrant-accent: #DB2777;
+            --color-vibrant-soft-pink: #FBCFE8;
+            --color-vibrant-yellow: #FDE047;
+            --color-vibrant-shadow: #4F46E5;
+        }
+
+        @keyframes pulse-custom {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        .animate-pulse-custom {
+            animation: pulse-custom 2s infinite;
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-vibrant-bg text-vibrant-ink font-sans flex flex-col">
+    <!-- Main App State Managed by Script -->
+    <div id="app" class="flex flex-col flex-1">
+        <!-- Header -->
+        <header class="px-6 lg:px-10 py-5 border-b-4 border-vibrant-soft-pink bg-white sticky top-0 z-30 flex items-center justify-between shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)]">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-vibrant-yellow rounded-xl flex items-center justify-center border-3 border-vibrant-primary font-black shadow-[3px_3px_0px_var(--color-vibrant-primary)]">
+                    <span class="text-xl">L</span>
+                </div>
+                <div>
+                    <h1 class="font-black text-2xl tracking-tight text-vibrant-primary">LingoRead.ai</h1>
+                    <p class="text-[10px] text-vibrant-accent font-bold uppercase tracking-[0.2em] leading-none mt-0.5">Learn English Fast</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <!-- Learning Mode Selector (View Only) -->
+                <div id="mode-selector" class="hidden md:flex bg-gray-100 p-1.5 rounded-full border-2 border-vibrant-primary">
+                    <button id="btn-beginner" onclick="setMode('beginner')" class="px-6 py-1.5 rounded-full font-black text-sm transition-all bg-vibrant-primary text-white shadow-[2px_2px_0px_black]">
+                        초급 (문장별)
+                    </button>
+                    <button id="btn-intermediate" onclick="setMode('intermediate')" class="px-6 py-1.5 rounded-full font-black text-sm transition-all text-gray-500 hover:text-gray-700">
+                        중급 (전체읽기)
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <button id="toggle-edit" onclick="toggleEdit()" class="flex items-center gap-2 px-5 py-2.5 bg-white border-3 border-vibrant-primary rounded-full text-sm font-black hover:bg-vibrant-soft-pink transition-all active:scale-95 shadow-[4px_4px_0px_var(--color-vibrant-primary)]">
+                        <i data-lucide="settings-2" class="w-[18px] h-[18px]"></i>
+                        <span id="edit-btn-text" class="hidden sm:inline">대본 수정</span>
+                    </button>
+                    <button onclick="handleClear()" class="p-2 text-gray-400 hover:text-vibrant-accent transition-colors" title="Clear all">
+                        <i data-lucide="trash-2" class="w-6 h-6"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+  <!-- con01 배지 -->
+  <div style="position:fixed;bottom:14px;right:14px;z-index:9999;background:#16a34a;color:#fff;border-radius:999px;padding:5px 14px;font-size:10px;font-weight:900;box-shadow:0 2px 10px rgba(22,163,74,0.5);">📌 con01</div>
+
+        <main class="flex-1 p-6 lg:p-10">
+            <!-- Edit Mode -->
+            <div id="edit-view" class="hidden max-w-5xl mx-auto w-full h-[calc(100vh-180px)] flex flex-col lg:flex-row gap-8">
+                <div class="lg:w-[400px] flex flex-col bg-white border-4 border-vibrant-primary rounded-[32px] p-8 shadow-[8px_8px_0px_var(--color-vibrant-shadow)] h-full">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-black flex items-center gap-2">
+                            <span class="text-vibrant-accent">📝</span> Your Script
+                        </h2>
+                        <p class="text-sm font-bold text-gray-500 mt-2">영어 대본을 입력하세요. 자동으로 문장 카드로 변환됩니다.</p>
+                    </div>
+                    
+                    <div class="flex-1 relative flex flex-col gap-4">
+                        <textarea id="script-input" placeholder="Paste your English text here..." class="flex-1 w-full p-5 bg-gray-50 border-3 border-gray-200 rounded-2xl outline-none focus:border-vibrant-primary focus:bg-white transition-all text-lg leading-relaxed resize-none font-medium"></textarea>
+                        
+                        <div class="flex gap-3">
+                            <button onclick="pasteFromClipboard()" class="p-4 bg-vibrant-yellow text-vibrant-ink border-3 border-vibrant-ink rounded-2xl hover:brightness-95 transition-all shadow-[4px_4px_0px_var(--color-vibrant-ink)] active:translate-y-0.5 active:shadow-none" title="Paste from clipboard">
+                                <i data-lucide="clipboard" class="w-[22px] h-[22px]"></i>
+                            </button>
+                            <button onclick="generateSentences()" class="flex-1 py-4 bg-vibrant-primary text-white rounded-2xl font-black text-lg shadow-[4px_4px_0px_var(--color-vibrant-ink)] hover:brightness-110 disabled:opacity-50 disabled:shadow-none transition-all flex items-center justify-center gap-2">
+                                학습 시작 <i data-lucide="chevron-right" class="w-[22px] h-[22px]"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hidden lg:flex flex-1 items-center justify-center border-4 border-dashed border-vibrant-primary/20 rounded-[32px]">
+                    <div class="text-center space-y-4 max-w-sm">
+                        <div class="w-16 h-16 bg-white border-4 border-vibrant-primary rounded-2xl mx-auto flex items-center justify-center rotate-3 shadow-[8px_8px_0px_var(--color-vibrant-shadow)]">
+                            <i data-lucide="book-open" class="text-vibrant-primary w-8 h-8"></i>
+                        </div>
+                        <h3 class="text-xl font-black">학습 모드 선택 가능</h3>
+                        <p class="text-gray-500 font-bold">초급(문장 클릭)과 중급(전체 연속 듣기) 두 가지 모드로 영어를 정복하세요!</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reading Mode -->
+            <div id="reading-view" class="max-w-6xl mx-auto w-full flex flex-col lg:flex-row gap-8 pb-32">
+                <div class="flex-1 space-y-5">
+                    <!-- Mobile Mode Switcher -->
+                    <div id="mobile-mode-selector" class="flex md:hidden bg-gray-100 p-1.5 rounded-full border-2 border-vibrant-primary mb-6">
+                        <button onclick="setMode('beginner')" class="mode-btn-mobile-beginner flex-1 py-2 rounded-full font-black text-xs transition-all bg-vibrant-primary text-white shadow-[2px_2px_0px_black]">초급</button>
+                        <button onclick="setMode('intermediate')" class="mode-btn-mobile-intermediate flex-1 py-2 rounded-full font-black text-xs transition-all text-gray-500">중급</button>
+                    </div>
+
+                    <!-- Intermediate Header -->
+                    <div id="intermediate-header" class="hidden bg-vibrant-accent text-white p-6 rounded-[32px] shadow-[8px_8px_0px_var(--color-vibrant-ink)] border-4 border-vibrant-ink mb-10 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div>
+                            <h3 class="text-2xl font-black">중급 코스: 전체 읽기</h3>
+                            <p class="font-bold opacity-80 mt-1">대본 전체를 끊김 없이 자연스럽게 들려줍니다.</p>
+                        </div>
+                        <div id="full-play-controls">
+                            <button id="btn-play-all" onclick="startFullPlay()" class="px-8 py-4 bg-vibrant-yellow text-vibrant-ink rounded-full font-black border-3 border-vibrant-ink shadow-[4px_4px_0px_var(--color-vibrant-ink)] active:translate-y-1 active:shadow-none transition-all flex items-center gap-2">
+                                <i data-lucide="play" class="w-5 h-5 fill-current"></i> Play All
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="sentence-list" class="space-y-4">
+                        <!-- Sentences will be injected here -->
+                    </div>
+                </div>
+
+                <!-- Sidebar Controls -->
+                <aside class="hidden lg:flex w-[340px] flex-col gap-6 lg:sticky lg:top-32 lg:h-fit">
+                    <div class="bg-white border-4 border-vibrant-primary rounded-[32px] p-8 shadow-[8px_8px_0px_var(--color-vibrant-shadow)] flex flex-col gap-8">
+                        <div class="space-y-4">
+                            <label class="text-xs font-black text-vibrant-primary uppercase tracking-[0.2em] flex items-center gap-2">
+                                <i data-lucide="volume-2" class="w-3.5 h-3.5"></i> Voice Artist
+                            </label>
+                            <select id="voice-select" class="w-full p-4 bg-gray-50 border-3 border-vibrant-primary rounded-2xl text-sm font-bold outline-none appearance-none focus:bg-white transition-all shadow-[4px_4px_0px_var(--color-vibrant-shadow)]">
+                                <!-- Voices will be injected here -->
+                            </select>
+                        </div>
+
+                        <div class="space-y-6">
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center text-xs font-black text-vibrant-primary uppercase tracking-widest">
+                                    <span>Reading Speed</span>
+                                    <span id="rate-value" class="text-vibrant-accent bg-vibrant-soft-pink px-2 py-0.5 rounded-lg border-2 border-vibrant-accent">1.0x</span>
+                                </div>
+                                <input type="range" id="rate-slider" min="0.5" max="2" step="0.1" value="1.0" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-vibrant-primary">
+                            </div>
+
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center text-xs font-black text-vibrant-primary uppercase tracking-widest">
+                                    <span>Diction Pitch</span>
+                                    <span id="pitch-value" class="text-vibrant-primary bg-blue-50 px-2 py-0.5 rounded-lg border-2 border-vibrant-primary">1.2</span>
+                                </div>
+                                <input type="range" id="pitch-slider" min="0.5" max="2" step="0.1" value="1.2" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-vibrant-primary">
+                            </div>
+                        </div>
+
+                        <div class="p-4 bg-indigo-50 rounded-2xl border-2 border-vibrant-primary font-bold text-xs">
+                            <p id="tip-text">💡 문장을 클릭해서 개별 발음을 연습하세요.</p>
+                        </div>
+                        
+                        <button onclick="toggleEdit()" class="p-4 border-4 border-dashed border-vibrant-primary/30 rounded-2xl hover:border-vibrant-primary transition-all font-black text-vibrant-primary text-sm flex items-center justify-center gap-2">
+                             <i data-lucide="clipboard" class="w-[18px] h-[18px]"></i> Edit Your Script
+                        </button>
+                    </div>
+                </aside>
+            </div>
+        </main>
+
+        <!-- Fixed Bottom Controls -->
+        <div id="floating-controls" class="hidden fixed bottom-10 left-6 right-6 lg:left-[440px] lg:right-10 z-50">
+            <div class="bg-white border-4 border-vibrant-primary shadow-[8px_8px_0px_var(--color-vibrant-shadow)] rounded-[100px] px-8 py-3 flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div id="status-badge" class="bg-vibrant-soft-pink text-vibrant-accent border-2 border-vibrant-accent px-4 py-1 rounded-full font-black text-sm">
+                        READING
+                    </div>
+                    <div class="hidden sm:block text-sm font-black text-vibrant-primary">
+                        <span id="current-pos">1</span> <span class="opacity-30">/</span> <span id="total-count">0</span>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-6">
+                    <button id="btn-pause-toggle" onclick="togglePause()" class="w-14 h-14 bg-vibrant-primary text-white rounded-full flex items-center justify-center shadow-[4px_4px_0px_var(--color-vibrant-ink)] active:translate-y-0.5 active:shadow-none transition-all">
+                        <i data-lucide="pause" class="w-7 h-7 fill-current"></i>
+                    </button>
+                    <button onclick="stopSpeech()" class="w-12 h-12 border-3 border-vibrant-primary text-vibrant-primary rounded-full flex items-center justify-center hover:bg-red-50 hover:border-red-500 hover:text-red-500 transition-all">
+                        <i data-lucide="square" class="w-5 h-5 fill-current"></i>
+                    </button>
+                </div>
+
+                <div id="mode-text" class="hidden md:block font-black text-vibrant-primary text-sm tracking-widest uppercase">
+                    Sentence Mode
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let inputScript = `[Scene 1 : At the Pond]
+(Goldie is sitting on a chair/cushion acting like a lily pad, stretching in the sun.)
+Narrator : It is a peaceful afternoon at the pond. Goldie is relaxing.
+Goldie : (Happily) Ah, what a beautiful day! The sun is so warm on my back.
+
+[Scene 2 : Meeting Skater]
+(Skater enters, moving smoothly like he's skating.)
+Skater : Whoosh! Look at me go!
+Goldie : (Surprised) Wow, Skater! You are so fast! How do you walk on water?
+Skater : (Shows legs) See these tiny hairs on my legs? They help me float!
+Goldie : (A bit sad) I wish I could walk on water too.
+Skater : (Pats Goldie’s shoulder) Don’t be sad! You are the best hunter in this pond!
+
+[Scene 3 : The Big Hunt]
+(The Insect enters, flying around making "Buzz" sounds.)
+Goldie : (Whishpering) Shh! Look! Dinner is coming.
+(Goldie crouches down and stays very still. When the Insect is close...)
+Goldie : SNAP!
+(Goldie pretends to throw a long tongue out and grabs the Insect.)
+Goldie : Gotcha! Mmm, so yummy!
+Skater : (Clapping) Great job, Goldie! You are a super hunter!
+
+[Scene 4 : Happy Ending]
+Goldie : You’re right, Skater. You are good at skating, and I am good at snapping!
+Narrator : Goldie and Skater are both special. Now, it’s time for a nap.
+Goldie : (Yawns and closes eyes) Good night, everyone!
+(All characters bow.)`;
+        
+        let isEditing = false;
+        let learningMode = 'beginner'; 
+        let sentences = [];
+        let currentSentenceIndex = null;
+        let isPaused = false;
+        let isPlayingFull = false;
+        let selectedVoiceName = '';
+        let baseRate = 1.0;
+        let basePitch = 1.2;
+
+        const synth = window.speechSynthesis;
+        let currentUtterance = null;
+        let voices = [];
+
+        // Elements
+        const app = document.getElementById('app');
+        const scriptInput = document.getElementById('script-input');
+        const editView = document.getElementById('edit-view');
+        const readingView = document.getElementById('reading-view');
+        const sentenceList = document.getElementById('sentence-list');
+        const voiceSelect = document.getElementById('voice-select');
+        const floatingControls = document.getElementById('floating-controls');
+        const currentPosEl = document.getElementById('current-pos');
+        const totalCountEl = document.getElementById('total-count');
+        const statusBadge = document.getElementById('status-badge');
+        const modeText = document.getElementById('mode-text');
+        const pauseIcon = document.querySelector('#btn-pause-toggle i');
+        const rateSlider = document.getElementById('rate-slider');
+        const pitchSlider = document.getElementById('pitch-slider');
+        const rateValue = document.getElementById('rate-value');
+        const pitchValue = document.getElementById('pitch-value');
+
+        // Initialization
+        function init() {
+            scriptInput.value = inputScript;
+            
+            // Load Voices
+            const loadVoices = () => {
+                voices = synth.getVoices();
+                voiceSelect.innerHTML = voices
+                    .filter(v => v.lang.startsWith('en'))
+                    .map(v => `<option value="${v.name}">${v.name.split(' (')[0]}</option>`)
+                    .join('');
+                
+                // Set default voice
+                const defaultVoice = voices.find(v => v.lang.startsWith('en') && v.name.includes('Google')) 
+                                    || voices.find(v => v.lang.startsWith('en')) 
+                                    || voices[0];
+                if (defaultVoice) {
+                    selectedVoiceName = defaultVoice.name;
+                    voiceSelect.value = selectedVoiceName;
+                }
+            };
+
+            loadVoices();
+            if (synth.onvoiceschanged !== undefined) {
+                synth.onvoiceschanged = loadVoices;
+            }
+
+            // Sliders
+            rateSlider.addEventListener('input', (e) => {
+                baseRate = parseFloat(e.target.value);
+                rateValue.innerText = baseRate + 'x';
+            });
+            pitchSlider.addEventListener('input', (e) => {
+                basePitch = parseFloat(e.target.value);
+                pitchValue.innerText = basePitch;
+            });
+            voiceSelect.addEventListener('change', (e) => {
+                selectedVoiceName = e.target.value;
+            });
+
+            updateView();
+            lucide.createIcons();
+        }
+
+        function parseScript() {
+            if (!inputScript.trim()) return [];
+            const lines = inputScript.split(/\n+/);
+            const result = [];
+
+            lines.forEach((line, lineIdx) => {
+                const trimmedLine = line.trim();
+                if (!trimmedLine) return;
+
+                if ((trimmedLine.startsWith('[') && trimmedLine.endsWith(']')) || 
+                    (trimmedLine.startsWith('(') && trimmedLine.endsWith(')'))) {
+                    result.push({
+                        id: `line-${lineIdx}`,
+                        text: trimmedLine,
+                        character: 'Stage'
+                    });
+                } else {
+                    const dialogMatch = trimmedLine.match(/^([^:]+)\s*:\s*(.*)$/);
+                    if (dialogMatch) {
+                        const char = dialogMatch[1].trim();
+                        const content = dialogMatch[2].trim();
+                        const parts = content.match(/[^.!?]+[.!?]*/g) || [content];
+                        parts.forEach((p, pIdx) => {
+                            const raw = p.trim();
+                            const emotionMatch = raw.match(/^\(([^)]+)\)\s*(.*)$/);
+                            result.push({
+                                id: `line-${lineIdx}-p-${pIdx}`,
+                                text: emotionMatch ? emotionMatch[2] : raw,
+                                originalText: raw,
+                                character: char,
+                                emotion: emotionMatch ? emotionMatch[1] : undefined
+                            });
+                        });
+                    } else {
+                        const parts = trimmedLine.match(/[^.!?]+[.!?]*/g) || [trimmedLine];
+                        parts.forEach((p, pIdx) => {
+                            result.push({
+                                id: `line-${lineIdx}-plain-${pIdx}`,
+                                text: p.trim()
+                            });
+                        });
+                    }
+                }
+            });
+            return result;
+        }
+
+        function renderSentences() {
+            sentences = parseScript();
+            totalCountEl.innerText = sentences.length;
+            sentenceList.innerHTML = sentences.map((s, idx) => {
+                const isActive = currentSentenceIndex === idx;
+                const charHtml = s.character && s.character !== 'Stage' ? `<span class="text-vibrant-primary opacity-60 mr-2 text-base align-middle">${s.character}:</span>` : '';
+                const emotionHtml = s.emotion ? `<span class="text-vibrant-accent italic mr-2 text-base align-middle">(${s.emotion})</span>` : '';
+                
+                return `
+                    <div id="sentence-${idx}" onclick="handleSentenceClick(${idx})" class="sentence-card group relative p-6 rounded-[28px] transition-all duration-200 border-4 ${learningMode === 'beginner' ? 'cursor-pointer' : ''} ${
+                        isActive 
+                        ? 'bg-vibrant-soft-pink border-vibrant-accent shadow-[6px_6px_0px_var(--color-vibrant-accent)] -translate-y-1' 
+                        : (learningMode === 'beginner' 
+                            ? 'bg-white border-vibrant-primary hover:bg-gray-50 shadow-[4px_4px_0px_var(--color-vibrant-primary)] hover:shadow-[10px_10px_0px_var(--color-vibrant-primary)] hover:-translate-x-1 hover:-translate-y-1'
+                            : 'bg-white/60 border-gray-200 opacity-60')
+                    }">
+                        <div class="flex items-center gap-6">
+                            <div class="icon-box w-12 h-12 rounded-full border-3 border-vibrant-ink flex items-center justify-center flex-shrink-0 transition-colors ${isActive ? 'bg-vibrant-accent text-white' : 'bg-vibrant-yellow text-vibrant-ink'}">
+                                ${isActive ? '<i data-lucide="volume-2" class="w-5 h-5 animate-pulse-custom"></i>' : `<span class="font-black text-sm">${idx + 1}</span>`}
+                            </div>
+                            <p class="text-xl font-black leading-snug text-vibrant-ink">
+                                ${charHtml}${emotionHtml}${s.text}
+                            </p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        function updateView() {
+            if (isEditing) {
+                editView.classList.remove('hidden');
+                editView.classList.add('flex');
+                readingView.classList.add('hidden');
+                document.getElementById('edit-btn-text').innerText = '학습 시작';
+                document.getElementById('toggle-edit').querySelector('i').setAttribute('data-lucide', 'book-open');
+            } else {
+                editView.classList.add('hidden');
+                readingView.classList.remove('hidden');
+                readingView.classList.add('flex');
+                document.getElementById('edit-btn-text').innerText = '대본 수정';
+                document.getElementById('toggle-edit').querySelector('i').setAttribute('data-lucide', 'settings-2');
+                renderSentences();
+            }
+            lucide.createIcons();
+        }
+
+        function setMode(mode) {
+            learningMode = mode;
+            stopSpeech();
+            
+            // UI Updates
+            const btnBeg = document.getElementById('btn-beginner');
+            const btnInt = document.getElementById('btn-intermediate');
+            const mobBeg = document.querySelector('.mode-btn-mobile-beginner');
+            const mobInt = document.querySelector('.mode-btn-mobile-intermediate');
+            const intHeader = document.getElementById('intermediate-header');
+            const tip = document.getElementById('tip-text');
+
+            if (mode === 'beginner') {
+                btnBeg.className = "px-6 py-1.5 rounded-full font-black text-sm transition-all bg-vibrant-primary text-white shadow-[2px_2px_0px_black]";
+                btnInt.className = "px-6 py-1.5 rounded-full font-black text-sm transition-all text-gray-500 hover:text-gray-700";
+                mobBeg.className = "mode-btn-mobile-beginner flex-1 py-2 rounded-full font-black text-xs transition-all bg-vibrant-primary text-white shadow-[2px_2px_0px_black]";
+                mobInt.className = "mode-btn-mobile-intermediate flex-1 py-2 rounded-full font-black text-xs transition-all text-gray-500";
+                intHeader.classList.add('hidden');
+                tip.innerText = "💡 문장을 클릭해서 개별 발음을 연습하세요.";
+            } else {
+                btnInt.className = "px-6 py-1.5 rounded-full font-black text-sm transition-all bg-vibrant-accent text-white shadow-[2px_2px_0px_black]";
+                btnBeg.className = "px-6 py-1.5 rounded-full font-black text-sm transition-all text-gray-500 hover:text-gray-700";
+                mobInt.className = "mode-btn-mobile-intermediate flex-1 py-2 rounded-full font-black text-xs transition-all bg-vibrant-accent text-white shadow-[2px_2px_0px_black]";
+                mobBeg.className = "mode-btn-mobile-beginner flex-1 py-2 rounded-full font-black text-xs transition-all text-gray-500";
+                intHeader.classList.remove('hidden');
+                intHeader.classList.add('flex');
+                tip.innerText = "💡 Play All 버튼을 눌러 전체 흐름을 익히세요.";
+            }
+            renderSentences();
+        }
+
+        function toggleEdit() {
+            if (isEditing) {
+                inputScript = scriptInput.value;
+            }
+            isEditing = !isEditing;
+            stopSpeech();
+            updateView();
+        }
+
+        async function pasteFromClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                scriptInput.value = text;
+            } catch (err) {
+                alert('Clipboard access denied.');
+            }
+        }
+
+        function generateSentences() {
+            inputScript = scriptInput.value;
+            if (!inputScript.trim()) return;
+            isEditing = false;
+            updateView();
+        }
+
+        function handleClear() {
+            stopSpeech();
+            scriptInput.value = '';
+            inputScript = '';
+            isEditing = true;
+            updateView();
+        }
+
+        function handleSentenceClick(index) {
+            if (learningMode === 'beginner') {
+                speak(index, false);
+            }
+        }
+
+        function speak(index, autoNext = false) {
+            if (!synth || index >= sentences.length) {
+                isPlayingFull = false;
+                currentSentenceIndex = null;
+                floatingControls.classList.add('hidden');
+                renderSentences();
+                return;
+            }
+
+            const sentence = sentences[index];
+            synth.cancel();
+            currentSentenceIndex = index;
+            isPaused = false;
+            
+            // UI Update
+            renderSentences();
+            floatingControls.classList.remove('hidden');
+            currentPosEl.innerText = index + 1;
+            statusBadge.innerText = isPlayingFull ? 'ALL-PLAY' : 'READING';
+            modeText.innerText = learningMode === 'beginner' ? 'Sentence Mode' : 'Continuous Mode';
+            updatePauseIcon();
+
+            const utterance = new SpeechSynthesisUtterance(sentence.text);
+            const voice = voices.find(v => v.name === selectedVoiceName);
+            if (voice) utterance.voice = voice;
+
+            let finalRate = baseRate;
+            let finalPitch = basePitch;
+            let finalVolume = 1.0;
+
+            if (sentence.character === 'Goldie') {
+                finalPitch = basePitch * 1.05;
+                finalRate = baseRate * 0.98;
+            } else if (sentence.character === 'Skater') {
+                finalPitch = basePitch * 1.0;
+                finalRate = baseRate * 1.02;
+            } else if (sentence.character === 'Narrator') {
+                finalPitch = basePitch * 0.95;
+                finalRate = baseRate * 0.95;
+            } else if (sentence.character === 'Stage') {
+                finalVolume = 0.5;
+            }
+
+            if (sentence.emotion) {
+                const e = sentence.emotion.toLowerCase();
+                if (e.includes('happily')) finalPitch *= 1.1;
+                else if (e.includes('surprised')) { finalPitch *= 1.15; finalRate *= 1.05; }
+                else if (e.includes('sad')) { finalPitch *= 0.9; finalRate *= 0.9; }
+                else if (e.includes('whispering')) { finalVolume *= 0.4; finalRate *= 0.8; finalPitch *= 0.9; }
+                else if (e.includes('yawns')) finalRate *= 0.5;
+            }
+
+            utterance.rate = Math.max(0.1, Math.min(finalRate, 3.0));
+            utterance.pitch = Math.max(0.1, Math.min(finalPitch, 2.0));
+            utterance.volume = finalVolume;
+
+            utterance.onend = () => {
+                if (autoNext && index + 1 < sentences.length) {
+                    setTimeout(() => speak(index + 1, true), 300);
+                } else {
+                    currentSentenceIndex = null;
+                    isPlayingFull = false;
+                    floatingControls.classList.add('hidden');
+                    renderSentences();
+                }
+            };
+
+            utterance.onerror = (e) => {
+                console.error(e);
+                currentSentenceIndex = null;
+                isPlayingFull = false;
+                floatingControls.classList.add('hidden');
+                renderSentences();
+            };
+
+            currentUtterance = utterance;
+            synth.speak(utterance);
+        }
+
+        function startFullPlay() {
+            isPlayingFull = true;
+            document.getElementById('full-play-controls').innerHTML = `
+                <button onclick="stopSpeech()" class="px-8 py-4 bg-white text-vibrant-ink rounded-full font-black border-3 border-vibrant-ink shadow-[4px_4px_0px_var(--color-vibrant-ink)] active:translate-y-1 active:shadow-none transition-all flex items-center gap-2">
+                    <i data-lucide="square" class="w-5 h-5 fill-current"></i> Stop Reading
+                </button>
+            `;
+            lucide.createIcons();
+            speak(0, true);
+        }
+
+        function stopSpeech() {
+            synth.cancel();
+            currentSentenceIndex = null;
+            isPaused = false;
+            isPlayingFull = false;
+            floatingControls.classList.add('hidden');
+            
+            // Reset Intermediate Play Button
+            const fullControls = document.getElementById('full-play-controls');
+            if (fullControls) {
+                fullControls.innerHTML = `
+                    <button id="btn-play-all" onclick="startFullPlay()" class="px-8 py-4 bg-vibrant-yellow text-vibrant-ink rounded-full font-black border-3 border-vibrant-ink shadow-[4px_4px_0px_var(--color-vibrant-ink)] active:translate-y-1 active:shadow-none transition-all flex items-center gap-2">
+                        <i data-lucide="play" class="w-5 h-5 fill-current"></i> Play All
+                    </button>
+                `;
+            }
+            
+            renderSentences();
+            lucide.createIcons();
+        }
+
+        function togglePause() {
+            if (isPaused) {
+                synth.resume();
+                isPaused = false;
+                statusBadge.innerText = isPlayingFull ? 'ALL-PLAY' : 'READING';
+            } else {
+                synth.pause();
+                isPaused = true;
+                statusBadge.innerText = 'PAUSED';
+            }
+            updatePauseIcon();
+        }
+
+        function updatePauseIcon() {
+            if (isPaused) {
+                pauseIcon.setAttribute('data-lucide', 'play');
+            } else {
+                pauseIcon.setAttribute('data-lucide', 'pause');
+            }
+            lucide.createIcons();
+        }
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quokka & Goldie's English Adventure</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F5F5F0;
+            overflow-x: hidden;
+        }
+        .bubble-quokka {
+            border-top-left-radius: 0;
+        }
+        .bubble-frog {
+            border-top-right-radius: 0;
+        }
+        .leaf-bg {
+            opacity: 0.1;
+            position: fixed;
+            z-index: -1;
+            pointer-events: none;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        .word-chip {
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .word-chip:active {
+            transform: scale(0.9);
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <!-- Background Icons -->
+    <div class="leaf-bg top-10 left-10"><i data-lucide="leaf" size="240"></i></div>
+    <div class="leaf-bg bottom-10 right-10 rotate-12"><i data-lucide="leaf" size="360"></i></div>
+    <div class="leaf-bg top-1/2 left-1/4 -translate-y-1/2 -rotate-12"><i data-lucide="cloud-rain" size="160"></i></div>
+
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200 py-6 px-10">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-5">
+                <div class="w-16 h-16 bg-green-600 rounded-2xl flex items-center justify-center text-white shadow-xl">
+                    <i data-lucide="sprout" size="36"></i>
+                </div>
+                <div>
+                    <h1 class="text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-blue-600">
+                        LILY PAD TALKS
+                    </h1>
+                    <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">English Adventure</p>
+                </div>
+            </div>
+            
+            <nav class="flex items-center gap-8">
+                <button onclick="switchView('story')" id="nav-story" class="text-xl font-black transition-all pb-2 border-b-4 text-green-600 border-green-600">
+                    Story
+                </button>
+                <button onclick="switchView('practice')" id="nav-practice" class="text-xl font-black transition-all pb-2 border-b-4 text-slate-300 border-transparent hover:text-slate-500">
+                    Practice
+                </button>
+            </nav>
+        </div>
+    </header>
+
+  <!-- con01 배지 -->
+  <div style="position:fixed;bottom:14px;right:14px;z-index:9999;background:#16a34a;color:#fff;border-radius:999px;padding:5px 14px;font-size:10px;font-weight:900;box-shadow:0 2px 10px rgba(22,163,74,0.5);">📌 con01</div>
+
+    <!-- Main Content -->
+    <main class="pt-48 pb-60 px-10 max-w-5xl mx-auto relative z-10" id="main-content">
+        <!-- Content will be injected here by JS -->
+    </main>
+
+    <!-- Footer Navigation -->
+    <footer class="fixed bottom-0 left-0 right-0 p-12 z-50">
+        <div class="max-w-4xl mx-auto flex items-center justify-between gap-10">
+            <button onclick="prevStep()" class="w-20 h-20 bg-white border-2 border-slate-100 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-slate-800 transition-all shadow-2xl active:scale-90">
+                <i data-lucide="chevron-left" size="40"></i>
+            </button>
+
+            <div class="flex-1 flex gap-3 justify-center" id="step-indicators">
+                <!-- Dots injected by JS -->
+            </div>
+
+            <button onclick="nextStep()" class="w-20 h-20 bg-green-600 rounded-full flex items-center justify-center text-white hover:bg-green-700 transition-all shadow-2xl shadow-green-200 active:scale-90">
+                <i data-lucide="chevron-right" size="40"></i>
+            </button>
+        </div>
+    </footer>
+
+    <script>
+        const CONVERSATIONS = [
+            {
+                id: 'observation',
+                title: 'Observation',
+                koreanTitle: '관찰하기',
+                description: 'Look at the frog on the lily pad.',
+                dialogues: [
+                    { character: 'Quokka', text: 'Mr. Frog, why are you staying so still on the lily pad?', translation: '개구리님, 왜 연잎 위에서 그렇게 가만히 계세요?' },
+                    { character: 'Frog', text: 'I’m waiting for a delicious snack! If I move, the insects will fly away. I have to be very quiet and still.', translation: '맛있는 간식을 기다리고 있단다! 내가 움직이면 곤충들이 날아가 버리거든. 아주 조용하고 가만히 있어야 해.' }
+                ]
+            },
+            {
+                id: 'understanding',
+                title: 'Understanding Principles',
+                koreanTitle: '원리 이해',
+                description: 'Learn why the frog\'s tongue is sticky.',
+                dialogues: [
+                    { character: 'Quokka', text: 'Your tongue is so sticky! Why is it like that? What if it weren\'t sticky?', translation: '혀가 정말 끈적거려요! 왜 그런가요? 만약 끈적거리지 않는다면 어떨까요?' },
+                    { character: 'Frog', text: 'My tongue is like a piece of strong tape! If it weren\'t sticky, the insects would just fly away. The stickiness helps me catch them quickly with a "SNAP!"', translation: '내 혀는 강력한 테이프 조각 같단다! 만약 끈적거리지 않는다면 곤충들이 그냥 날아가 버릴 거야. 이 끈적임 덕분에 "덥석!" 하고 빠르게 잡을 수 있지.' }
+                ]
+            },
+            {
+                id: 'imagination',
+                title: 'Imagination',
+                koreanTitle: '상상하기',
+                description: 'What would you do if you were a frog?',
+                dialogues: [
+                    { character: 'Quokka', text: 'If I were a frog, I would wait for something else. What would you like to wait for on the lily pad?', translation: '제가 만약 개구리라면 다른 걸 기다릴 것 같아요. 연잎 위에서 무엇을 기다리고 싶으신가요?' },
+                    { character: 'Frog', text: 'That\'s a fun question! If I weren\'t hungry, I would wait for a beautiful butterfly to land on a flower, or I would wait for the cool raindrops to dance on the lily pad.', translation: '재밌는 질문이구나! 내가 배고프지 않다면, 꽃에 내려앉는 아름다운 나비를 기다리거나 연잎 위에서 춤추는 시원한 빗방울을 기다릴 거야.' }
+                ]
+            }
+        ];
+
+        let currentStep = 0;
+        let currentView = 'story'; // 'story' or 'practice'
+        let practiceState = {}; // Stores selected and shuffled words for current step
+
+        function speak(text, character) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            if (character === 'Quokka') {
+                utterance.pitch = 1.4; // Lively boy
+                utterance.rate = 1.0;
+            } else {
+                utterance.pitch = 0.8; // Deep frog
+                utterance.rate = 0.85;
+            }
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function toggleTranslation(id) {
+            const el = document.getElementById(id);
+            el.classList.toggle('hidden');
+        }
+
+        function switchView(view) {
+            currentView = view;
+            render();
+        }
+
+        function nextStep() {
+            currentStep = (currentStep + 1) % CONVERSATIONS.length;
+            currentView = 'story';
+            render();
+        }
+
+        function prevStep() {
+            currentStep = (currentStep - 1 + CONVERSATIONS.length) % CONVERSATIONS.length;
+            currentView = 'story';
+            render();
+        }
+
+        function initPractice(stepIdx, dialogueIdx) {
+            const text = CONVERSATIONS[stepIdx].dialogues[dialogueIdx].text.replace(/["'!?,.]/g, '');
+            const realWords = text.split(' ').filter(w => w.length > 0);
+            const shuffledWords = [...realWords].sort(() => Math.random() - 0.5);
+            
+            practiceState[`${stepIdx}-${dialogueIdx}`] = {
+                realWords,
+                shuffledWords,
+                selectedWords: [],
+                isCorrect: null
+            };
+            render();
+        }
+
+        function selectWord(stepIdx, dialogueIdx, wordIdx) {
+            const state = practiceState[`${stepIdx}-${dialogueIdx}`];
+            const word = state.shuffledWords.splice(wordIdx, 1)[0];
+            state.selectedWords.push(word);
+            render();
+        }
+
+        function deselectWord(stepIdx, dialogueIdx, wordIdx) {
+            const state = practiceState[`${stepIdx}-${dialogueIdx}`];
+            const word = state.selectedWords.splice(wordIdx, 1)[0];
+            state.shuffledWords.push(word);
+            render();
+        }
+
+        function checkPractice(stepIdx, dialogueIdx) {
+            const state = practiceState[`${stepIdx}-${dialogueIdx}`];
+            const result = state.selectedWords.map(w => w.toLowerCase()).join(' ') === state.realWords.map(w => w.toLowerCase()).join(' ');
+            state.isCorrect = result;
+            render();
+        }
+
+        function render() {
+            const main = document.getElementById('main-content');
+            const data = CONVERSATIONS[currentStep];
+
+            // Update Nav
+            document.getElementById('nav-story').className = `text-xl font-black transition-all pb-2 border-b-4 ${currentView === 'story' ? 'text-green-600 border-green-600' : 'text-slate-300 border-transparent hover:text-slate-500'}`;
+            document.getElementById('nav-practice').className = `text-xl font-black transition-all pb-2 border-b-4 ${currentView === 'practice' ? 'text-blue-600 border-blue-600' : 'text-slate-300 border-transparent hover:text-slate-500'}`;
+
+            // Header Icon Logic
+            const icons = ['eye', 'lightbulb', 'smile'];
+            const colors = ['text-blue-400', 'text-amber-400', 'text-purple-400'];
+
+            let html = `
+                <div class="animate-fade-in">
+                    <div class="mb-20 text-center">
+                        <div class="inline-flex items-center gap-3 px-6 py-2.5 bg-white border-2 border-slate-100 rounded-full text-sm font-black text-slate-500 mb-8 shadow-md">
+                            <i data-lucide="${icons[currentStep]}" class="${colors[currentStep]}" size="18"></i>
+                            Step ${currentStep + 1} • ${data.koreanTitle}
+                        </div>
+                        <h2 class="text-6xl font-black leading-tight mb-4 tracking-tighter text-slate-900">
+                            ${data.title}
+                        </h2>
+                        <p class="text-3xl text-slate-500 font-bold max-w-2xl mx-auto">
+                            ${data.description}
+                        </p>
+                    </div>
+            `;
+
+            if (currentView === 'story') {
+                html += `<div class="space-y-4">`;
+                data.dialogues.forEach((d, i) => {
+                    const isQuokka = d.character === 'Quokka';
+                    html += `
+                        <div class="flex gap-6 mb-10 ${isQuokka ? 'flex-row' : 'flex-row-reverse'} animate-fade-in" style="animation-delay: ${i * 0.2}s">
+                            <div class="shrink-0">
+                                <div class="w-20 h-20 rounded-3xl flex items-center justify-center shrink-0 ${isQuokka ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-600'} shadow-lg border-2 border-white">
+                                    <i data-lucide="${isQuokka ? 'smile' : 'sprout'}" size="48"></i>
+                                </div>
+                            </div>
+                            <div class="max-w-[85%] flex flex-col ${isQuokka ? 'items-start' : 'items-end'}">
+                                <div class="flex items-center gap-3 mb-2">
+                                    <span class="text-sm font-black uppercase tracking-widest text-slate-400">${d.character}</span>
+                                    <button onclick="speak('${d.text}', '${d.character}')" class="p-2 bg-white hover:bg-blue-50 rounded-full transition-all shadow-sm border border-slate-100 text-blue-500">
+                                        <i data-lucide="volume-2" size="24"></i>
+                                    </button>
+                                </div>
+                                <div onclick="toggleTranslation('trans-${i}')" class="p-8 rounded-[2rem] cursor-pointer transition-all duration-300 shadow-lg ${isQuokka ? 'bg-white border-2 border-slate-100 bubble-quokka' : 'bg-green-600 text-white bubble-frog'} hover:shadow-xl">
+                                    <p class="text-3xl leading-relaxed font-bold tracking-tight">${d.text}</p>
+                                    <p id="trans-${i}" class="hidden mt-4 text-xl border-t-2 pt-4 font-medium ${isQuokka ? 'border-slate-100 text-slate-500' : 'border-green-500 text-green-50'}">${d.translation}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += `
+                    <div class="pt-16 flex justify-center">
+                        <button onclick="switchView('practice')" class="group relative flex items-center gap-5 px-12 py-7 bg-blue-600 text-white rounded-[2.5rem] font-black text-2xl hover:bg-blue-700 transition-all shadow-2xl active:scale-95">
+                            <i data-lucide="play" class="fill-current" size="32"></i>
+                            Let's Practice!
+                            <i data-lucide="sparkles" class="absolute -top-4 -right-4 text-amber-400" size="28"></i>
+                        </button>
+                    </div>
+                </div>`;
+            } else {
+                html += `<div class="space-y-20">`;
+                data.dialogues.forEach((d, i) => {
+                    const key = `${currentStep}-${i}`;
+                    if (!practiceState[key]) {
+                        const text = d.text.replace(/["'!?,.]/g, '');
+                        const realWords = text.split(' ').filter(w => w.length > 0);
+                        practiceState[key] = {
+                            realWords,
+                            shuffledWords: [...realWords].sort(() => Math.random() - 0.5),
+                            selectedWords: [],
+                            isCorrect: null
+                        };
+                    }
+                    const state = practiceState[key];
+                    const isQuokka = d.character === 'Quokka';
+
+                    html += `
+                        <div class="bg-white/30 p-10 rounded-[3rem] border-2 border-white animate-fade-in" style="animation-delay: ${i * 0.2}s">
+                            <div class="flex items-center gap-5 mb-8">
+                                <div class="w-20 h-20 rounded-3xl flex items-center justify-center shrink-0 ${isQuokka ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-600'} shadow-lg border-2 border-white">
+                                    <i data-lucide="${isQuokka ? 'smile' : 'sprout'}" size="48"></i>
+                                </div>
+                                <p class="text-2xl font-bold italic text-slate-500">"${d.translation}"</p>
+                            </div>
+                            
+                            <div class="bg-white/50 backdrop-blur-sm border-2 border-white/80 rounded-[3rem] p-10 mt-8 shadow-inner">
+                                <div class="flex items-center gap-4 mb-8">
+                                    <i data-lucide="sparkles" class="text-amber-500" size="32"></i>
+                                    <h3 class="text-xl font-black uppercase tracking-[0.2em] text-slate-500">Sentence Builder</h3>
+                                </div>
+                                
+                                <div class="min-h-[160px] bg-white border-4 border-dashed border-slate-200 rounded-[2rem] p-8 flex flex-wrap gap-4 mb-10 items-center justify-center">
+                                    ${state.selectedWords.length > 0 ? 
+                                        state.selectedWords.map((w, wi) => `<button onclick="deselectWord(${currentStep}, ${i}, ${wi})" class="word-chip px-6 py-3 bg-blue-50 text-blue-700 rounded-2xl text-2xl font-black border-2 border-blue-200 shadow-sm">${w}</button>`).join('')
+                                        : `<span class="text-slate-300 text-2xl font-bold italic text-center w-full">Click words below to build the sentence!</span>`
+                                    }
+                                </div>
+
+                                <div class="flex flex-wrap gap-4 mb-12 justify-center">
+                                    ${state.shuffledWords.map((w, wi) => `<button onclick="selectWord(${currentStep}, ${currentStep === 10 ? 0 : i}, ${wi})" class="word-chip px-6 py-3 bg-white shadow-md border-2 border-slate-100 rounded-2xl text-2xl font-black hover:border-blue-400 hover:text-blue-600">${w}</button>`).join('')}
+                                </div>
+
+                                <div class="flex items-center justify-between">
+                                    <button onclick="initPractice(${currentStep}, ${i})" class="flex items-center gap-3 text-slate-400 hover:text-slate-600 transition-colors">
+                                        <i data-lucide="refresh-ccw" size="24"></i>
+                                        <span class="text-lg font-black">Reset Game</span>
+                                    </button>
+
+                                    <div class="flex items-center gap-8">
+                                        ${state.isCorrect !== null ? `<span class="text-2xl font-black ${state.isCorrect ? 'text-green-500' : 'text-red-500'}">${state.isCorrect ? 'GREAT JOB! ✨' : 'TRY AGAIN! 🔄'}</span>` : ''}
+                                        <button onclick="checkPractice(${currentStep}, ${i})" class="px-12 py-4 rounded-[2rem] font-black text-2xl transition-all shadow-xl ${state.selectedWords.length > 0 ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-slate-100 text-slate-300 cursor-not-allowed shadow-none'}">Check!</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            }
+
+            html += `</div>`;
+            main.innerHTML = html;
+
+            // Step Indicators
+            const indicators = document.getElementById('step-indicators');
+            indicators.innerHTML = CONVERSATIONS.map((_, idx) => `
+                <div class="h-3 transition-all duration-500 rounded-full ${idx === currentStep ? 'w-24 bg-green-600' : 'w-4 bg-slate-200'}"></div>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        // Initialize lucide once at the start
+        document.addEventListener('DOMContentLoaded', () => {
+            render();
+        });
+    </script>
+</body>
+</html>

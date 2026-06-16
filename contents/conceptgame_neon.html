@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Core - Concept Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #050505;
+            font-family: 'Inter', sans-serif;
+            color: white;
+            touch-action: none;
+        }
+        canvas {
+            display: block;
+        }
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s;
+        }
+        .interactive {
+            pointer-events: auto;
+        }
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            text-align: left;
+            pointer-events: none;
+        }
+        .glow-text {
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.7);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="hud" class="hidden">
+        <div class="text-xs uppercase tracking-widest text-cyan-400 opacity-70">Security Protocol</div>
+        <div id="score-display" class="text-3xl font-bold glow-text">SCORE: 0</div>
+    </div>
+
+    <div id="ui-layer">
+        <!-- Start Screen -->
+        <div id="start-screen" class="interactive text-center">
+            <h1 class="text-6xl font-black mb-4 tracking-tighter italic glow-text">NEON CORE</h1>
+            <p class="text-cyan-300 mb-8 opacity-80 uppercase tracking-widest text-sm">Protect the central core from glitches</p>
+            <button id="start-btn" class="px-8 py-3 bg-cyan-500 hover:bg-cyan-400 text-black font-bold rounded-full transition-all transform hover:scale-110 active:scale-95 shadow-[0_0_20px_rgba(6,182,212,0.5)]">
+                INITIALIZE SYSTEM
+            </button>
+            <p class="mt-6 text-xs text-white opacity-40 uppercase tracking-widest">Move mouse/touch to rotate shield</p>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over-screen" class="hidden interactive text-center">
+            <h2 class="text-5xl font-black mb-2 text-red-500 italic tracking-tighter">CORE BREACHED</h2>
+            <div id="final-score" class="text-2xl mb-8 font-mono">FINAL SCORE: 0</div>
+            <button id="restart-btn" class="px-8 py-3 border-2 border-white hover:bg-white hover:text-black transition-all font-bold rounded-full uppercase tracking-widest">
+                REBOOT SYSTEM
+            </button>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score-display');
+        const startScreen = document.getElementById('start-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const hud = document.getElementById('hud');
+        const finalScoreLabel = document.getElementById('final-score');
+
+        let width, height, centerX, centerY;
+        let score = 0;
+        let gameState = 'START'; // START, PLAYING, GAMEOVER
+        let particles = [];
+        let enemies = [];
+        let pulseRadius = 0;
+        let shieldAngle = 0;
+        const coreRadius = 30;
+        const shieldWidth = 0.8; // Radians
+        const shieldDistance = 60;
+
+        // Resize handler
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            centerX = width / 2;
+            centerY = height / 2;
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Input handling
+        function updateShieldAngle(e) {
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            shieldAngle = Math.atan2(clientY - centerY, clientX - centerX);
+        }
+
+        window.addEventListener('mousemove', updateShieldAngle);
+        window.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            updateShieldAngle(e);
+        }, { passive: false });
+
+        class Enemy {
+            constructor() {
+                const side = Math.floor(Math.random() * 4);
+                let x, y;
+                if (side === 0) { x = Math.random() * width; y = -20; }
+                else if (side === 1) { x = width + 20; y = Math.random() * height; }
+                else if (side === 2) { x = Math.random() * width; y = height + 20; }
+                else { x = -20; y = Math.random() * height; }
+
+                this.x = x;
+                this.y = y;
+                this.speed = 1.5 + (score / 100);
+                this.size = 8 + Math.random() * 6;
+                this.color = `hsl(${180 + Math.random() * 60}, 100%, 70%)`;
+                
+                const angle = Math.atan2(centerY - this.y, centerX - this.x);
+                this.vx = Math.cos(angle) * this.speed;
+                this.vy = Math.sin(angle) * this.speed;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Check collision with shield
+                const dist = Math.hypot(this.x - centerX, this.y - centerY);
+                const enemyAngle = Math.atan2(this.y - centerY, this.x - centerX);
+
+                // Shield collision
+                if (dist < shieldDistance + 10 && dist > shieldDistance - 10) {
+                    let diff = Math.abs(enemyAngle - shieldAngle);
+                    while (diff > Math.PI) diff = Math.abs(diff - 2 * Math.PI);
+
+                    if (diff < shieldWidth / 2) {
+                        this.destroy(true);
+                        return false;
+                    }
+                }
+
+                // Core collision
+                if (dist < coreRadius) {
+                    gameOver();
+                    return false;
+                }
+
+                return true;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(Math.atan2(this.vy, this.vx));
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = this.color;
+                ctx.fillStyle = this.color;
+                ctx.fillRect(-this.size/2, -this.size/4, this.size, this.size/2);
+                ctx.restore();
+            }
+
+            destroy(byShield) {
+                if (byShield) {
+                    score += 10;
+                    scoreDisplay.innerText = `SCORE: ${score}`;
+                    createExplosion(this.x, this.y, this.color);
+                }
+                const index = enemies.indexOf(this);
+                if (index > -1) enemies.splice(index, 1);
+            }
+        }
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                const angle = Math.random() * Math.PI * 2;
+                const force = Math.random() * 4;
+                this.vx = Math.cos(angle) * force;
+                this.vy = Math.sin(angle) * force;
+                this.alpha = 1;
+                this.life = 0.02 + Math.random() * 0.03;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.alpha -= this.life;
+                return this.alpha > 0;
+            }
+
+            draw() {
+                ctx.globalAlpha = this.alpha;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function createExplosion(x, y, color) {
+            for (let i = 0; i < 8; i++) {
+                particles.push(new Particle(x, y, color));
+            }
+        }
+
+        function spawnEnemy() {
+            if (gameState === 'PLAYING') {
+                enemies.push(new Enemy());
+                const nextSpawn = Math.max(200, 1000 - (score * 2));
+                setTimeout(spawnEnemy, nextSpawn);
+            }
+        }
+
+        function startGame() {
+            score = 0;
+            enemies = [];
+            particles = [];
+            scoreDisplay.innerText = `SCORE: 0`;
+            gameState = 'PLAYING';
+            startScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            hud.classList.remove('hidden');
+            spawnEnemy();
+        }
+
+        function gameOver() {
+            gameState = 'GAMEOVER';
+            hud.classList.add('hidden');
+            gameOverScreen.classList.remove('hidden');
+            finalScoreLabel.innerText = `FINAL SCORE: ${score}`;
+            createExplosion(centerX, centerY, '#ff0000');
+            // Shake effect
+            canvas.style.transform = 'translate(5px, 5px)';
+            setTimeout(() => canvas.style.transform = 'translate(-5px, -5px)', 50);
+            setTimeout(() => canvas.style.transform = 'translate(0, 0)', 100);
+        }
+
+        function draw() {
+            // Dark trail effect
+            ctx.fillStyle = 'rgba(5, 5, 5, 0.2)';
+            ctx.fillRect(0, 0, width, height);
+
+            // Draw Core
+            pulseRadius = coreRadius + Math.sin(Date.now() / 200) * 5;
+            const coreGrad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, pulseRadius);
+            coreGrad.addColorStop(0, '#fff');
+            coreGrad.addColorStop(0.3, '#0ff');
+            coreGrad.addColorStop(1, 'transparent');
+            
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = '#0ff';
+            ctx.fillStyle = coreGrad;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, pulseRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            if (gameState === 'PLAYING' || gameState === 'GAMEOVER') {
+                // Draw Shield
+                ctx.strokeStyle = '#0ff';
+                ctx.lineWidth = 4;
+                ctx.lineCap = 'round';
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#0ff';
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, shieldDistance, shieldAngle - shieldWidth/2, shieldAngle + shieldWidth/2);
+                ctx.stroke();
+
+                // Update & Draw Enemies
+                for (let i = enemies.length - 1; i >= 0; i--) {
+                    if (enemies[i].update()) {
+                        enemies[i].draw();
+                    }
+                }
+            }
+
+            // Update & Draw Particles
+            ctx.shadowBlur = 0;
+            for (let i = particles.length - 1; i >= 0; i--) {
+                if (particles[i].update()) {
+                    particles[i].draw();
+                } else {
+                    particles.splice(i, 1);
+                }
+            }
+
+            requestAnimationFrame(draw);
+        }
+
+        document.getElementById('start-btn').onclick = startGame;
+        document.getElementById('restart-btn').onclick = startGame;
+
+        draw();
+    </script>
+</body>
+</html>

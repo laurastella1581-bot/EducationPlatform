@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>쿼카의 숲속탐험대: 탐험 퀴즈</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nanum+Gothic', sans-serif;
+            background-color: #f0fdf4;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .option-btn:disabled {
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+  <!-- con01 서브헤더 -->
+  <div style="position:fixed;top:0;left:0;right:0;z-index:9999;background:#f0fdf4;border-bottom:2px solid #bbf7d0;padding:6px 16px;">
+    <div style="max-width:900px;margin:0 auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <span style="font-size:10px;font-weight:900;color:#166534;background:#dcfce7;border:1.5px solid #86efac;border-radius:999px;padding:2px 10px;flex-shrink:0;">📌 con01</span>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="con-btn" data-label="🔬 자연관찰놀이" onclick="showAllCon()" style="background:#fff;border:1.5px solid #86efac;border-radius:999px;padding:3px 11px;font-size:10px;font-weight:800;color:#166534;cursor:pointer;transition:all 0.2s;">🔬 자연관찰놀이</button>
+        <button class="con-btn" data-label="📖 국어 동화코너" onclick="showAllCon()" style="background:#fff;border:1.5px solid #86efac;border-radius:999px;padding:3px 11px;font-size:10px;font-weight:800;color:#166534;cursor:pointer;transition:all 0.2s;">📖 국어 동화코너</button>
+        <button class="con-btn" data-label="📚 English story book" onclick="showAllCon()" style="background:#fff;border:1.5px solid #86efac;border-radius:999px;padding:3px 11px;font-size:10px;font-weight:800;color:#166534;cursor:pointer;transition:all 0.2s;">📚 English story book</button>
+        <button class="con-btn" data-label="🗣️ 쿼카의 영어 Q&A 영어라운지" onclick="showAllCon()" style="background:#fff;border:1.5px solid #86efac;border-radius:999px;padding:3px 11px;font-size:10px;font-weight:800;color:#166534;cursor:pointer;transition:all 0.2s;">🗣️ 쿼카의 영어 Q&A 영어라운지</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    var conShown = false;
+    function showAllCon() {
+      conShown = !conShown;
+      document.querySelectorAll('.con-btn').forEach(function(b) {
+        if (conShown) { b.textContent = b.dataset.label + ' · con01'; b.style.background = '#16a34a'; b.style.color = '#fff'; }
+        else { b.textContent = b.dataset.label; b.style.background = '#fff'; b.style.color = '#166534'; }
+      });
+    }
+  </script>
+
+    <!-- Main Container -->
+    <div id="app" class="bg-white w-full max-w-2xl min-h-[600px] rounded-[2.5rem] shadow-2xl overflow-hidden relative flex flex-col">
+        <!-- Background Decorations -->
+        <div class="absolute top-0 left-0 p-8 opacity-10 pointer-events-none">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600 rotate-45"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8a7 7 0 0 1-10 10Z"/><path d="M19 2c-5.5 3-9 6.73-9 10"/></svg>
+        </div>
+        <div class="absolute bottom-0 right-0 p-8 opacity-10 pointer-events-none">
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600 -rotate-12"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8a7 7 0 0 1-10 10Z"/><path d="M19 2c-5.5 3-9 6.73-9 10"/></svg>
+        </div>
+
+        <!-- Screens Content -->
+        <div id="screen-container" class="relative z-10 flex-grow flex flex-col items-center justify-center p-6 lg:p-10">
+            <!-- Content will be injected here via JavaScript -->
+        </div>
+    </div>
+
+    <script>
+        const QUIZ_DATA = {
+            goldFrog: {
+                title: "반짝반짝 금개구리 탐험",
+                icon: "🐸",
+                questions: [
+                    {
+                        question: "금개구리의 등 옆에는 어떤 색깔의 줄이 두 줄 있을까요?",
+                        options: ["은색 줄", "금색(노란색) 줄", "빨간색 줄"],
+                        answer: 1,
+                        explanation: "금개구리는 등에 선명한 두 줄의 금색(노란색) 줄이 있는 것이 특징이에요!"
+                    },
+                    {
+                        question: "금개구리는 주로 어디에서 살까요?",
+                        options: ["깊은 바닷속", "건조한 사막", "논이나 습지"],
+                        answer: 2,
+                        explanation: "금개구리는 물이 고여 있는 논이나 습지, 연못가에서 주로 살아요."
+                    },
+                    {
+                        question: "금개구리는 우리나라에서 점점 사라지고 있는 '멸종위기 야생생물'일까요?",
+                        options: ["맞아요 (O)", "아니에요 (X)"],
+                        answer: 0,
+                        explanation: "네, 맞아요! 금개구리는 우리가 소중히 보호해야 할 멸종위기 야생생물 2급 동물입니다."
+                    }
+                ]
+            },
+            waterStrider: {
+                title: "물 위를 걷는 소금쟁이 탐험",
+                icon: "🦗",
+                questions: [
+                    {
+                        question: "소금쟁이가 가라앉지 않고 물 위를 걷는 비결은 무엇일까요?",
+                        options: ["다리에 있는 잔털과 기름기", "물 밑에 있는 신비한 발판", "날개가 커서"],
+                        answer: 0,
+                        explanation: "소금쟁이의 다리에는 아주 작은 털들이 있고 기름기가 있어서 물을 밀어내며 뜰 수 있어요!"
+                    },
+                    {
+                        question: "소금쟁이는 주로 무엇을 먹고 살까요?",
+                        options: ["물속의 미역", "물 위에 떨어진 곤충", "모래알"],
+                        answer: 1,
+                        explanation: "소금쟁이는 물 위에 떨어진 작은 곤충들의 진액을 빨아먹는 육식성 곤충이에요."
+                    },
+                    {
+                        question: "소금쟁이가 물 위에 떠 있을 수 있게 해주는 힘의 이름은 무엇일까요?",
+                        options: ["표면장력", "중력", "마찰력"],
+                        answer: 0,
+                        explanation: "물 입자들이 서로 당겨서 막을 만드는 '표면장력' 덕분에 소금쟁이가 물 위에 서 있을 수 있답니다."
+                    }
+                ]
+            }
+        };
+
+        let currentScreen = 'home';
+        let currentCategory = null;
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let isAnswered = false;
+
+        const container = document.getElementById('screen-container');
+
+        function render() {
+            container.className = "relative z-10 flex-grow flex flex-col items-center justify-center p-6 lg:p-10 fade-in";
+            
+            if (currentScreen === 'home') {
+                renderHome();
+            } else if (currentScreen === 'quiz') {
+                renderQuiz();
+            } else if (currentScreen === 'result') {
+                renderResult();
+            }
+        }
+
+        function renderHome() {
+            container.innerHTML = `
+                <div class="mb-6 bg-green-100 p-8 rounded-full shadow-inner">
+                    <span class="text-8xl">🐹</span>
+                </div>
+                <h1 class="text-3xl font-bold text-green-800 mb-2">쿼카의 숲속탐험대</h1>
+                <p class="text-gray-600 mb-8 text-center">안녕! 나는 탐험 대장 쿼카야.<br/>금개구리와 소금쟁이 친구들에 대해 알아볼까?</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-md">
+                    <button onclick="startQuiz('goldFrog')" class="flex items-center justify-between p-6 bg-yellow-50 border-2 border-yellow-200 rounded-2xl hover:bg-yellow-100 transition-all group">
+                        <div class="text-left">
+                            <span class="text-3xl mb-2 block">🐸</span>
+                            <span class="font-bold text-yellow-800">금개구리 탐험</span>
+                        </div>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-400 transition-transform group-hover:translate-x-2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                    </button>
+                    
+                    <button onclick="startQuiz('waterStrider')" class="flex items-center justify-between p-6 bg-blue-50 border-2 border-blue-200 rounded-2xl hover:bg-blue-100 transition-all group">
+                        <div class="text-left">
+                            <span class="text-3xl mb-2 block">🦗</span>
+                            <span class="font-bold text-blue-800">소금쟁이 탐험</span>
+                        </div>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-400 transition-transform group-hover:translate-x-2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                    </button>
+                </div>
+            `;
+        }
+
+        function renderQuiz() {
+            const quiz = QUIZ_DATA[currentCategory];
+            const currentQ = quiz.questions[currentQuestionIndex];
+            const progress = ((currentQuestionIndex + 1) / quiz.questions.length) * 100;
+
+            container.innerHTML = `
+                <div class="w-full max-w-2xl">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-2">
+                            <span class="text-2xl">${quiz.icon}</span>
+                            <h2 class="font-bold text-xl text-gray-800">${quiz.title}</h2>
+                        </div>
+                        <div class="text-sm font-medium text-gray-500">
+                            ${currentQuestionIndex + 1} / ${quiz.questions.length}
+                        </div>
+                    </div>
+
+                    <div class="w-full bg-gray-200 h-2 rounded-full mb-8">
+                        <div class="bg-green-500 h-2 rounded-full transition-all duration-300" style="width: ${progress}%"></div>
+                    </div>
+
+                    <div class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 mb-6">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-6 leading-relaxed">
+                            ${currentQ.question}
+                        </h3>
+                        
+                        <div id="options-container" class="space-y-3">
+                            ${currentQ.options.map((option, idx) => `
+                                <button onclick="handleOptionSelect(${idx})" class="option-btn w-full p-4 text-left rounded-xl border-2 transition-all flex items-center justify-between border-gray-100 hover:border-gray-300 bg-white">
+                                    <span>${option}</span>
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div id="explanation-container" class="hidden animate-in fade-in slide-in-from-top-4">
+                        <div class="bg-amber-50 border-l-4 border-amber-400 p-6 rounded-r-xl">
+                            <div class="flex items-start gap-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-amber-500 flex-shrink-0 mt-1"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                <div>
+                                    <p class="font-bold text-amber-800 mb-1">탐험 가이드</p>
+                                    <p class="text-amber-700 leading-relaxed">${currentQ.explanation}</p>
+                                </div>
+                            </div>
+                            <button onclick="nextQuestion()" class="mt-6 w-full py-4 bg-gray-800 text-white rounded-xl font-bold hover:bg-gray-700 transition-colors flex items-center justify-center gap-2">
+                                ${currentQuestionIndex + 1 === quiz.questions.length ? "결과 보기" : "다음 문제"}
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderResult() {
+            const quiz = QUIZ_DATA[currentCategory];
+            const isPerfect = score === quiz.questions.length;
+
+            container.innerHTML = `
+                <div class="flex flex-col items-center text-center">
+                    <div class="mb-6 relative">
+                        <div class="bg-yellow-100 p-10 rounded-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${isPerfect ? 'text-yellow-500' : 'text-gray-400'}"><path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"/><circle cx="12" cy="8" r="6"/></svg>
+                        </div>
+                        ${isPerfect ? `<div class="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold shadow-sm">MASTER</div>` : ''}
+                    </div>
+                    
+                    <h2 class="text-3xl font-bold text-gray-800 mb-2">탐험 완료!</h2>
+                    <p class="text-gray-600 mb-8 leading-relaxed">
+                        ${score} / ${quiz.questions.length} 문제를 맞혔어!<br/>
+                        ${isPerfect ? "와우! 넌 정말 똑똑한 숲속 탐험가구나!" : "조금만 더 하면 완벽한 탐험가가 될 수 있어!"}
+                    </p>
+
+                    <div class="flex flex-col gap-3 w-full max-w-xs">
+                        <button onclick="goHome()" class="w-full py-4 bg-green-600 text-white rounded-2xl font-bold hover:bg-green-700 transition-colors">
+                            다른 탐험하러 가기
+                        </button>
+                        <button onclick="startQuiz('${currentCategory}')" class="w-full py-4 bg-white border-2 border-gray-200 text-gray-700 rounded-2xl font-bold hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+                            다시 도전하기
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Logic Functions
+        function startQuiz(category) {
+            currentCategory = category;
+            currentQuestionIndex = 0;
+            score = 0;
+            isAnswered = false;
+            currentScreen = 'quiz';
+            render();
+        }
+
+        function handleOptionSelect(index) {
+            if (isAnswered) return;
+            isAnswered = true;
+            const quiz = QUIZ_DATA[currentCategory];
+            const currentQ = quiz.questions[currentQuestionIndex];
+            const isCorrect = index === currentQ.answer;
+
+            if (isCorrect) score++;
+
+            // Update UI for buttons
+            const buttons = document.querySelectorAll('.option-btn');
+            buttons.forEach((btn, i) => {
+                btn.disabled = true;
+                if (i === currentQ.answer) {
+                    btn.className = "option-btn w-full p-4 text-left rounded-xl border-2 transition-all flex items-center justify-between bg-green-50 border-green-500 text-green-700 font-bold";
+                    btn.innerHTML += `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`;
+                } else if (i === index && !isCorrect) {
+                    btn.className = "option-btn w-full p-4 text-left rounded-xl border-2 transition-all flex items-center justify-between bg-red-50 border-red-500 text-red-700 font-bold";
+                    btn.innerHTML += `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+                }
+            });
+
+            // Show explanation
+            document.getElementById('explanation-container').classList.remove('hidden');
+        }
+
+        function nextQuestion() {
+            const quiz = QUIZ_DATA[currentCategory];
+            if (currentQuestionIndex + 1 < quiz.questions.length) {
+                currentQuestionIndex++;
+                isAnswered = false;
+                render();
+            } else {
+                currentScreen = 'result';
+                render();
+            }
+        }
+
+        function goHome() {
+            currentScreen = 'home';
+            render();
+        }
+
+        // Initialize
+        window.onload = render;
+    </script>
+</body>
+</html>

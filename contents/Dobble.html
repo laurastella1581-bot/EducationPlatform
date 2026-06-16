@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>도블 공간지각 놀이 - 웹 버전</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;800&display=swap');
+        
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: #f8fafc;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .card-container {
+            perspective: 1000px;
+        }
+
+        .symbol-item {
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .symbol-item:active {
+            transform: scale(0.8);
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        .animate-shake {
+            animation: shake 0.3s ease-in-out;
+        }
+
+        @keyframes pop {
+            0% { transform: scale(0.5); opacity: 0; }
+            70% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .animate-pop {
+            animation: pop 0.4s ease-out;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div id="game-container" class="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden relative">
+        
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-indigo-600 to-violet-600 p-6 text-white">
+            <div class="flex justify-between items-center mb-1">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="zap" class="w-6 h-6 fill-yellow-400 text-yellow-400"></i>
+                    <h1 class="text-xl font-extrabold tracking-tight">도블 공간지각 놀이</h1>
+                </div>
+                <div id="timer-display" class="bg-white/20 px-3 py-1 rounded-full font-mono font-bold text-lg flex items-center gap-1">
+                    <i data-lucide="timer" class="w-4 h-4"></i>
+                    <span id="seconds">30</span>s
+                </div>
+            </div>
+            <p class="text-indigo-100 text-xs font-medium">똑같은 모양을 누구보다 빠르게 찾으세요!</p>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="h-1.5 bg-slate-100 w-full overflow-hidden">
+            <div id="progress-bar" class="h-full bg-indigo-500 transition-all duration-1000 ease-linear" style="width: 100%"></div>
+        </div>
+
+        <div class="p-6">
+            <!-- Start Screen -->
+            <div id="screen-start" class="text-center py-8">
+                <div class="mb-8 flex justify-center">
+                    <div class="relative">
+                        <div class="w-28 h-28 bg-indigo-50 rounded-full flex items-center justify-center text-5xl animate-bounce shadow-inner">
+                            🍦
+                        </div>
+                        <div class="absolute -top-2 -right-2 w-12 h-12 bg-pink-50 rounded-full flex items-center justify-center text-2xl shadow-sm">
+                            🍦
+                        </div>
+                    </div>
+                </div>
+                <h2 class="text-2xl font-extrabold text-slate-800 mb-4">놀이 준비 되셨나요?</h2>
+                <p class="text-slate-500 mb-10 leading-relaxed px-2 text-sm">
+                    두 카드에는 항상 <span class="text-indigo-600 font-bold underline">딱 하나</span>의 공통된 그림이 있습니다.<br>
+                    30초 동안 얼마나 많이 찾을 수 있는지 확인해보세요!
+                </p>
+                <button onclick="startGame()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-5 rounded-2xl transition-all shadow-lg active:scale-[0.98] text-lg flex items-center justify-center gap-2">
+                    놀이 시작하기
+                </button>
+            </div>
+
+            <!-- Playing Screen -->
+            <div id="screen-playing" class="hidden py-2 space-y-8">
+                <div class="flex flex-col gap-8 items-center">
+                    
+                    <!-- Card 1 -->
+                    <div id="card-left" class="w-48 h-48 bg-white border-4 border-slate-200 rounded-full shadow-inner flex flex-wrap items-center justify-center p-5 relative transition-all animate-pop">
+                        <!-- Symbols will be injected here -->
+                    </div>
+
+                    <div class="relative w-full flex items-center justify-center">
+                        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-100"></div></div>
+                        <span class="relative px-4 bg-white text-[10px] font-black text-slate-300 tracking-[0.2em] uppercase italic">Match the symbol</span>
+                    </div>
+
+                    <!-- Card 2 -->
+                    <div id="card-right" class="w-48 h-48 bg-white border-4 border-slate-200 rounded-full shadow-inner flex flex-wrap items-center justify-center p-5 relative transition-all animate-pop">
+                        <!-- Symbols will be injected here -->
+                    </div>
+                </div>
+
+                <div class="text-center">
+                    <div class="inline-block bg-slate-100 px-4 py-1.5 rounded-full text-xs font-bold text-slate-500 uppercase tracking-widest">
+                        Score: <span id="current-score" class="text-indigo-600">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- End Screen -->
+            <div id="screen-end" class="hidden text-center py-6">
+                <div class="w-20 h-20 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i data-lucide="trophy" class="w-10 h-10"></i>
+                </div>
+                <h2 class="text-3xl font-black text-slate-800 mb-2">대단해요!</h2>
+                <div class="bg-indigo-50 rounded-3xl p-8 mb-8 border border-indigo-100/50">
+                    <div class="text-xs text-indigo-400 font-extrabold mb-1 uppercase tracking-[0.2em]">Final Score</div>
+                    <div id="final-score" class="text-6xl font-black text-indigo-700">0</div>
+                    <p class="text-slate-500 mt-4 text-sm font-medium">
+                        아이의 공간지각력이 한 뼘 더 <br/>성장한 멋진 시간이었습니다!
+                    </p>
+                </div>
+                <button onclick="startGame()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-5 rounded-2xl transition-all shadow-lg active:scale-[0.98] flex items-center justify-center gap-2">
+                    <i data-lucide="refresh-cw" class="w-5 h-5"></i> 다시 도전하기
+                </button>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="bg-slate-50 p-4 border-t border-slate-100 flex items-center gap-4">
+            <div class="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
+                <i data-lucide="brain" class="w-5 h-5"></i>
+            </div>
+            <div class="text-[10px] text-slate-500 leading-normal font-medium">
+                <strong>학습 가이드:</strong> 아이가 공통된 그림을 손가락으로 가리키며 그림 이름을 큰 소리로 외치도록 격려해 주세요. 시각적 탐색 능력과 순발력이 향상됩니다.
+            </div>
+        </div>
+
+        <!-- Result Overlay -->
+        <div id="feedback-overlay" class="fixed inset-0 pointer-events-none flex items-center justify-center z-50 hidden">
+            <div id="feedback-icon" class="transition-all duration-300 scale-50 opacity-0">
+                <!-- Icon injected -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game Logic
+        const SYMBOLS = ['🍎', '🌟', '🌈', '🍦', '🎈', '🐱', '🚀', '⚽', '🎨', '🎁', '🍄', '🔔', '🌙', '🌻', '🦄', '🍕', '🍰', '🎸', '🚲', '💎', '🍀', '🐳', '🍭', '🧸', '🍪', '🐝'];
+        const P = 3; // Order of projective plane
+        let allCards = [];
+        let score = 0;
+        let timeLeft = 30;
+        let timerInterval = null;
+        let leftCardSymbols = [];
+        let rightCardSymbols = [];
+
+        // Generate cards using Finite Projective Plane logic
+        function generateCards() {
+            const cards = [];
+            const n = P;
+            for (let i = 0; i <= n; i++) {
+                let card = [0];
+                for (let j = 0; j < n; j++) card.push(1 + i * n + j);
+                cards.push(card);
+            }
+            for (let i = 0; i < n; i++) {
+                for (let j = 0; j < n; j++) {
+                    let card = [i + 1];
+                    for (let k = 0; k < n; k++) card.push(n + 1 + k * n + (i * k + j) % n);
+                    cards.push(card);
+                }
+            }
+            return cards;
+        }
+
+        function initGame() {
+            allCards = generateCards();
+            lucide.createIcons();
+        }
+
+        function pickNewCards() {
+            let idx1 = Math.floor(Math.random() * allCards.length);
+            let idx2 = Math.floor(Math.random() * allCards.length);
+            while (idx1 === idx2) idx2 = Math.floor(Math.random() * allCards.length);
+
+            leftCardSymbols = allCards[idx1].map(id => SYMBOLS[id]).sort(() => Math.random() - 0.5);
+            rightCardSymbols = allCards[idx2].map(id => SYMBOLS[id]).sort(() => Math.random() - 0.5);
+
+            renderCards();
+        }
+
+        function renderCards() {
+            const leftEl = document.getElementById('card-left');
+            const rightEl = document.getElementById('card-right');
+
+            leftEl.innerHTML = '';
+            rightEl.innerHTML = '';
+
+            // Re-trigger animation
+            leftEl.classList.remove('animate-pop');
+            rightEl.classList.remove('animate-pop');
+            void leftEl.offsetWidth; // trigger reflow
+            leftEl.classList.add('animate-pop');
+            rightEl.classList.add('animate-pop');
+
+            leftCardSymbols.forEach(sym => {
+                const div = document.createElement('div');
+                div.className = 'w-1/2 h-1/2 flex items-center justify-center text-4xl cursor-pointer symbol-item';
+                div.innerText = sym;
+                div.onclick = () => checkMatch(sym);
+                leftEl.appendChild(div);
+            });
+
+            rightCardSymbols.forEach(sym => {
+                const div = document.createElement('div');
+                div.className = 'w-1/2 h-1/2 flex items-center justify-center text-4xl cursor-pointer symbol-item';
+                div.innerText = sym;
+                div.onclick = () => checkMatch(sym);
+                rightEl.appendChild(div);
+            });
+        }
+
+        function checkMatch(symbol) {
+            const isMatch = leftCardSymbols.includes(symbol) && rightCardSymbols.includes(symbol);
+            
+            if (isMatch) {
+                score++;
+                document.getElementById('current-score').innerText = score;
+                showFeedback(true);
+                pickNewCards();
+            } else {
+                showFeedback(false);
+                document.getElementById('game-container').classList.add('animate-shake');
+                setTimeout(() => document.getElementById('game-container').classList.remove('animate-shake'), 300);
+            }
+        }
+
+        function showFeedback(isCorrect) {
+            const overlay = document.getElementById('feedback-overlay');
+            const iconWrap = document.getElementById('feedback-icon');
+            overlay.classList.remove('hidden');
+            
+            iconWrap.innerHTML = isCorrect 
+                ? '<i data-lucide="check-circle-2" class="w-32 h-32 text-green-500 shadow-2xl"></i>'
+                : '<i data-lucide="x-circle" class="w-32 h-32 text-red-500 shadow-2xl"></i>';
+            
+            lucide.createIcons();
+            
+            iconWrap.style.opacity = '1';
+            iconWrap.style.transform = 'scale(1)';
+            
+            setTimeout(() => {
+                iconWrap.style.opacity = '0';
+                iconWrap.style.transform = 'scale(0.5)';
+                setTimeout(() => overlay.classList.add('hidden'), 200);
+            }, 300);
+        }
+
+        function startGame() {
+            score = 0;
+            timeLeft = 30;
+            document.getElementById('current-score').innerText = '0';
+            document.getElementById('seconds').innerText = '30';
+            document.getElementById('progress-bar').style.width = '100%';
+            
+            document.getElementById('screen-start').classList.add('hidden');
+            document.getElementById('screen-end').classList.add('hidden');
+            document.getElementById('screen-playing').classList.remove('hidden');
+            
+            pickNewCards();
+            
+            if(timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('seconds').innerText = timeLeft;
+                document.getElementById('progress-bar').style.width = (timeLeft / 30 * 100) + '%';
+                
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function endGame() {
+            clearInterval(timerInterval);
+            document.getElementById('screen-playing').classList.add('hidden');
+            document.getElementById('screen-end').classList.remove('hidden');
+            document.getElementById('final-score').innerText = score;
+        }
+
+        window.onload = initGame;
+    </script>
+</body>
+</html>
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>도블과 함께하는 통합놀이</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Gaegu', cursive;
+            background-color: #fdfbf7;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        .play-card {
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .play-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .view-section {
+            display: none;
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        .view-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .dobble-bounce {
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* 보석 찾기 지도 스타일 */
+        .adventure-map {
+            background: linear-gradient(to bottom, #e0f2f1 0%, #b2dfdb 100%);
+            border: 8px solid #80cbc4;
+            position: relative;
+            background-image: radial-gradient(#ffffff 2px, transparent 2px);
+            background-size: 30px 30px;
+        }
+
+        .jewel {
+            position: absolute;
+            font-size: 2.5rem;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            filter: drop-shadow(0 0 8px rgba(255,255,255,0.9));
+            z-index: 10;
+        }
+
+        .jewel:hover {
+            transform: scale(1.4) rotate(15deg);
+        }
+
+        .jewel.found {
+            transform: scale(0);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .clue-box {
+            border-left: 8px solid #f43f5e;
+            background: #fff1f2;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div id="app" class="max-w-5xl mx-auto">
+        
+        <header class="text-center mb-12">
+            <div class="inline-block dobble-bounce mb-4">
+                <svg width="100" height="100" viewBox="0 0 100 100">
+                    <circle cx="50" cy="55" r="40" fill="#A67C52" />
+                    <circle cx="50" cy="45" r="35" fill="#C69C72" />
+                    <circle cx="30" cy="25" r="10" fill="#A67C52" />
+                    <circle cx="70" cy="25" r="10" fill="#A67C52" />
+                    <circle cx="40" cy="40" r="4" fill="#333" />
+                    <circle cx="60" cy="40" r="4" fill="#333" />
+                    <path d="M 45 50 Q 50 55 55 50" fill="none" stroke="#333" stroke-width="2" />
+                    <ellipse cx="50" cy="48" rx="5" ry="3" fill="#333" />
+                </svg>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-bold text-orange-800 mb-2">통합놀이 코너</h1>
+            <p class="text-xl text-orange-600">도블과 함께 8가지 지능을 깨워보아요!</p>
+        </header>
+
+        <div id="main-menu" class="view-section active">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div onclick="openPlay('story')" class="play-card bg-rose-100 p-8 rounded-3xl border-4 border-rose-200 cursor-pointer text-center">
+                    <div class="text-5xl mb-4">📖</div>
+                    <h2 class="text-2xl font-bold text-rose-800 mb-2">[스토리] 도블의 모험</h2>
+                    <p class="text-rose-600">"도블과 함께 떠나는 8가지 여행"</p>
+                </div>
+                <div onclick="openPlay('coding')" class="play-card bg-blue-100 p-8 rounded-3xl border-4 border-blue-200 cursor-pointer text-center">
+                    <div class="text-5xl mb-4">💻</div>
+                    <h2 class="text-2xl font-bold text-blue-800 mb-2">[코딩] 도블의 코드 놀이</h2>
+                    <p class="text-blue-600">"도블을 움직이는 마법의 명령어"</p>
+                </div>
+                <div onclick="openPlay('quiz')" class="play-card bg-yellow-100 p-8 rounded-3xl border-4 border-yellow-200 cursor-pointer text-center">
+                    <div class="text-5xl mb-4">💡</div>
+                    <h2 class="text-2xl font-bold text-yellow-800 mb-2">[논리] 도블의 퀴즈 쇼</h2>
+                    <p class="text-yellow-600">"도블과 함께하는 두뇌 깨우기"</p>
+                </div>
+                <div onclick="openPlay('diary')" class="play-card bg-emerald-100 p-8 rounded-3xl border-4 border-emerald-200 cursor-pointer text-center">
+                    <div class="text-5xl mb-4">✍️</div>
+                    <h2 class="text-2xl font-bold text-emerald-800 mb-2">[감성] 도블의 마음 일기</h2>
+                    <p class="text-emerald-600">"도블에게 털어놓는 내 하루"</p>
+                </div>
+            </div>
+        </div>
+
+        <section id="play-content" class="bg-white p-8 rounded-3xl shadow-xl border-2 border-orange-100 min-h-[600px] hidden">
+            <button onclick="goBack()" class="mb-6 text-orange-500 font-bold flex items-center hover:text-orange-700">
+                ← 메인 메뉴로 돌아가기
+            </button>
+
+            <!-- 스토리 뷰 (전략형 게임) -->
+            <div id="view-story" class="view-section text-center">
+                <h2 class="text-3xl font-bold text-rose-600 mb-4">📖 도블의 보석 탐험 전략 게임</h2>
+                
+                <div id="story-intro">
+                    <p class="text-xl mb-6">"그냥 클릭하는 게 아니야! 내가 주는 힌트를 듣고 어떤 보석인지 맞춰봐!"</p>
+                    <button onclick="startAdventure()" class="bg-rose-500 text-white px-8 py-3 rounded-full text-xl hover:bg-rose-600 shadow-lg">미션 시작!</button>
+                </div>
+
+                <div id="adventure-game" class="hidden">
+                    <!-- 힌트 박스 -->
+                    <div class="clue-box p-6 rounded-2xl mb-6 text-left">
+                        <p class="text-rose-500 font-bold text-sm uppercase mb-1">도블의 힌트</p>
+                        <h3 id="current-clue" class="text-2xl font-bold text-rose-800 italic">"힌트가 여기에 나타납니다."</h3>
+                    </div>
+
+                    <div class="flex justify-between items-center mb-4 text-rose-700 font-bold">
+                        <span>모은 보석: <span id="found-count">0</span> / 8</span>
+                        <span id="feedback-msg" class="text-orange-500">지도를 탐험하세요!</span>
+                    </div>
+
+                    <div class="adventure-map w-full h-[450px] rounded-3xl overflow-hidden shadow-inner relative">
+                        <div id="map-content"></div>
+                        <!-- 도블 가이드 -->
+                        <div class="absolute bottom-4 right-4 pointer-events-none">
+                            <div class="bg-white px-3 py-1 rounded-full text-xs shadow-sm mb-2 text-rose-600 font-bold">지도를 클릭해봐!</div>
+                            <svg width="60" height="60" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="#A67C52" />
+                                <circle cx="35" cy="40" r="5" fill="#333" />
+                                <circle cx="65" cy="40" r="5" fill="#333" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="adventure-result" class="hidden py-10">
+                    <div class="text-8xl mb-6">🌈</div>
+                    <h3 class="text-4xl font-bold text-orange-600 mb-4">미션 완료! 당신은 지능 박사!</h3>
+                    <p class="text-xl text-gray-600 mb-8">도블이 8가지 지능의 힘을 모두 합쳐 커다란 무지개를 만들었어요!</p>
+                    <button onclick="goBack()" class="bg-orange-500 text-white px-10 py-4 rounded-full text-2xl hover:bg-orange-600 transition shadow-xl">축하 파티하러 가기</button>
+                </div>
+            </div>
+
+            <!-- 코딩 뷰 -->
+            <div id="view-coding" class="view-section text-center">
+                <h2 class="text-3xl font-bold text-blue-600 mb-6">💻 도블의 코드 놀이</h2>
+                <div class="flex justify-center gap-4 mb-8">
+                    <button onclick="moveDobble('left')" class="bg-blue-500 text-white p-4 rounded-xl">왼쪽</button>
+                    <button onclick="moveDobble('jump')" class="bg-blue-500 text-white p-4 rounded-xl">점프</button>
+                    <button onclick="moveDobble('right')" class="bg-blue-500 text-white p-4 rounded-xl">오른쪽</button>
+                </div>
+                <div class="w-full h-40 bg-slate-100 rounded-2xl relative">
+                    <div id="dobble-player" class="absolute bottom-4 left-1/2 -translate-x-1/2 transition-all">
+                        <svg width="50" height="50" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#A67C52"/><circle cx="35" cy="40" r="5" fill="#333"/><circle cx="65" cy="40" r="5" fill="#333"/></svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 퀴즈 뷰 -->
+            <div id="view-quiz" class="view-section text-center">
+                <h2 class="text-3xl font-bold text-yellow-600 mb-6">💡 도블의 퀴즈 쇼</h2>
+                <div class="bg-yellow-50 p-8 rounded-2xl">
+                    <p class="text-2xl font-bold mb-6">도블이 가장 행복할 때는?</p>
+                    <button onclick="checkQuiz(true)" class="bg-white p-4 w-full rounded-xl border-2 mb-4">친구들과 함께 배울 때</button>
+                    <button onclick="checkQuiz(false)" class="bg-white p-4 w-full rounded-xl border-2">혼자서만 놀 때</button>
+                    <p id="quiz-feedback" class="mt-4 font-bold"></p>
+                </div>
+            </div>
+
+            <!-- 일기 뷰 -->
+            <div id="view-diary" class="view-section text-center">
+                <h2 class="text-3xl font-bold text-emerald-600 mb-6">✍️ 도블의 마음 일기</h2>
+                <textarea id="diary-input" class="w-full h-40 p-4 border-4 border-emerald-100 rounded-2xl text-xl" placeholder="오늘 어떤 지능을 쓴 것 같나요?"></textarea>
+                <button onclick="saveDiary()" class="mt-4 bg-emerald-500 text-white px-10 py-3 rounded-full">저장하기</button>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        function openPlay(type) {
+            document.getElementById('main-menu').classList.replace('active', 'hidden');
+            document.getElementById('play-content').classList.remove('hidden');
+            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+            document.getElementById('view-' + type).classList.add('active');
+            if(type === 'story') resetStoryGame();
+        }
+
+        function goBack() {
+            document.getElementById('play-content').classList.add('hidden');
+            document.getElementById('main-menu').classList.replace('hidden', 'active');
+        }
+
+        // --- 전략적 보석 찾기 로직 ---
+        const jewelsData = [
+            { id: 0, emoji: '💎', name: '언어 보석', hint: '"말하기와 글쓰기를 좋아하는 보석은 어디 있을까?"', top: '15%', left: '10%' },
+            { id: 1, emoji: '🧮', name: '논리 보석', top: '10%', left: '80%', hint: '"숫자 계산과 퍼즐 풀기를 좋아하는 보석은?"' },
+            { id: 2, emoji: '🎨', name: '시각 보석', top: '45%', left: '15%', hint: '"그림 그리기와 길 찾기를 잘하는 보석은?"' },
+            { id: 3, emoji: '🏃', name: '신체 보석', top: '80%', left: '30%', hint: '"운동과 춤추기를 좋아하는 보석을 찾아줘!"' },
+            { id: 4, emoji: '🎵', name: '음악 보석', top: '70%', left: '80%', hint: '"노래와 리듬을 사랑하는 보석은 어디에?"' },
+            { id: 5, emoji: '🤝', name: '관계 보석', top: '40%', left: '60%', hint: '"친구를 도와주고 함께 노는 걸 좋아하는 보석은?"' },
+            { id: 6, emoji: '🧘', name: '성찰 보석', top: '15%', left: '45%', hint: '"내 마음을 조용히 들여다보는 보석은 어디 있을까?"' },
+            { id: 7, emoji: '🌿', name: '자연 보석', top: '65%', left: '45%', hint: '"동물과 식물을 사랑하는 보석을 찾아봐!"' }
+        ];
+
+        let currentTargetIdx = 0;
+
+        function resetStoryGame() {
+            currentTargetIdx = 0;
+            document.getElementById('story-intro').classList.remove('hidden');
+            document.getElementById('adventure-game').classList.add('hidden');
+            document.getElementById('adventure-result').classList.add('hidden');
+            document.getElementById('map-content').innerHTML = '';
+            document.getElementById('found-count').innerText = '0';
+        }
+
+        function startAdventure() {
+            document.getElementById('story-intro').classList.add('hidden');
+            document.getElementById('adventure-game').classList.remove('hidden');
+            createJewels();
+            updateClue();
+        }
+
+        function createJewels() {
+            const map = document.getElementById('map-content');
+            jewelsData.forEach((j, index) => {
+                const el = document.createElement('div');
+                el.className = 'jewel';
+                el.innerText = j.emoji;
+                el.style.top = j.top;
+                el.style.left = j.left;
+                el.onclick = () => handleJewelClick(index);
+                el.id = 'jewel-' + index;
+                map.appendChild(el);
+            });
+        }
+
+        function updateClue() {
+            if(currentTargetIdx < jewelsData.length) {
+                document.getElementById('current-clue').innerText = jewelsData[currentTargetIdx].hint;
+            }
+        }
+
+        function handleJewelClick(index) {
+            const feedback = document.getElementById('feedback-msg');
+            
+            if(index === currentTargetIdx) {
+                // 정답 클릭
+                const el = document.getElementById('jewel-' + index);
+                el.classList.add('found');
+                currentTargetIdx++;
+                document.getElementById('found-count').innerText = currentTargetIdx;
+                feedback.innerText = "✨ 정답! 보석을 얻었어요!";
+                feedback.style.color = "#f97316";
+                
+                if(currentTargetIdx === jewelsData.length) {
+                    setTimeout(() => {
+                        document.getElementById('adventure-game').classList.add('hidden');
+                        document.getElementById('adventure-result').classList.remove('hidden');
+                    }, 800);
+                } else {
+                    updateClue();
+                }
+            } else {
+                // 오답 클릭
+                feedback.innerText = "😅 그 보석이 아닌 것 같아요! 다시 생각해보세요.";
+                feedback.style.color = "#94a3b8";
+            }
+        }
+
+        // --- 기타 기능 ---
+        let posX = 50;
+        function moveDobble(action) {
+            const p = document.getElementById('dobble-player');
+            if(action === 'left') posX = Math.max(10, posX-10);
+            if(action === 'right') posX = Math.min(90, posX+10);
+            if(action === 'jump') { p.style.bottom = '80px'; setTimeout(()=> p.style.bottom = '16px', 300); }
+            p.style.left = posX + '%';
+        }
+
+        function checkQuiz(correct) {
+            const f = document.getElementById('quiz-feedback');
+            f.innerText = correct ? "딩동댕! 정답입니다!" : "다시 생각해보세요!";
+            f.style.color = correct ? "orange" : "gray";
+        }
+
+        function saveDiary() { alert("저장되었습니다!"); goBack(); }
+    </script>
+</body>
+</html>

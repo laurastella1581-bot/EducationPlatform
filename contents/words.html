@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🐸 금개구리 & 소금쟁이 — 단어 맞추기 말하기 게임</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
+    * { font-family: 'Noto Sans KR', sans-serif; box-sizing: border-box; }
+    body { margin: 0; background: #f0f9ff; color: #0f172a; }
+
+    /* 플래시카드 flip */
+    .card-wrapper { perspective: 800px; }
+    .card-inner {
+      position: relative; width: 100%; height: 210px;
+      transition: transform 0.55s cubic-bezier(.4,0,.2,1);
+      transform-style: preserve-3d;
+    }
+    .card-inner.flipped { transform: rotateY(180deg); }
+    .card-front, .card-back {
+      position: absolute; inset: 0; border-radius: 1.5rem;
+      backface-visibility: hidden; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    }
+    .card-back { transform: rotateY(180deg); }
+
+    /* 파닉스 카드 flip */
+    .phonics-card-wrapper { perspective: 700px; }
+    .phonics-card-inner {
+      position: relative; width: 100%; height: 260px;
+      transition: transform 0.5s cubic-bezier(.4,0,.2,1);
+      transform-style: preserve-3d;
+    }
+    .phonics-card-inner.flipped { transform: rotateY(180deg); }
+    .phonics-front, .phonics-back {
+      position: absolute; inset: 0; border-radius: 1.5rem;
+      backface-visibility: hidden; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 8px;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.12);
+    }
+    .phonics-back { transform: rotateY(180deg); }
+
+    .mode-btn { cursor: pointer; border: none; transition: all 0.18s; }
+    .cat-btn   { cursor: pointer; border: none; transition: all 0.18s; }
+    .letter-btn { cursor: pointer; border: none; transition: all 0.15s; }
+    .letter-btn:hover { transform: scale(1.12); }
+
+    @keyframes pop { 0%{transform:scale(0.82);opacity:0} 100%{transform:scale(1);opacity:1} }
+    .pop-in { animation: pop 0.28s ease-out; }
+    @keyframes correct { 0%,100%{transform:scale(1)} 50%{transform:scale(1.06)} }
+    .correct-flash { animation: correct 0.38s ease; }
+    @keyframes wrong { 0%,100%{transform:translateX(0)} 25%,75%{transform:translateX(-6px)} 50%{transform:translateX(6px)} }
+    .wrong-flash { animation: wrong 0.32s ease; }
+    @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+    .bounce { animation: bounce 0.4s ease; }
+
+    ::-webkit-scrollbar { height: 4px; width: 4px; }
+    ::-webkit-scrollbar-thumb { background: #bae6fd; border-radius: 2px; }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- 헤더 -->
+  <header style="background:linear-gradient(135deg,#0891b2,#0e7490);padding:13px 16px;position:sticky;top:0;z-index:10;box-shadow:0 2px 12px rgba(0,0,0,0.2);">
+    <div style="display:flex;align-items:center;justify-content:space-between;max-width:820px;margin:0 auto;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:22px;">🎯</span>
+        <div>
+          <div style="font-size:13px;font-weight:900;color:#fff;">단어 맞추기 말하기 게임</div>
+          <div style="font-size:9px;color:rgba(255,255,255,0.7);letter-spacing:1px;">🐸 금개구리 & 소금쟁이의 연못 이야기</div>
+        </div>
+      </div>
+      <div id="score-badge" style="background:rgba(255,255,255,0.2);border-radius:999px;padding:4px 12px;font-size:12px;font-weight:900;color:#fff;display:none;align-items:center;gap:4px;">
+        ⭐ <span id="score-num">0</span>점
+      </div>
+    </div>
+  </header>
+
+  <!-- con01 서브헤더 -->
+  <div style="background:#f0fdf4;border-bottom:2px solid #bbf7d0;padding:8px 16px;">
+    <div style="max-width:820px;margin:0 auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <span style="font-size:10px;font-weight:900;color:#166534;background:#dcfce7;border:1.5px solid #86efac;border-radius:999px;padding:2px 10px;flex-shrink:0;">📌 con01</span>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="con-btn" data-label="🔬 자연관찰놀이" onclick="showAllCon()" style="background:#fff;border:1.5px solid #86efac;border-radius:999px;padding:3px 11px;font-size:10px;font-weight:800;color:#166534;cursor:pointer;transition:all 0.2s;">🔬 자연관찰놀이</button>
+        <button class="con-btn" data-label="📖 국어 동화코너" onclick="showAllCon()" style="background:#fff;border:1.5px solid #86efac;border-radius:999px;padding:3px 11px;font-size:10px;font-weight:800;color:#166534;cursor:pointer;transition:all 0.2s;">📖 국어 동화코너</button>
+        <button class="con-btn" data-label="📚 English story book" onclick="showAllCon()" style="background:#fff;border:1.5px solid #86efac;border-radius:999px;padding:3px 11px;font-size:10px;font-weight:800;color:#166534;cursor:pointer;transition:all 0.2s;">📚 English story book</button>
+        <button class="con-btn" data-label="🗣️ 쿼카의 영어 Q&A 영어라운지" onclick="showAllCon()" style="background:#fff;border:1.5px solid #86efac;border-radius:999px;padding:3px 11px;font-size:10px;font-weight:800;color:#166534;cursor:pointer;transition:all 0.2s;">🗣️ 쿼카의 영어 Q&A 영어라운지</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    var conShown = false;
+    function showAllCon() {
+      conShown = !conShown;
+      document.querySelectorAll('.con-btn').forEach(function(b) {
+        if (conShown) {
+          b.textContent = b.dataset.label + ' · con01';
+          b.style.background = '#16a34a';
+          b.style.color = '#fff';
+        } else {
+          b.textContent = b.dataset.label;
+          b.style.background = '#fff';
+          b.style.color = '#166534';
+        }
+      });
+    }
+  </script>
+
+  <main style="max-width:820px;margin:0 auto;padding:13px 12px 20px;">
+
+    <!-- ══ 모드 선택 (3개) ══ -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:12px;">
+      <button id="btn-phonics" onclick="setMode('phonics')" class="mode-btn"
+              style="background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border-radius:11px;padding:10px 6px;font-size:12px;font-weight:900;box-shadow:0 4px 12px rgba(124,58,237,0.3);">
+        🔤 파닉스 게임
+      </button>
+      <button id="btn-vocab" onclick="setMode('vocab')" class="mode-btn"
+              style="background:#fff;border:2px solid #bae6fd;color:#0e7490;border-radius:11px;padding:10px 6px;font-size:12px;font-weight:900;">
+        📖 단어장 보기
+      </button>
+      <button id="btn-game" onclick="setMode('game')" class="mode-btn"
+              style="background:#fff;border:2px solid #bae6fd;color:#0e7490;border-radius:11px;padding:10px 6px;font-size:12px;font-weight:900;">
+        🎮 맞추기 게임
+      </button>
+    </div>
+
+    <!-- 카테고리 탭 (단어장·맞추기 게임 모드에서만) -->
+    <div id="cat-tabs" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:13px;scrollbar-width:thin;">
+      <button id="cat-pond"     onclick="setCategory('pond')"     class="cat-btn" style="flex-shrink:0;background:#f1f5f9;color:#334155;border-radius:999px;padding:5px 12px;font-size:11px;font-weight:800;">🐸 연못탐험</button>
+      <button id="cat-animals"  onclick="setCategory('animals')"  class="cat-btn" style="flex-shrink:0;background:linear-gradient(135deg,#0891b2,#0e7490);color:#fff;border-radius:999px;padding:5px 12px;font-size:11px;font-weight:800;">🐾 동물</button>
+      <button id="cat-colors"   onclick="setCategory('colors')"   class="cat-btn" style="flex-shrink:0;background:#f1f5f9;color:#334155;border-radius:999px;padding:5px 12px;font-size:11px;font-weight:800;">🎨 색깔</button>
+      <button id="cat-food"     onclick="setCategory('food')"     class="cat-btn" style="flex-shrink:0;background:#f1f5f9;color:#334155;border-radius:999px;padding:5px 12px;font-size:11px;font-weight:800;">🍎 음식</button>
+      <button id="cat-nature"   onclick="setCategory('nature')"   class="cat-btn" style="flex-shrink:0;background:#f1f5f9;color:#334155;border-radius:999px;padding:5px 12px;font-size:11px;font-weight:800;">🌿 자연</button>
+      <button id="cat-body"     onclick="setCategory('body')"     class="cat-btn" style="flex-shrink:0;background:#f1f5f9;color:#334155;border-radius:999px;padding:5px 12px;font-size:11px;font-weight:800;">👁️ 신체</button>
+      <button id="cat-numbers"  onclick="setCategory('numbers')"  class="cat-btn" style="flex-shrink:0;background:#f1f5f9;color:#334155;border-radius:999px;padding:5px 12px;font-size:11px;font-weight:800;">🔢 숫자</button>
+    </div>
+
+    <!-- ══════════════════════════
+         파닉스 게임 영역
+    ══════════════════════════ -->
+    <div id="phonics-area" style="display:block;">
+
+      <!-- Starfall 링크 버튼 -->
+      <a href="https://www.starfall.com/h/ltr-classic/" target="_blank" rel="noopener noreferrer"
+         style="display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#1e40af,#1d4ed8);border-radius:14px;padding:13px 18px;margin-bottom:13px;text-decoration:none;box-shadow:0 4px 16px rgba(30,64,175,0.35);transition:all 0.2s;"
+         onmouseenter="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(30,64,175,0.45)'"
+         onmouseleave="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 16px rgba(30,64,175,0.35)'">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:42px;height:42px;background:rgba(255,255,255,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;">⭐</div>
+          <div>
+            <div style="font-size:15px;font-weight:900;color:#fff;letter-spacing:0.5px;">Starfall</div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.75);">파닉스 전문 학습 사이트</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.2);border-radius:999px;padding:6px 14px;">
+          <span style="font-size:11px;font-weight:800;color:#fff;">입장하기</span>
+          <span style="font-size:14px;color:#fff;">→</span>
+        </div>
+      </a>
+
+      <!-- 알파벳 그리드 -->
+      <div id="letter-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:6px;margin-bottom:14px;"></div>
+
+      <!-- 파닉스 카드 -->
+      <div id="phonics-card-section" style="display:none;">
+        <div class="phonics-card-wrapper" style="margin-bottom:12px;cursor:pointer;" onclick="flipPhonicsCard()">
+          <div id="phonics-card" class="phonics-card-inner">
+            <!-- 앞면: 알파벳 + 파닉스 -->
+            <div class="phonics-front" style="background:linear-gradient(145deg,#f3e8ff,#e9d5ff);border:2.5px solid #c4b5fd;">
+              <div id="ph-letter" style="font-size:80px;font-weight:900;color:#5b21b6;line-height:1;user-select:none;"></div>
+              <div id="ph-sound" style="font-size:16px;font-weight:800;color:#6d28d9;background:rgba(255,255,255,0.7);padding:4px 16px;border-radius:999px;"></div>
+              <div style="font-size:10px;color:#7c3aed;user-select:none;">👆 눌러서 예시 단어 확인!</div>
+            </div>
+            <!-- 뒷면: 예시 단어들 -->
+            <div class="phonics-back" style="background:linear-gradient(145deg,#fdf4ff,#f3e8ff);border:2.5px solid #d8b4fe;padding:14px;">
+              <div id="ph-back-letter" style="font-size:36px;font-weight:900;color:#5b21b6;"></div>
+              <div id="ph-examples" style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;width:100%;"></div>
+              <button onclick="speakPhonics(event)" id="ph-speak-btn"
+                      style="background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;border-radius:999px;padding:7px 18px;font-size:11px;font-weight:800;cursor:pointer;margin-top:2px;">
+                🔊 소리 듣기
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 이전/다음 버튼 -->
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <button onclick="phonicsPrev()" style="flex:1;background:#f3e8ff;border:2px solid #c4b5fd;color:#5b21b6;border-radius:11px;padding:10px;font-size:13px;font-weight:900;cursor:pointer;">◀ 이전</button>
+          <button onclick="phonicsNext()" style="flex:1;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;border-radius:11px;padding:10px;font-size:13px;font-weight:900;cursor:pointer;">다음 ▶</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ══════════════════════════
+         단어장 모드
+    ══════════════════════════ -->
+    <div id="vocab-area" style="display:none;">
+      <div id="vocab-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:10px;"></div>
+    </div>
+
+    <!-- ══════════════════════════
+         맞추기 게임 모드
+    ══════════════════════════ -->
+    <div id="game-area" style="display:none;">
+
+      <!-- 진행 바 -->
+      <div style="background:#fff;border-radius:12px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;border:1.5px solid #e0f2fe;">
+        <div style="font-size:11px;font-weight:900;color:#0e7490;flex-shrink:0;"><span id="game-index">1</span>/<span id="game-total">10</span></div>
+        <div style="flex:1;height:6px;background:#e0f2fe;border-radius:999px;overflow:hidden;">
+          <div id="progress-bar" style="height:100%;background:linear-gradient(90deg,#0891b2,#0e7490);border-radius:999px;transition:width 0.4s;width:10%;"></div>
+        </div>
+        <div style="font-size:11px;font-weight:900;color:#059669;flex-shrink:0;">⭐<span id="game-score">0</span></div>
+      </div>
+
+      <!-- 플래시카드 -->
+      <div id="game-card-wrap" class="card-wrapper" style="margin-bottom:12px;cursor:pointer;" onclick="flipGameCard()">
+        <div id="game-card" class="card-inner">
+          <div class="card-front" style="background:linear-gradient(145deg,#e0f2fe,#bae6fd);border:2px solid #7dd3fc;">
+            <div id="game-emoji" style="font-size:64px;line-height:1;user-select:none;"></div>
+            <div id="game-hint" style="font-size:13px;font-weight:800;color:#0e7490;background:rgba(255,255,255,0.75);padding:4px 14px;border-radius:999px;"></div>
+            <div style="font-size:10px;color:#0369a1;user-select:none;">👆 눌러서 단어 확인!</div>
+          </div>
+          <div class="card-back" style="background:linear-gradient(145deg,#f0fdf4,#dcfce7);border:2px solid #86efac;">
+            <div id="game-answer-emoji" style="font-size:44px;line-height:1;user-select:none;"></div>
+            <div id="game-answer-word" style="font-size:32px;font-weight:900;color:#065f46;letter-spacing:1px;user-select:none;"></div>
+            <div id="game-answer-kr" style="font-size:13px;font-weight:700;color:#16a34a;user-select:none;"></div>
+            <button id="game-speak-btn" onclick="speakFromBtn(event)"
+                    style="margin-top:4px;background:linear-gradient(135deg,#059669,#047857);color:#fff;border:none;border-radius:999px;padding:7px 18px;font-size:11px;font-weight:800;cursor:pointer;">
+              🔊 들어보기
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 정답/오답 버튼 -->
+      <div id="answer-btns" style="display:none;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+        <button onclick="markAnswer(false)" style="background:#fee2e2;border:2px solid #fca5a5;color:#b91c1c;border-radius:12px;padding:13px;font-size:13px;font-weight:900;cursor:pointer;">❌ 다시 봐야 해</button>
+        <button onclick="markAnswer(true)"  style="background:#dcfce7;border:2px solid #86efac;color:#15803d;border-radius:12px;padding:13px;font-size:13px;font-weight:900;cursor:pointer;">⭐ 맞혔어요!</button>
+      </div>
+
+      <!-- 게임 완료 -->
+      <div id="game-result" style="display:none;background:#fff;border-radius:1.5rem;padding:2rem;text-align:center;border:2px solid #bae6fd;box-shadow:0 8px 24px rgba(8,145,178,0.1);">
+        <div style="font-size:52px;margin-bottom:10px;">🏆</div>
+        <div style="font-size:20px;font-weight:900;color:#0e7490;margin-bottom:6px;">게임 완료!</div>
+        <div style="font-size:14px;color:#475569;margin-bottom:8px;"><span id="result-score"></span>점 / <span id="result-total"></span>점</div>
+        <div id="result-msg" style="font-size:14px;font-weight:900;color:#059669;margin-bottom:20px;padding:10px;background:#f0fdf4;border-radius:10px;"></div>
+        <button onclick="restartGame()" style="background:linear-gradient(135deg,#0891b2,#0e7490);color:#fff;border:none;border-radius:12px;padding:12px 28px;font-size:14px;font-weight:900;cursor:pointer;">🔄 다시 하기</button>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    // ═══════════════ 데이터 ═══════════════
+
+    var phonicsData = [
+      { letter:'A', sound:'/æ/', words:[{w:'apple',kr:'사과',e:'🍎'},{w:'ant',kr:'개미',e:'🐜'},{w:'arm',kr:'팔',e:'💪'}] },
+      { letter:'B', sound:'/b/', words:[{w:'ball',kr:'공',e:'⚽'},{w:'bear',kr:'곰',e:'🐻'},{w:'bird',kr:'새',e:'🐦'}] },
+      { letter:'C', sound:'/k/', words:[{w:'cat',kr:'고양이',e:'🐱'},{w:'cake',kr:'케이크',e:'🎂'},{w:'cloud',kr:'구름',e:'☁️'}] },
+      { letter:'D', sound:'/d/', words:[{w:'dog',kr:'강아지',e:'🐶'},{w:'duck',kr:'오리',e:'🦆'},{w:'drum',kr:'드럼',e:'🥁'}] },
+      { letter:'E', sound:'/ɛ/', words:[{w:'egg',kr:'달걀',e:'🥚'},{w:'ear',kr:'귀',e:'👂'},{w:'eye',kr:'눈',e:'👁️'}] },
+      { letter:'F', sound:'/f/', words:[{w:'fish',kr:'물고기',e:'🐠'},{w:'flower',kr:'꽃',e:'🌸'},{w:'foot',kr:'발',e:'🦶'}] },
+      { letter:'G', sound:'/g/', words:[{w:'grape',kr:'포도',e:'🍇'},{w:'green',kr:'초록색',e:'🟢'},{w:'gift',kr:'선물',e:'🎁'}] },
+      { letter:'H', sound:'/h/', words:[{w:'hand',kr:'손',e:'✋'},{w:'heart',kr:'심장',e:'❤️'},{w:'hat',kr:'모자',e:'🎩'}] },
+      { letter:'I', sound:'/ɪ/', words:[{w:'ice',kr:'얼음',e:'🧊'},{w:'igloo',kr:'이글루',e:'🏔️'},{w:'insect',kr:'곤충',e:'🐞'}] },
+      { letter:'J', sound:'/dʒ/', words:[{w:'juice',kr:'주스',e:'🧃'},{w:'jump',kr:'점프',e:'🦘'},{w:'jam',kr:'잼',e:'🫙'}] },
+      { letter:'K', sound:'/k/', words:[{w:'kite',kr:'연',e:'🪁'},{w:'king',kr:'왕',e:'👑'},{w:'key',kr:'열쇠',e:'🔑'}] },
+      { letter:'L', sound:'/l/', words:[{w:'lion',kr:'사자',e:'🦁'},{w:'leaf',kr:'나뭇잎',e:'🍃'},{w:'leg',kr:'다리',e:'🦵'}] },
+      { letter:'M', sound:'/m/', words:[{w:'moon',kr:'달',e:'🌙'},{w:'milk',kr:'우유',e:'🥛'},{w:'monkey',kr:'원숭이',e:'🐵'}] },
+      { letter:'N', sound:'/n/', words:[{w:'nose',kr:'코',e:'👃'},{w:'night',kr:'밤',e:'🌙'},{w:'nest',kr:'둥지',e:'🪺'}] },
+      { letter:'O', sound:'/ɒ/', words:[{w:'orange',kr:'오렌지',e:'🍊'},{w:'owl',kr:'올빼미',e:'🦉'},{w:'ocean',kr:'바다',e:'🌊'}] },
+      { letter:'P', sound:'/p/', words:[{w:'pizza',kr:'피자',e:'🍕'},{w:'pig',kr:'돼지',e:'🐷'},{w:'purple',kr:'보라색',e:'🟣'}] },
+      { letter:'Q', sound:'/kw/', words:[{w:'queen',kr:'여왕',e:'👸'},{w:'quokka',kr:'쿼카',e:'🦘'},{w:'quiz',kr:'퀴즈',e:'❓'}] },
+      { letter:'R', sound:'/r/', words:[{w:'rabbit',kr:'토끼',e:'🐰'},{w:'rain',kr:'비',e:'🌧️'},{w:'red',kr:'빨간색',e:'🔴'}] },
+      { letter:'S', sound:'/s/', words:[{w:'sun',kr:'태양',e:'☀️'},{w:'star',kr:'별',e:'⭐'},{w:'snow',kr:'눈',e:'❄️'}] },
+      { letter:'T', sound:'/t/', words:[{w:'tree',kr:'나무',e:'🌳'},{w:'tiger',kr:'호랑이',e:'🐯'},{w:'two',kr:'둘',e:'2️⃣'}] },
+      { letter:'U', sound:'/ʌ/', words:[{w:'umbrella',kr:'우산',e:'☂️'},{w:'up',kr:'위',e:'⬆️'},{w:'uncle',kr:'삼촌',e:'👨'}] },
+      { letter:'V', sound:'/v/', words:[{w:'violet',kr:'보라색',e:'💜'},{w:'van',kr:'밴',e:'🚐'},{w:'vase',kr:'꽃병',e:'💐'}] },
+      { letter:'W', sound:'/w/', words:[{w:'water',kr:'물',e:'💧'},{w:'wind',kr:'바람',e:'💨'},{w:'whale',kr:'고래',e:'🐋'}] },
+      { letter:'X', sound:'/ks/', words:[{w:'fox',kr:'여우',e:'🦊'},{w:'box',kr:'상자',e:'📦'},{w:'mix',kr:'섞다',e:'🔀'}] },
+      { letter:'Y', sound:'/j/', words:[{w:'yellow',kr:'노란색',e:'🟡'},{w:'yogurt',kr:'요거트',e:'🥛'},{w:'yak',kr:'야크',e:'🐃'}] },
+      { letter:'Z', sound:'/z/', words:[{w:'zebra',kr:'얼룩말',e:'🦓'},{w:'zero',kr:'영',e:'0️⃣'},{w:'zoo',kr:'동물원',e:'🦁'}] }
+    ];
+
+    var wordCategories = {
+      pond: { label:'🐸 연못탐험', words:[
+        {en:'frog',   kr:'개구리', emoji:'🐸'},
+        {en:'pond',   kr:'연못',   emoji:'🏞️'},
+        {en:'leaf',   kr:'연잎',   emoji:'🍃'},
+        {en:'tongue', kr:'혀',     emoji:'👅'},
+        {en:'insect', kr:'곤충',   emoji:'🐛'},
+        {en:'sun',    kr:'햇볕',   emoji:'☀️'},
+        {en:'water',  kr:'물',     emoji:'💧'},
+        {en:'hair',   kr:'솜털',   emoji:'🪶'},
+        {en:'hunter', kr:'사냥꾼', emoji:'🏹'},
+        {en:'nap',    kr:'낮잠',   emoji:'😴'}
+      ]},
+      animals: { label:'🐾 동물', words:[
+        {en:'cat',kr:'고양이',emoji:'🐱'},{en:'dog',kr:'강아지',emoji:'🐶'},
+        {en:'rabbit',kr:'토끼',emoji:'🐰'},{en:'bird',kr:'새',emoji:'🐦'},
+        {en:'fish',kr:'물고기',emoji:'🐠'},{en:'bear',kr:'곰',emoji:'🐻'},
+        {en:'lion',kr:'사자',emoji:'🦁'},{en:'elephant',kr:'코끼리',emoji:'🐘'},
+        {en:'monkey',kr:'원숭이',emoji:'🐵'},{en:'quokka',kr:'쿼카',emoji:'🦘'}
+      ]},
+      colors: { label:'🎨 색깔', words:[
+        {en:'red',kr:'빨간색',emoji:'🔴'},{en:'blue',kr:'파란색',emoji:'🔵'},
+        {en:'green',kr:'초록색',emoji:'🟢'},{en:'yellow',kr:'노란색',emoji:'🟡'},
+        {en:'orange',kr:'주황색',emoji:'🟠'},{en:'purple',kr:'보라색',emoji:'🟣'},
+        {en:'pink',kr:'분홍색',emoji:'🩷'},{en:'white',kr:'하얀색',emoji:'⬜'},
+        {en:'black',kr:'검정색',emoji:'⬛'},{en:'brown',kr:'갈색',emoji:'🟤'}
+      ]},
+      food: { label:'🍎 음식', words:[
+        {en:'apple',kr:'사과',emoji:'🍎'},{en:'banana',kr:'바나나',emoji:'🍌'},
+        {en:'milk',kr:'우유',emoji:'🥛'},{en:'bread',kr:'빵',emoji:'🍞'},
+        {en:'rice',kr:'밥',emoji:'🍚'},{en:'egg',kr:'달걀',emoji:'🥚'},
+        {en:'cake',kr:'케이크',emoji:'🎂'},{en:'juice',kr:'주스',emoji:'🧃'},
+        {en:'pizza',kr:'피자',emoji:'🍕'},{en:'cookie',kr:'쿠키',emoji:'🍪'}
+      ]},
+      nature: { label:'🌿 자연', words:[
+        {en:'sun',kr:'태양',emoji:'☀️'},{en:'moon',kr:'달',emoji:'🌙'},
+        {en:'star',kr:'별',emoji:'⭐'},{en:'tree',kr:'나무',emoji:'🌳'},
+        {en:'flower',kr:'꽃',emoji:'🌸'},{en:'rain',kr:'비',emoji:'🌧️'},
+        {en:'snow',kr:'눈',emoji:'❄️'},{en:'cloud',kr:'구름',emoji:'☁️'},
+        {en:'river',kr:'강',emoji:'🏞️'},{en:'forest',kr:'숲',emoji:'🌲'}
+      ]},
+      body: { label:'👁️ 신체', words:[
+        {en:'head',kr:'머리',emoji:'🗣️'},{en:'eye',kr:'눈',emoji:'👁️'},
+        {en:'nose',kr:'코',emoji:'👃'},{en:'mouth',kr:'입',emoji:'👄'},
+        {en:'ear',kr:'귀',emoji:'👂'},{en:'hand',kr:'손',emoji:'✋'},
+        {en:'foot',kr:'발',emoji:'🦶'},{en:'heart',kr:'심장',emoji:'❤️'},
+        {en:'arm',kr:'팔',emoji:'💪'},{en:'leg',kr:'다리',emoji:'🦵'}
+      ]},
+      numbers: { label:'🔢 숫자', words:[
+        {en:'one',kr:'하나',emoji:'1️⃣'},{en:'two',kr:'둘',emoji:'2️⃣'},
+        {en:'three',kr:'셋',emoji:'3️⃣'},{en:'four',kr:'넷',emoji:'4️⃣'},
+        {en:'five',kr:'다섯',emoji:'5️⃣'},{en:'six',kr:'여섯',emoji:'6️⃣'},
+        {en:'seven',kr:'일곱',emoji:'7️⃣'},{en:'eight',kr:'여덟',emoji:'8️⃣'},
+        {en:'nine',kr:'아홉',emoji:'9️⃣'},{en:'ten',kr:'열',emoji:'🔟'}
+      ]}
+    };
+
+    // ═══════════════ 상태 ═══════════════
+    var currentMode = 'phonics';
+    var currentCategory = 'animals';
+    var gameWords = [];
+    var gameIndex = 0;
+    var gameScore = 0;
+    var cardFlipped = false;
+    var phonicsIndex = 0;
+    var phonicsCardFlipped = false;
+
+    // ═══════════════ 모드 전환 ═══════════════
+    var modeStyles = {
+      active_phonics: 'background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;box-shadow:0 4px 12px rgba(124,58,237,0.3);',
+      active_vocab:   'background:linear-gradient(135deg,#0891b2,#0e7490);color:#fff;border:none;box-shadow:0 4px 12px rgba(8,145,178,0.3);',
+      active_game:    'background:linear-gradient(135deg,#059669,#047857);color:#fff;border:none;box-shadow:0 4px 12px rgba(5,150,105,0.3);',
+      inactive:       'background:#fff;border:2px solid #bae6fd;color:#0e7490;box-shadow:none;'
+    };
+    var baseBtn = 'border-radius:11px;padding:10px 6px;font-size:12px;font-weight:900;cursor:pointer;transition:all 0.18s;';
+
+    function setMode(mode) {
+      currentMode = mode;
+      ['phonics','vocab','game'].forEach(function(m) {
+        var btn = document.getElementById('btn-' + m);
+        if (btn) btn.style.cssText = baseBtn + (m === mode ? modeStyles['active_' + m] : modeStyles.inactive);
+      });
+      document.getElementById('phonics-area').style.display = mode === 'phonics' ? 'block' : 'none';
+      document.getElementById('vocab-area').style.display   = mode === 'vocab'   ? 'block' : 'none';
+      document.getElementById('game-area').style.display    = mode === 'game'    ? 'block' : 'none';
+      document.getElementById('cat-tabs').style.display     = (mode === 'vocab' || mode === 'game') ? 'flex' : 'none';
+      document.getElementById('score-badge').style.display  = mode === 'game'    ? 'flex'  : 'none';
+      if (mode === 'phonics') { renderLetterGrid(); }
+      if (mode === 'vocab')   { renderVocab(); }
+      if (mode === 'game')    { startGame(); }
+    }
+
+    function setCategory(cat) {
+      currentCategory = cat;
+      Object.keys(wordCategories).forEach(function(k) {
+        var btn = document.getElementById('cat-' + k);
+        if (!btn) return;
+        btn.style.background = k === cat ? 'linear-gradient(135deg,#0891b2,#0e7490)' : '#f1f5f9';
+        btn.style.color = k === cat ? '#fff' : '#334155';
+      });
+      if (currentMode === 'vocab') renderVocab();
+      else if (currentMode === 'game') startGame();
+    }
+
+    // ═══════════════ 파닉스 게임 ═══════════════
+    function renderLetterGrid() {
+      var grid = document.getElementById('letter-grid');
+      grid.innerHTML = '';
+      phonicsData.forEach(function(item, idx) {
+        var btn = document.createElement('button');
+        btn.className = 'letter-btn pop-in';
+        btn.style.cssText = 'background:linear-gradient(145deg,#f3e8ff,#e9d5ff);border:2px solid #c4b5fd;border-radius:10px;padding:6px 4px;text-align:center;font-size:18px;font-weight:900;color:#5b21b6;line-height:1.2;';
+        btn.innerHTML = '<div>' + item.letter + '</div><div style="font-size:8px;font-weight:700;color:#7c3aed;">' + item.sound + '</div>';
+        btn.onclick = (function(i) { return function() { openPhonicsCard(i); }; })(idx);
+        grid.appendChild(btn);
+      });
+    }
+
+    function openPhonicsCard(idx) {
+      phonicsIndex = idx;
+      phonicsCardFlipped = false;
+      document.getElementById('phonics-card').classList.remove('flipped');
+      document.getElementById('phonics-card-section').style.display = 'block';
+      document.getElementById('phonics-card-section').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      renderPhonicsCard();
+    }
+
+    function renderPhonicsCard() {
+      var item = phonicsData[phonicsIndex];
+      document.getElementById('ph-letter').textContent = item.letter + item.letter.toLowerCase();
+      document.getElementById('ph-sound').textContent = item.letter + ' is for "' + item.words[0].w + '" ' + item.sound;
+      document.getElementById('ph-back-letter').textContent = item.letter + item.letter.toLowerCase();
+      document.getElementById('ph-speak-btn').dataset.letter = item.letter;
+      var exDiv = document.getElementById('ph-examples');
+      exDiv.innerHTML = '';
+      item.words.forEach(function(w) {
+        var d = document.createElement('div');
+        d.style.cssText = 'text-align:center;background:rgba(255,255,255,0.8);border-radius:10px;padding:8px 10px;min-width:70px;cursor:pointer;';
+        d.innerHTML = '<div style="font-size:28px;line-height:1;margin-bottom:3px;">' + w.e + '</div>' +
+                      '<div style="font-size:12px;font-weight:900;color:#5b21b6;">' + w.w + '</div>' +
+                      '<div style="font-size:10px;font-weight:700;color:#7c3aed;">' + w.kr + '</div>';
+        d.onclick = (function(word) { return function(ev) { ev.stopPropagation(); speakWord(null, word); }; })(w.w);
+        d.onmouseenter = function() { this.style.background = '#e9d5ff'; };
+        d.onmouseleave = function() { this.style.background = 'rgba(255,255,255,0.8)'; };
+        exDiv.appendChild(d);
+      });
+      phonicsCardFlipped = false;
+      document.getElementById('phonics-card').classList.remove('flipped');
+    }
+
+    function flipPhonicsCard() {
+      phonicsCardFlipped = !phonicsCardFlipped;
+      var card = document.getElementById('phonics-card');
+      if (phonicsCardFlipped) {
+        card.classList.add('flipped');
+        speakWord(null, phonicsData[phonicsIndex].letter.toLowerCase());
+      } else {
+        card.classList.remove('flipped');
+      }
+    }
+
+    function phonicsPrev() {
+      phonicsIndex = (phonicsIndex - 1 + phonicsData.length) % phonicsData.length;
+      renderPhonicsCard();
+    }
+    function phonicsNext() {
+      phonicsIndex = (phonicsIndex + 1) % phonicsData.length;
+      renderPhonicsCard();
+    }
+
+    function speakPhonics(event) {
+      event.stopPropagation();
+      var letter = event.currentTarget.dataset.letter;
+      var item = phonicsData.find(function(p){ return p.letter === letter; });
+      if (item) speakWord(null, item.words[0].w);
+    }
+
+    // ═══════════════ 단어장 모드 ═══════════════
+    function renderVocab() {
+      var words = wordCategories[currentCategory].words;
+      var grid = document.getElementById('vocab-grid');
+      grid.innerHTML = '';
+      words.forEach(function(w) {
+        var card = document.createElement('div');
+        card.className = 'pop-in';
+        card.style.cssText = 'background:#fff;border:2px solid #e0f2fe;border-radius:1.25rem;padding:13px 8px;text-align:center;cursor:pointer;transition:all 0.2s;';
+        card.innerHTML =
+          '<div style="font-size:38px;line-height:1;margin-bottom:5px;">' + w.emoji + '</div>' +
+          '<div style="font-size:14px;font-weight:900;color:#0c4a6e;margin-bottom:2px;">' + w.en + '</div>' +
+          '<div style="font-size:10px;font-weight:700;color:#0369a1;margin-bottom:7px;">' + w.kr + '</div>' +
+          '<button onclick="speakWord(null,\'' + w.en + '\');event.stopPropagation();" style="background:#e0f2fe;border:none;border-radius:999px;padding:3px 10px;font-size:10px;font-weight:800;color:#0e7490;cursor:pointer;">🔊 듣기</button>';
+        card.onmouseenter = function() { this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 20px rgba(8,145,178,0.18)'; this.style.borderColor='#7dd3fc'; };
+        card.onmouseleave = function() { this.style.transform='translateY(0)'; this.style.boxShadow='none'; this.style.borderColor='#e0f2fe'; };
+        grid.appendChild(card);
+      });
+    }
+
+    // ═══════════════ 맞추기 게임 ═══════════════
+    function startGame() {
+      var words = wordCategories[currentCategory].words;
+      gameWords = words.slice().sort(function() { return Math.random() - 0.5; });
+      gameIndex = 0; gameScore = 0; cardFlipped = false;
+      document.getElementById('game-result').style.display = 'none';
+      document.getElementById('game-card-wrap').style.display = 'block';
+      document.getElementById('answer-btns').style.display = 'none';
+      document.getElementById('game-total').textContent = gameWords.length;
+      document.getElementById('score-num').textContent = '0';
+      updateGameCard();
+    }
+
+    function updateGameCard() {
+      if (gameIndex >= gameWords.length) { showGameResult(); return; }
+      cardFlipped = false;
+      document.getElementById('game-card').classList.remove('flipped');
+      var w = gameWords[gameIndex];
+      document.getElementById('game-emoji').textContent = w.emoji;
+      document.getElementById('game-hint').textContent = w.kr;
+      document.getElementById('game-answer-emoji').textContent = w.emoji;
+      document.getElementById('game-answer-word').textContent = w.en;
+      document.getElementById('game-answer-kr').textContent = w.kr;
+      document.getElementById('game-speak-btn').dataset.word = w.en;
+      document.getElementById('game-index').textContent = gameIndex + 1;
+      document.getElementById('progress-bar').style.width = ((gameIndex + 1) / gameWords.length * 100).toFixed(0) + '%';
+      document.getElementById('answer-btns').style.display = 'none';
+      document.getElementById('game-card-wrap').className = 'card-wrapper pop-in';
+    }
+
+    function flipGameCard() {
+      if (cardFlipped) return;
+      cardFlipped = true;
+      document.getElementById('game-card').classList.add('flipped');
+      speakWord(null, gameWords[gameIndex].en);
+      setTimeout(function() { document.getElementById('answer-btns').style.display = 'grid'; }, 420);
+    }
+
+    function markAnswer(correct) {
+      var wrap = document.getElementById('game-card-wrap');
+      if (correct) {
+        gameScore += 10;
+        document.getElementById('game-score').textContent = gameScore;
+        document.getElementById('score-num').textContent = gameScore;
+        wrap.className = 'card-wrapper correct-flash';
+      } else {
+        wrap.className = 'card-wrapper wrong-flash';
+      }
+      setTimeout(function() { gameIndex++; updateGameCard(); }, 360);
+    }
+
+    function showGameResult() {
+      document.getElementById('game-card-wrap').style.display = 'none';
+      document.getElementById('answer-btns').style.display = 'none';
+      document.getElementById('game-result').style.display = 'block';
+      var total = gameWords.length * 10;
+      document.getElementById('result-score').textContent = gameScore;
+      document.getElementById('result-total').textContent = total;
+      var pct = gameScore / total;
+      document.getElementById('result-msg').textContent =
+        pct >= 0.9 ? '🌟 완벽해요! 단어 마스터!' :
+        pct >= 0.7 ? '👍 잘했어요! 조금만 더 연습해요!' :
+        pct >= 0.5 ? '😊 반 이상 맞혔어요! 다시 도전!' :
+        '🌱 함께 다시 연습해봐요!';
+    }
+
+    function restartGame() {
+      document.getElementById('game-result').style.display = 'none';
+      document.getElementById('game-card-wrap').style.display = 'block';
+      startGame();
+    }
+
+    function speakFromBtn(event) {
+      event.stopPropagation();
+      speakWord(null, event.currentTarget.dataset.word);
+    }
+
+    function speakWord(event, word) {
+      if (event) event.stopPropagation();
+      if (!word || !window.speechSynthesis) return;
+      window.speechSynthesis.cancel();
+      var utt = new SpeechSynthesisUtterance(word);
+      utt.lang = 'en-US'; utt.rate = 0.85; utt.pitch = 1.1;
+      window.speechSynthesis.speak(utt);
+    }
+
+    // 초기화
+    setMode('phonics');
+  </script>
+</body>
+</html>

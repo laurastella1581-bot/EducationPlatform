@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>아발론(Abalone) 보드게임</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #1a202c;
+            color: white;
+            font-family: 'Pretendard', sans-serif;
+            touch-action: manipulation;
+        }
+        canvas {
+            max-width: 100%;
+            height: auto;
+        }
+        .controls {
+            user-select: none;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
+
+    <div class="max-w-4xl w-full text-center">
+        <h1 class="text-4xl font-bold mb-2 text-blue-400">ABALONE</h1>
+        <p class="text-gray-400 mb-6">상대방의 구슬 6개를 먼저 밀어내세요!</p>
+
+        <div class="flex justify-between items-center bg-gray-800 p-4 rounded-xl shadow-2xl mb-6">
+            <div id="player-black" class="flex flex-col items-center opacity-100 transition-opacity">
+                <div class="w-12 h-12 bg-gray-900 rounded-full border-4 border-gray-700 mb-2"></div>
+                <span class="font-bold">BLACK</span>
+                <span id="score-black" class="text-2xl text-blue-400">0 / 6</span>
+            </div>
+            
+            <div id="turn-indicator" class="text-xl font-semibold px-6 py-2 bg-blue-600 rounded-full animate-pulse">
+                BLACK 차례
+            </div>
+
+            <div id="player-white" class="flex flex-col items-center opacity-50 transition-opacity">
+                <div class="w-12 h-12 bg-white rounded-full border-4 border-gray-300 mb-2"></div>
+                <span class="font-bold text-gray-200">WHITE</span>
+                <span id="score-white" class="text-2xl text-blue-400">0 / 6</span>
+            </div>
+        </div>
+
+        <div class="relative inline-block bg-gray-700 p-2 rounded-2xl shadow-inner">
+            <canvas id="gameCanvas" width="600" height="600"></canvas>
+        </div>
+
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4 text-left bg-gray-800 p-6 rounded-xl">
+            <div>
+                <h3 class="font-bold text-blue-300 mb-2">💡 조작 방법</h3>
+                <ul class="text-sm text-gray-300 space-y-1">
+                    <li>• 자신의 구슬을 클릭하여 **1~3개**까지 선택합니다.</li>
+                    <li>• 선택된 구슬과 인접한 빈 칸이나 상대 구슬 방향을 클릭해 이동합니다.</li>
+                    <li>• 상대보다 내 구슬이 많아야 밀 수 있습니다. (2 vs 1, 3 vs 1, 3 vs 2)</li>
+                </ul>
+            </div>
+            <div class="flex flex-col justify-center items-center">
+                <button id="resetBtn" class="px-8 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors shadow-lg">
+                    게임 초기화
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 승리 팝업 모달 -->
+    <div id="winModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50">
+        <div class="bg-gray-800 p-10 rounded-2xl text-center border-2 border-blue-500 max-w-sm">
+            <h2 id="winMessage" class="text-3xl font-bold mb-6">BLACK 승리!</h2>
+            <button onclick="location.reload()" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded">다시 하기</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreBlackEl = document.getElementById('score-black');
+        const scoreWhiteEl = document.getElementById('score-white');
+        const turnIndicator = document.getElementById('turn-indicator');
+        const playerBlackBox = document.getElementById('player-black');
+        const playerWhiteBox = document.getElementById('player-white');
+        const winModal = document.getElementById('winModal');
+        const winMessage = document.getElementById('winMessage');
+
+        // 게임 설정
+        const HEX_SIZE = 35;
+        const BOARD_SIZE = 5; // 육각형 한 변의 구슬 개수
+        let board = {}; // 'q,r': {color: 'black'|'white'|null}
+        let turn = 'black';
+        let selectedCoords = []; // [{q, r}]
+        let scores = { black: 0, white: 0 };
+
+        // 육각형 좌표 방향 (Axial Coordinates)
+        const directions = [
+            {q: 1, r: 0}, {q: 1, r: -1}, {q: 0, r: -1},
+            {q: -1, r: 0}, {q: -1, r: 1}, {q: 0, r: 1}
+        ];
+
+        function initBoard() {
+            board = {};
+            scores = { black: 0, white: 0 };
+            turn = 'black';
+            selectedCoords = [];
+            
+            // 육각형 그리드 생성
+            for (let q = -BOARD_SIZE + 1; q < BOARD_SIZE; q++) {
+                let r1 = Math.max(-BOARD_SIZE + 1, -q - BOARD_SIZE + 1);
+                let r2 = Math.min(BOARD_SIZE - 1, -q + BOARD_SIZE - 1);
+                for (let r = r1; r <= r2; r++) {
+                    board[`${q},${r}`] = null;
+                }
+            }
+
+            // 초기 배치 (표준 아발론 배치)
+            // Black
+            [
+                {q: 0, r: 4}, {q: 1, r: 3}, {q: 2, r: 2}, {q: 3, r: 1}, {q: 4, r: 0},
+                {q: -1, r: 4}, {q: 0, r: 3}, {q: 1, r: 2}, {q: 2, r: 1}, {q: 3, r: 0},
+                {q: 0, r: 2}, {q: 1, r: 1}, {q: -1, r: 3}
+            ].forEach(p => board[`${p.q},${p.r}`] = 'black');
+
+            // White
+            [
+                {q: 0, r: -4}, {q: -1, r: -3}, {q: -2, r: -2}, {q: -3, r: -1}, {q: -4, r: 0},
+                {q: 1, r: -4}, {q: 0, r: -3}, {q: -1, r: -2}, {q: -2, r: -1}, {q: -3, r: 0},
+                {q: 0, r: -2}, {q: -1, r: -1}, {q: 1, r: -3}
+            ].forEach(p => board[`${p.q},${p.r}`] = 'white');
+
+            updateUI();
+            draw();
+        }
+
+        function hexToPixel(q, r) {
+            const x = HEX_SIZE * (3/2 * q) + canvas.width / 2;
+            const y = HEX_SIZE * (Math.sqrt(3)/2 * q + Math.sqrt(3) * r) + canvas.height / 2;
+            return {x, y};
+        }
+
+        function pixelToHex(x, y) {
+            x -= canvas.width / 2;
+            y -= canvas.height / 2;
+            const q = (2/3 * x) / HEX_SIZE;
+            const r = (-1/3 * x + Math.sqrt(3)/3 * y) / HEX_SIZE;
+            return axialRound(q, r);
+        }
+
+        function axialRound(q, r) {
+            let x = q;
+            let z = r;
+            let y = -x - z;
+
+            let rx = Math.round(x);
+            let ry = Math.round(y);
+            let rz = Math.round(z);
+
+            const x_diff = Math.abs(rx - x);
+            const y_diff = Math.abs(ry - y);
+            const z_diff = Math.abs(rz - z);
+
+            if (x_diff > y_diff && x_diff > z_diff) rx = -ry - rz;
+            else if (y_diff > z_diff) ry = -rx - rz;
+            else rz = -rx - ry;
+
+            return {q: rx, r: rz};
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 보드 배경 그림자
+            ctx.beginPath();
+            ctx.arc(canvas.width/2, canvas.height/2, 260, 0, Math.PI*2);
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.fill();
+
+            // 칸 그리기
+            for (let key in board) {
+                const [q, r] = key.split(',').map(Number);
+                const {x, y} = hexToPixel(q, r);
+
+                // 육각형 칸
+                ctx.beginPath();
+                for (let i = 0; i < 6; i++) {
+                    const angle = i * Math.PI / 3;
+                    const vx = x + HEX_SIZE * 0.95 * Math.cos(angle);
+                    const vy = y + HEX_SIZE * 0.95 * Math.sin(angle);
+                    if (i === 0) ctx.moveTo(vx, vy);
+                    else ctx.lineTo(vx, vy);
+                }
+                ctx.closePath();
+                ctx.fillStyle = '#374151'; // gray-700
+                ctx.fill();
+                ctx.strokeStyle = '#4B5563'; // gray-600
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                // 구슬 그리기
+                if (board[key]) {
+                    const color = board[key];
+                    const isSelected = selectedCoords.some(s => s.q === q && s.r === r);
+                    
+                    // 그림자
+                    ctx.beginPath();
+                    ctx.arc(x + 2, y + 4, HEX_SIZE * 0.7, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+                    ctx.fill();
+
+                    // 구슬 몸체
+                    ctx.beginPath();
+                    ctx.arc(x, y, HEX_SIZE * 0.7, 0, Math.PI * 2);
+                    
+                    const grad = ctx.createRadialGradient(x - 5, y - 5, 2, x, y, HEX_SIZE * 0.7);
+                    if (color === 'black') {
+                        grad.addColorStop(0, '#4b5563');
+                        grad.addColorStop(1, '#111827');
+                    } else {
+                        grad.addColorStop(0, '#ffffff');
+                        grad.addColorStop(1, '#d1d5db');
+                    }
+                    
+                    ctx.fillStyle = grad;
+                    ctx.fill();
+
+                    // 선택 표시
+                    if (isSelected) {
+                        ctx.strokeStyle = '#3B82F6'; // blue-500
+                        ctx.lineWidth = 4;
+                        ctx.stroke();
+                        
+                        // 하이라이트 효과
+                        ctx.beginPath();
+                        ctx.arc(x, y, HEX_SIZE * 0.75, 0, Math.PI * 2);
+                        ctx.strokeStyle = 'rgba(59, 130, 246, 0.5)';
+                        ctx.lineWidth = 8;
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        function updateUI() {
+            scoreBlackEl.innerText = `${scores.white} / 6`; // White가 밖으로 나간 수
+            scoreWhiteEl.innerText = `${scores.black} / 6`; // Black이 밖으로 나간 수
+            turnIndicator.innerText = `${turn.toUpperCase()} 차례`;
+            turnIndicator.className = `text-xl font-semibold px-6 py-2 rounded-full animate-pulse ${turn === 'black' ? 'bg-gray-900 text-white border border-gray-600' : 'bg-white text-black'}`;
+            
+            playerBlackBox.style.opacity = turn === 'black' ? '1' : '0.4';
+            playerWhiteBox.style.opacity = turn === 'white' ? '1' : '0.4';
+
+            if (scores.white >= 6) showWin('BLACK');
+            if (scores.black >= 6) showWin('WHITE');
+        }
+
+        function showWin(winner) {
+            winMessage.innerText = `${winner} 승리!`;
+            winModal.style.display = 'flex';
+        }
+
+        function getDistance(a, b) {
+            return (Math.abs(a.q - b.q) + Math.abs(a.q + a.r - b.q - b.r) + Math.abs(a.r - b.r)) / 2;
+        }
+
+        function isLine(coords) {
+            if (coords.length <= 1) return true;
+            if (coords.length === 2) return getDistance(coords[0], coords[1]) === 1;
+            
+            // 3개일 때: 정렬 후 간격 확인
+            const sorted = [...coords].sort((a, b) => a.q !== b.q ? a.q - b.q : a.r - b.r);
+            const d1 = {q: sorted[1].q - sorted[0].q, r: sorted[1].r - sorted[0].r};
+            const d2 = {q: sorted[2].q - sorted[1].q, r: sorted[2].r - sorted[1].r};
+            return d1.q === d2.q && d1.r === d2.r && getDistance(sorted[0], sorted[1]) === 1;
+        }
+
+        function handleMove(targetHex) {
+            if (selectedCoords.length === 0) return;
+
+            // 이동 방향 벡터 계산
+            // 선택된 구슬 중 하나에서 타겟으로의 방향 찾기
+            let moveDir = null;
+            for (let s of selectedCoords) {
+                const dq = targetHex.q - s.q;
+                const dr = targetHex.r - s.r;
+                if (getDistance(s, targetHex) === 1) {
+                    moveDir = {q: dq, r: dr};
+                    break;
+                }
+            }
+
+            if (!moveDir) {
+                // 선택 해제 후 새로 선택 시도
+                selectedCoords = [];
+                const key = `${targetHex.q},${targetHex.r}`;
+                if (board[key] === turn) {
+                    selectedCoords.push(targetHex);
+                }
+                draw();
+                return;
+            }
+
+            // 인라인 이동(밀기 포함)인지 브로드사이드 이동인지 판별
+            const isInline = selectedCoords.every(s => {
+                const next = {q: s.q + moveDir.q, r: s.r + moveDir.r};
+                // 타겟이 선택 그룹 외부에 있고, 그룹의 연장선상에 있는지 확인
+                return true; 
+            });
+
+            // 간단한 로직: 선택된 모든 구슬을 같은 방향으로 한 칸씩 이동 시도
+            // 1. 밀기 로직(Sumito) 처리
+            if (trySumito(selectedCoords, moveDir)) {
+                turn = turn === 'black' ? 'white' : 'black';
+                selectedCoords = [];
+            } else {
+                // 밀기가 아닌 일반 이동
+                if (tryNormalMove(selectedCoords, moveDir)) {
+                    turn = turn === 'black' ? 'white' : 'black';
+                    selectedCoords = [];
+                } else {
+                    // 이동 불가시 선택 초기화
+                    selectedCoords = [];
+                }
+            }
+
+            updateUI();
+            draw();
+        }
+
+        function tryNormalMove(coords, dir) {
+            // 모든 타겟 칸이 비어있어야 함
+            const targets = coords.map(s => ({q: s.q + dir.q, r: s.r + dir.r}));
+            const canMove = targets.every(t => {
+                const key = `${t.q},${t.r}`;
+                return board.hasOwnProperty(key) && board[key] === null;
+            });
+
+            if (canMove) {
+                // 기존 위치 비우기
+                const oldColors = coords.map(s => board[`${s.q},${s.r}`]);
+                coords.forEach(s => board[`${s.q},${s.r}`] = null);
+                // 새 위치 채우기
+                targets.forEach((t, i) => board[`${t.q},${t.r}`] = oldColors[i]);
+                return true;
+            }
+            return false;
+        }
+
+        function trySumito(coords, dir) {
+            if (coords.length < 2) return false;
+
+            // 인라인 인지 확인 (선택된 구슬들이 이동 방향으로 일렬인지)
+            // 가장 끝 구슬 찾기
+            let tip = null;
+            let sorted = [...coords].sort((a,b) => {
+                if (dir.q !== 0) return (a.q - b.q) * dir.q;
+                return (a.r - b.r) * dir.r;
+            });
+            tip = sorted[sorted.length - 1];
+            
+            // 팁 바로 앞이 상대 구슬인지 확인
+            let current = {q: tip.q + dir.q, r: tip.r + dir.r};
+            let opponentCount = 0;
+            const enemy = turn === 'black' ? 'white' : 'black';
+
+            while (board[`${current.q},${current.r}`] === enemy) {
+                opponentCount++;
+                current = {q: current.q + dir.q, r: current.r + dir.r};
+            }
+
+            // 밀기 조건: 내 구슬 수 > 상대 구슬 수 AND 상대 줄 끝이 비었거나 보드 밖
+            if (opponentCount > 0 && coords.length > opponentCount) {
+                const endPos = current;
+                const endKey = `${endPos.q},${endPos.r}`;
+                
+                // 보드 밖으로 밀어내기
+                if (!board.hasOwnProperty(endKey)) {
+                    scores[enemy]++;
+                } else if (board[endKey] === null) {
+                    // 빈칸으로 밀기: 상대 구슬들을 한칸씩 이동
+                    for (let i = opponentCount; i > 0; i--) {
+                        const from = {q: tip.q + dir.q * i, r: tip.r + dir.r * i};
+                        const to = {q: tip.q + dir.q * (i+1), r: tip.r + dir.r * (i+1)};
+                        board[`${to.q},${to.r}`] = enemy;
+                    }
+                } else {
+                    return false; // 내 구슬이나 장애물에 막힘
+                }
+
+                // 내 구슬들 이동
+                const oldColors = coords.map(s => board[`${s.q},${s.r}`]);
+                coords.forEach(s => board[`${s.q},${s.r}`] = null);
+                coords.forEach((s, i) => {
+                    board[`${s.q + dir.q},${s.r + dir.r}`] = oldColors[i];
+                });
+                return true;
+            }
+
+            return false;
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const hex = pixelToHex(x, y);
+            const key = `${hex.q},${hex.r}`;
+
+            if (!board.hasOwnProperty(key)) return;
+
+            if (board[key] === turn) {
+                const idx = selectedCoords.findIndex(s => s.q === hex.q && s.r === hex.r);
+                if (idx > -1) {
+                    selectedCoords.splice(idx, 1);
+                } else {
+                    if (selectedCoords.length < 3) {
+                        const temp = [...selectedCoords, hex];
+                        if (isLine(temp)) {
+                            selectedCoords = temp;
+                        } else {
+                            selectedCoords = [hex];
+                        }
+                    } else {
+                        selectedCoords = [hex];
+                    }
+                }
+                draw();
+            } else {
+                // 빈칸이나 상대 구슬 클릭 시 이동 시도
+                handleMove(hex);
+            }
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            if (confirm('게임을 초기화하시겠습니까?')) initBoard();
+        });
+
+        window.onload = initBoard;
+
+    </script>
+</body>
+</html>

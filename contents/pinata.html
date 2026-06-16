@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>🪅 피냐타 게임</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+    background: linear-gradient(180deg, #1a78c2 0%, #87ceeb 45%, #7ec87e 100%);
+    height: 100vh; overflow: hidden; user-select: none;
+    display: flex; flex-direction: column; align-items: center;
+  }
+
+  .cloud {
+    position: fixed; opacity: 0.75;
+    animation: cloudFloat linear infinite;
+  }
+  @keyframes cloudFloat {
+    0%   { transform: translateX(-120px); }
+    100% { transform: translateX(calc(100vw + 120px)); }
+  }
+
+  .header {
+    text-align: center; padding: 14px 16px 6px;
+    color: #fff; text-shadow: 2px 2px 6px rgba(0,0,0,.35);
+    z-index: 10;
+  }
+  .header h1 { font-size: 26px; font-weight: 900; }
+  .header p  { font-size: 13px; margin-top: 3px; opacity: .9; }
+
+  .game-area {
+    flex: 1; width: 100%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    position: relative; z-index: 10;
+  }
+
+  .rope {
+    width: 7px; height: 90px;
+    background: linear-gradient(180deg, #6b3a1f, #c8864a);
+    border-radius: 4px;
+    transition: opacity .4s;
+  }
+
+  .pinata-wrap {
+    animation: swing 2s ease-in-out infinite;
+    transform-origin: top center;
+    display: flex; flex-direction: column; align-items: center;
+    cursor: crosshair;
+    transition: opacity .4s, transform .4s;
+  }
+  @keyframes swing {
+    0%, 100% { transform: rotate(-16deg); }
+    50%       { transform: rotate(16deg); }
+  }
+
+  .pinata-body {
+    font-size: 110px; line-height: 1;
+    filter: drop-shadow(4px 6px 10px rgba(0,0,0,.3));
+    transition: filter .3s, font-size .1s;
+  }
+  .pinata-body.c1 { filter: drop-shadow(4px 6px 10px rgba(0,0,0,.3)) brightness(.88); }
+  .pinata-body.c2 { filter: drop-shadow(4px 6px 10px rgba(0,0,0,.3)) brightness(.72) saturate(.7); }
+  .pinata-body.c3 { filter: drop-shadow(4px 6px 10px rgba(0,0,0,.3)) brightness(.55) saturate(.3); }
+
+  /* hit flash */
+  .pinata-body.flash { font-size: 126px; }
+
+  .hud {
+    position: fixed; top: 16px; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255,255,255,.88);
+    border-radius: 16px; padding: 8px 20px;
+    font-size: 14px; font-weight: 800; color: #c2410c;
+    box-shadow: 0 4px 14px rgba(0,0,0,.2);
+    white-space: nowrap; z-index: 20;
+  }
+
+  .bar-wrap {
+    position: fixed; bottom: 70px; left: 50%;
+    transform: translateX(-50%); width: 290px;
+    text-align: center; z-index: 20;
+  }
+  .bar-label {
+    font-size: 13px; font-weight: 800; color: #fff;
+    text-shadow: 1px 1px 4px rgba(0,0,0,.5); margin-bottom: 6px;
+  }
+  .bar-bg {
+    background: rgba(0,0,0,.3); border-radius: 20px; height: 22px;
+    overflow: hidden; border: 2px solid rgba(255,255,255,.5);
+  }
+  .bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff4d4d, #ffd93d, #6bcb77);
+    border-radius: 20px; transition: width .25s ease;
+  }
+
+  .tip {
+    position: fixed; bottom: 28px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 13px; font-weight: 700; color: #fff;
+    text-shadow: 1px 1px 3px rgba(0,0,0,.5); z-index: 20;
+  }
+
+  .hit-fx {
+    position: fixed; pointer-events: none; z-index: 100;
+    font-size: 30px;
+    animation: fxPop .5s ease-out forwards;
+  }
+  @keyframes fxPop {
+    0%   { transform: scale(.4); opacity: 1; }
+    100% { transform: scale(2.2) translateY(-44px); opacity: 0; }
+  }
+
+  .candy {
+    position: fixed; pointer-events: none; z-index: 50;
+    animation: candyFall linear forwards;
+  }
+  @keyframes candyFall {
+    0%   { transform: translateY(-30px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(110vh) rotate(800deg); opacity: 0; }
+  }
+
+  .win {
+    display: none; position: fixed; inset: 0; z-index: 300;
+    background: linear-gradient(135deg, #ffd93d, #ff6b6b, #c77dff, #6bcb77);
+    background-size: 300% 300%;
+    animation: gradShift 3s ease infinite;
+    flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 24px;
+  }
+  .win.show { display: flex; }
+  @keyframes gradShift {
+    0%,100% { background-position: 0% 50%; }
+    50%      { background-position: 100% 50%; }
+  }
+  .win-icon { font-size: 64px; margin-bottom: 10px; animation: bounce 1s ease infinite; }
+  @keyframes bounce {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(-14px); }
+  }
+  .win-title { font-size: 28px; font-weight: 900; color: #fff; text-shadow: 2px 2px 8px rgba(0,0,0,.3); margin-bottom: 6px; }
+  .win-sub   { font-size: 15px; color: rgba(255,255,255,.92); margin-bottom: 28px; }
+  .btn-replay {
+    padding: 16px 44px; background: #fff; color: #c2410c;
+    border: none; border-radius: 24px; font-size: 17px; font-weight: 900;
+    cursor: pointer; box-shadow: 0 6px 20px rgba(0,0,0,.2);
+    transition: transform .15s;
+  }
+  .btn-replay:hover { transform: scale(1.07); }
+</style>
+</head>
+<body>
+
+<!-- 구름 -->
+<div class="cloud" style="font-size:52px;top:8%;animation-duration:22s;animation-delay:-4s;">☁️</div>
+<div class="cloud" style="font-size:36px;top:18%;animation-duration:30s;animation-delay:-14s;">☁️</div>
+<div class="cloud" style="font-size:64px;top:3%;animation-duration:38s;animation-delay:-22s;">☁️</div>
+
+<!-- 헤더 -->
+<div class="header">
+  <h1>🪅 피냐타를 깨뜨려라!</h1>
+  <p>피냐타를 클릭해서 힘껏 두드려요! 💥</p>
+</div>
+
+<!-- HUD -->
+<div class="hud" id="hud">💥 0번 공격!</div>
+
+<!-- 게임 영역 -->
+<div class="game-area">
+  <div class="rope" id="rope"></div>
+  <div class="pinata-wrap" id="pinataWrap" onclick="hit(event)">
+    <div class="pinata-body" id="pinataBody">🪅</div>
+  </div>
+</div>
+
+<!-- 체력 바 -->
+<div class="bar-wrap">
+  <div class="bar-label" id="barLabel">피냐타 체력 100%</div>
+  <div class="bar-bg"><div class="bar-fill" id="barFill" style="width:100%"></div></div>
+</div>
+<div class="tip">👆 피냐타를 클릭하세요!</div>
+
+<!-- 승리 화면 -->
+<div class="win" id="win">
+  <div class="win-icon">🎉🍬🎊</div>
+  <div class="win-title">피냐타 격파 성공!</div>
+  <div class="win-sub">달콤한 사탕이 쏟아졌어요! 🌟<br>모두 함께 모아볼까요?</div>
+  <button class="btn-replay" onclick="reset()">🔄 다시 하기</button>
+</div>
+
+<script>
+  const MAX = 10;
+  const FX  = ['💥','⭐','✨','💫','🌟','🎉'];
+  const CANDY = ['🍬','🍭','🍫','🍩','🍪','🎁','⭐','🌈','🎀'];
+  let hits = 0, broken = false;
+
+  function hit(e) {
+    if (broken) return;
+    hits++;
+
+    // flash
+    const body = document.getElementById('pinataBody');
+    body.classList.add('flash');
+    setTimeout(() => body.classList.remove('flash'), 120);
+
+    // crack
+    if      (hits >= MAX * .7) body.className = 'pinata-body c3';
+    else if (hits >= MAX * .4) body.className = 'pinata-body c2';
+    else if (hits >= MAX * .2) body.className = 'pinata-body c1';
+
+    // fx
+    spawnFx(e.clientX, e.clientY);
+
+    // hud
+    const pct = Math.max(0, Math.round(100 - (hits / MAX) * 100));
+    document.getElementById('hud').textContent = `💥 ${hits}번 공격!`;
+    document.getElementById('barFill').style.width = pct + '%';
+    document.getElementById('barLabel').textContent = `피냐타 체력 ${pct}%`;
+
+    if (hits >= MAX) { broken = true; setTimeout(breakIt, 250); }
+  }
+
+  function spawnFx(x, y) {
+    const el = document.createElement('div');
+    el.className = 'hit-fx';
+    el.textContent = FX[Math.floor(Math.random() * FX.length)];
+    el.style.left = (x - 16) + 'px';
+    el.style.top  = (y - 16) + 'px';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 560);
+  }
+
+  function breakIt() {
+    const wrap = document.getElementById('pinataWrap');
+    wrap.style.opacity = '0';
+    wrap.style.transform = 'scale(2.5)';
+    document.getElementById('rope').style.opacity = '0';
+    for (let i = 0; i < 35; i++) setTimeout(spawnCandy, i * 70);
+    setTimeout(() => document.getElementById('win').classList.add('show'), 1600);
+  }
+
+  function spawnCandy() {
+    const el = document.createElement('div');
+    el.className = 'candy';
+    el.textContent = CANDY[Math.floor(Math.random() * CANDY.length)];
+    el.style.fontSize = (22 + Math.floor(Math.random() * 20)) + 'px';
+    el.style.left = (5 + Math.random() * 88) + 'vw';
+    el.style.top  = '-40px';
+    const dur = 1.6 + Math.random() * 2.2;
+    el.style.animationDuration = dur + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), (dur + .5) * 1000);
+  }
+
+  function reset() {
+    hits = 0; broken = false;
+    const wrap = document.getElementById('pinataWrap');
+    wrap.style.opacity = '1';
+    wrap.style.transform = '';
+    wrap.style.animation = 'swing 2s ease-in-out infinite';
+    document.getElementById('rope').style.opacity = '1';
+    document.getElementById('pinataBody').className = 'pinata-body';
+    document.getElementById('barFill').style.width = '100%';
+    document.getElementById('barLabel').textContent = '피냐타 체력 100%';
+    document.getElementById('hud').textContent = '💥 0번 공격!';
+    document.getElementById('win').classList.remove('show');
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>과학 탐구 대모험 - 숲과 우주</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap');
+        
+        body {
+            font-family: 'Nanum Gothic', sans-serif;
+            background-color: #020617;
+            color: white;
+            overflow: hidden;
+            touch-action: none;
+        }
+        canvas {
+            display: block;
+            border-radius: 1.5rem;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.6);
+            background: #1e293b;
+        }
+        .theme-forest { background: radial-gradient(circle at center, #065f46 0%, #064e3b 100%); }
+        .theme-space { background: radial-gradient(circle at center, #1e293b 0%, #020617 100%); }
+        
+        .info-card {
+            animation: slideUp 0.5s ease-out;
+        }
+        @keyframes slideUp {
+            from { transform: translate(-50%, 100%); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
+        }
+
+        /* 시작 모달 */
+        .start-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.72);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            backdrop-filter: blur(4px);
+        }
+        .start-modal.hidden { display: none; }
+        .start-modal-box {
+            background: #fff;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 420px;
+            overflow: hidden;
+            border: 4px solid #16a34a;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.35);
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn {
+            from { transform: scale(0.7); opacity: 0; }
+            to   { transform: scale(1);   opacity: 1; }
+        }
+        .sci-header {
+            background: linear-gradient(135deg, #16a34a, #15803d);
+            padding: 1.5rem;
+            text-align: center;
+        }
+        .rule-item-sci {
+            background: #f0fdf4;
+            border-left: 4px solid #16a34a;
+            border-radius: 8px;
+            padding: 0.5rem 0.8rem;
+            margin: 0.35rem 0;
+            font-size: 0.9rem;
+            color: #14532d;
+            font-weight: 600;
+            font-family: 'Nanum Gothic', sans-serif;
+        }
+        .sci-start-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #16a34a, #15803d);
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 900;
+            padding: 0.85rem;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            box-shadow: 0 5px 0 #14532d;
+            transition: all 0.15s;
+            font-family: 'Nanum Gothic', sans-serif;
+        }
+        .sci-start-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 1px 0 #14532d;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-2 md:p-4">
+
+    <div class="relative w-full max-w-4xl">
+        <!-- 상단 헤더 UI -->
+        <div class="absolute top-4 left-4 right-4 z-10 flex justify-between items-start pointer-events-none">
+            <div class="bg-white/10 backdrop-blur-lg p-3 rounded-2xl border border-white/20 shadow-xl">
+                <p id="theme-tag" class="text-xs font-black uppercase tracking-widest text-green-400 mb-1">Forest Ecology</p>
+                <p id="mission-title" class="text-lg md:text-xl font-bold text-white">무당벌레를 관찰하세요!</p>
+            </div>
+            <div class="bg-white/10 backdrop-blur-lg p-3 rounded-2xl border border-white/20 shadow-xl text-right">
+                <p class="text-sm text-blue-300">탐구 점수</p>
+                <p id="score" class="text-2xl font-black text-yellow-400">0</p>
+            </div>
+        </div>
+
+        <canvas id="gameCanvas" class="w-full h-auto aspect-[16/9] theme-forest"></canvas>
+
+        <!-- 지식 알림창 (Info Card) -->
+        <div id="info-card" class="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 hidden info-card w-[90%] max-w-md">
+            <div class="bg-white text-slate-900 p-4 rounded-2xl shadow-2xl border-t-4 border-blue-500">
+                <div class="flex items-center gap-3 mb-2">
+                    <span id="info-icon" class="text-3xl">🐞</span>
+                    <h3 id="info-title" class="text-xl font-bold">무당벌레</h3>
+                </div>
+                <p id="info-desc" class="text-sm leading-relaxed text-slate-600">무당벌레는 진딧물을 잡아먹는 고마운 곤충이에요!</p>
+            </div>
+        </div>
+
+        <!-- 시작/테마 전환 화면 -->
+        <div id="modal-overlay" class="absolute inset-0 z-40 flex items-center justify-center bg-slate-900/90 rounded-3xl p-6 text-center">
+            <div id="modal-content" class="max-w-md">
+                <h1 id="modal-title" class="text-4xl md:text-5xl font-black mb-4 text-white leading-tight">자연 탐구 여행<br><span class="text-green-400">숲속 생태계</span></h1>
+                <p id="modal-desc" class="text-lg text-slate-300 mb-8">우리 주변의 생물과 먼 우주의 행성을<br>직접 탐험하며 찾아보세요!</p>
+                <button id="start-btn" class="bg-blue-600 hover:bg-blue-500 text-white px-12 py-4 rounded-full text-xl font-black shadow-lg transition-all hover:scale-105 active:scale-95">
+                    탐험 시작
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 조작 컨트롤 -->
+    <div class="mt-6 flex flex-col items-center gap-4">
+        <div class="grid grid-cols-3 gap-2 w-48">
+            <div></div>
+            <button id="up-btn" class="bg-slate-800 p-4 rounded-xl active:bg-blue-600 flex justify-center shadow-lg"><svg width="24" height="24" fill="white" viewBox="0 0 24 24"><path d="M12 4l-8 8h16l-8-8z"/></svg></button>
+            <div></div>
+            <button id="left-btn" class="bg-slate-800 p-4 rounded-xl active:bg-blue-600 flex justify-center shadow-lg"><svg width="24" height="24" fill="white" viewBox="0 0 24 24"><path d="M4 12l8 8v-16l-8 8z"/></svg></button>
+            <button id="down-btn" class="bg-slate-800 p-4 rounded-xl active:bg-blue-600 flex justify-center shadow-lg"><svg width="24" height="24" fill="white" viewBox="0 0 24 24"><path d="M12 20l8-8h-16l8 8z"/></svg></button>
+            <button id="right-btn" class="bg-slate-800 p-4 rounded-xl active:bg-blue-600 flex justify-center shadow-lg"><svg width="24" height="24" fill="white" viewBox="0 0 24 24"><path d="M20 12l-8-8v16l8-8z"/></svg></button>
+        </div>
+        <p class="text-xs text-slate-500">키보드 방향키로도 조종할 수 있어요!</p>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const missionTitle = document.getElementById('mission-title');
+        const themeTag = document.getElementById('theme-tag');
+        const infoCard = document.getElementById('info-card');
+        const infoTitle = document.getElementById('info-title');
+        const infoDesc = document.getElementById('info-desc');
+        const infoIcon = document.getElementById('info-icon');
+        const startBtn = document.getElementById('start-btn');
+        const modalOverlay = document.getElementById('modal-overlay');
+
+        canvas.width = 800;
+        canvas.height = 450;
+
+        let gameState = 'start'; // start, play, transition
+        let currentTheme = 'forest';
+        let score = 0;
+        let missionIdx = 0;
+        let collectedCount = 0;
+        const targetPerMission = 2;
+
+        // 과학 탐구 데이터
+        const forestInquiry = [
+            { id: 'ladybug', name: '무당벌레', icon: '🐞', info: '진딧물을 잡아먹어 농작물을 도와주는 고마운 곤충이에요!', color: '#ef4444' },
+            { id: 'leaf', name: '나뭇잎', icon: '🍃', info: '햇빛을 받아 식물이 자라는 데 필요한 에너지를 만들어요.', color: '#22c55e' },
+            { id: 'mushroom', name: '버섯', icon: '🍄', info: '숲의 청소부예요! 죽은 나무나 잎을 분해해서 흙으로 돌려보내죠.', color: '#f87171' }
+        ];
+
+        const spaceInquiry = [
+            { id: 'earth', name: '지구', icon: '🌍', info: '우리가 사는 곳이에요. 물과 공기가 있어 생명이 살 수 있는 유일한 행성이에요.', color: '#3b82f6' },
+            { id: 'saturn', name: '토성', icon: '🪐', info: '아름다운 고리를 가지고 있어요. 태양계에서 두 번째로 큰 행성이에요.', color: '#fbbf24' },
+            { id: 'moon', name: '달', icon: '🌙', info: '지구의 유일한 위성이에요. 모양이 매일 조금씩 변하는 것처럼 보여요.', color: '#f1f5f9' }
+        ];
+
+        const player = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            size: 50,
+            speed: 5,
+            vx: 0, vy: 0,
+            angle: 0
+        };
+
+        let items = [];
+
+        function initItems() {
+            items = [];
+            const currentPool = currentTheme === 'forest' ? forestInquiry : spaceInquiry;
+            currentPool.forEach(data => {
+                for(let i=0; i<2; i++) {
+                    items.push({
+                        ...data,
+                        x: Math.random() * (canvas.width - 100) + 50,
+                        y: Math.random() * (canvas.height - 100) + 50,
+                        floatY: 0,
+                        seed: Math.random() * 10
+                    });
+                }
+            });
+        }
+
+        function drawPlayer() {
+            ctx.save();
+            ctx.translate(player.x, player.y);
+            ctx.rotate(player.angle);
+            
+            if (currentTheme === 'forest') {
+                // 탐험가 (돋보기 든 캐릭터)
+                ctx.fillStyle = '#ffedd5';
+                ctx.beginPath(); ctx.arc(0, 0, 20, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#0f172a';
+                ctx.beginPath(); ctx.arc(10, -5, 3, 0, Math.PI*2); ctx.arc(10, 5, 3, 0, Math.PI*2); ctx.fill();
+                // 돋보기
+                ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 4;
+                ctx.beginPath(); ctx.moveTo(15, 0); ctx.lineTo(30, 10); ctx.stroke();
+                ctx.fillStyle = 'rgba(186, 230, 253, 0.5)';
+                ctx.beginPath(); ctx.arc(35, 15, 12, 0, Math.PI*2); ctx.fill();
+                ctx.stroke();
+            } else {
+                // 탐사선
+                ctx.fillStyle = '#f8fafc';
+                ctx.beginPath(); ctx.moveTo(25, 0); ctx.lineTo(-15, -20); ctx.lineTo(-10, 0); ctx.lineTo(-15, 20); ctx.closePath(); ctx.fill();
+                ctx.fillStyle = '#38bdf8';
+                ctx.beginPath(); ctx.arc(5, 0, 8, 0, Math.PI*2); ctx.fill();
+            }
+            ctx.restore();
+        }
+
+        function drawItems() {
+            items.forEach(item => {
+                ctx.save();
+                const hover = Math.sin(Date.now() * 0.003 + item.seed) * 10;
+                ctx.translate(item.x, item.y + hover);
+                
+                // 아이템 아이콘 그리기
+                ctx.font = '36px serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(item.icon, 0, 0);
+                
+                // 그림자
+                ctx.fillStyle = 'rgba(0,0,0,0.2)';
+                ctx.beginPath(); ctx.ellipse(0, 25 - hover, 15, 5, 0, 0, Math.PI*2); ctx.fill();
+                
+                ctx.restore();
+            });
+        }
+
+        function update() {
+            if (gameState !== 'play') return;
+
+            player.x += player.vx;
+            player.y += player.vy;
+            player.vx *= 0.9;
+            player.vy *= 0.9;
+
+            if (player.x < 25) player.x = 25;
+            if (player.x > canvas.width - 25) player.x = canvas.width - 25;
+            if (player.y < 25) player.y = 25;
+            if (player.y > canvas.height - 25) player.y = canvas.height - 25;
+
+            if (Math.abs(player.vx) > 0.1 || Math.abs(player.vy) > 0.1) {
+                player.angle = Math.atan2(player.vy, player.vx);
+            }
+
+            // 충돌 확인
+            const currentPool = currentTheme === 'forest' ? forestInquiry : spaceInquiry;
+            const target = currentPool[missionIdx];
+
+            items.forEach((item, idx) => {
+                const dist = Math.hypot(player.x - item.x, player.y - item.y);
+                if (dist < 40) {
+                    if (item.id === target.id) {
+                        items.splice(idx, 1);
+                        collectItem(item);
+                    }
+                }
+            });
+        }
+
+        function collectItem(item) {
+            score += 50;
+            scoreEl.innerText = score;
+            
+            // 정보창 표시
+            infoIcon.innerText = item.icon;
+            infoTitle.innerText = item.name;
+            infoDesc.innerText = item.info;
+            infoCard.classList.remove('hidden');
+            
+            collectedCount++;
+            if (collectedCount >= targetPerMission) {
+                nextMission();
+            }
+        }
+
+        function nextMission() {
+            collectedCount = 0;
+            missionIdx++;
+            
+            const pool = currentTheme === 'forest' ? forestInquiry : spaceInquiry;
+            
+            if (missionIdx >= pool.length) {
+                if (currentTheme === 'forest') {
+                    startThemeTransition('우주 탐험', '지구와 행성들을 탐험하러 떠나요!', 'space');
+                } else {
+                    showFinalResult();
+                }
+            } else {
+                updateMissionUI();
+            }
+        }
+
+        function updateMissionUI() {
+            const pool = currentTheme === 'forest' ? forestInquiry : spaceInquiry;
+            const target = pool[missionIdx];
+            missionTitle.innerText = `${target.name}를 찾아보세요!`;
+            themeTag.innerText = currentTheme === 'forest' ? 'Forest Ecology' : 'Space Science';
+            themeTag.className = `text-xs font-black uppercase tracking-widest mb-1 ${currentTheme === 'forest' ? 'text-green-400' : 'text-blue-400'}`;
+        }
+
+        function startThemeTransition(title, desc, nextTheme) {
+            gameState = 'transition';
+            modalOverlay.classList.remove('hidden');
+            document.getElementById('modal-title').innerHTML = `테마 완료!<br><span class="text-blue-400">${title}</span>`;
+            document.getElementById('modal-desc').innerText = desc;
+            startBtn.innerText = '다음 탐험지로';
+            
+            currentTheme = nextTheme;
+            missionIdx = 0;
+        }
+
+        function showFinalResult() {
+            gameState = 'transition';
+            modalOverlay.classList.remove('hidden');
+            document.getElementById('modal-title').innerHTML = `탐험 완료!<br><span class="text-yellow-400">최고의 과학 탐험가!</span>`;
+            document.getElementById('modal-desc').innerText = `당신의 탐구 점수: ${score}점\n모든 생물과 행성을 관찰했어요!`;
+            startBtn.innerText = '다시 시작하기';
+            currentTheme = 'forest';
+            missionIdx = 0;
+            score = 0;
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 배경 파티클
+            ctx.fillStyle = currentTheme === 'forest' ? 'rgba(255,255,255,0.1)' : 'white';
+            for(let i=0; i<30; i++) {
+                const x = (Math.sin(i*123 + Date.now()*0.0001) * 0.5 + 0.5) * canvas.width;
+                const y = (Math.cos(i*456 + Date.now()*0.0001) * 0.5 + 0.5) * canvas.height;
+                ctx.beginPath(); ctx.arc(x, y, currentTheme === 'forest' ? 3 : 1, 0, Math.PI*2); ctx.fill();
+            }
+
+            drawItems();
+            drawPlayer();
+            update();
+            requestAnimationFrame(render);
+        }
+
+        // 컨트롤 설정
+        const move = (vx, vy) => {
+            if (gameState !== 'play') return;
+            player.vx = vx * player.speed;
+            player.vy = vy * player.speed;
+            infoCard.classList.add('hidden'); // 이동 시작하면 정보창 닫기
+        };
+
+        window.addEventListener('keydown', e => {
+            if (e.key === 'ArrowUp') move(0, -1);
+            if (e.key === 'ArrowDown') move(0, 1);
+            if (e.key === 'ArrowLeft') move(-1, 0);
+            if (e.key === 'ArrowRight') move(1, 0);
+        });
+
+        document.getElementById('up-btn').onclick = () => move(0, -1);
+        document.getElementById('down-btn').onclick = () => move(0, 1);
+        document.getElementById('left-btn').onclick = () => move(-1, 0);
+        document.getElementById('right-btn').onclick = () => move(1, 0);
+
+        startBtn.onclick = () => {
+            modalOverlay.classList.add('hidden');
+            canvas.className = `w-full h-auto aspect-[16/9] theme-${currentTheme}`;
+            gameState = 'play';
+            initItems();
+            updateMissionUI();
+            scoreEl.innerText = score;
+        };
+
+        window.onload = render;
+    </script>
+</body>
+</html>

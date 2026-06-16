@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>쿼카의 마법숲 미션</title>
+
+  <!-- =====================================================
+       게임마다 이 GAME_CONFIG 만 바꾸면 됩니다!
+       ===================================================== -->
+  <script>
+    const GAME_CONFIG = {
+      videoSrc:     '쿼카_마법숲_가이드_미션01.mp4',
+      videoTimeout: 12000,
+      missionLabel: '미션 1단계',
+      missionBg:    'linear-gradient(135deg, #1a472a 0%, #2d6a4f 50%, #1b4332 100%)',
+      cards: [
+        { emoji: '🍃', text: '잎사귀 찾기' },
+        { emoji: '🌰', text: '도토리 모으기' },
+        { emoji: '🦋', text: '나비 따라가기' },
+        { emoji: '🍄', text: '버섯 발견' },
+        { emoji: '🌸', text: '꽃 이름 맞추기' },
+        { emoji: '🐿️', text: '다람쥐 찾기' },
+      ],
+    };
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; height: 100%;
+      font-family: 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+      background: #0d1b2a;
+      overflow: hidden;
+    }
+
+    /* ── 화면 전환 ── */
+    .screen {
+      position: fixed; inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .screen.on {
+      display: flex;
+      animation: fadeIn .45s ease forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(.97); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    /* ══ 화면 1: 시작 버튼 ══ */
+    #s-start {
+      background: radial-gradient(ellipse at center, #1b3a5c 0%, #0d1b2a 70%);
+    }
+
+    .stars {
+      position: absolute; inset: 0; pointer-events: none; overflow: hidden;
+    }
+    .star {
+      position: absolute;
+      background: #fff;
+      border-radius: 50%;
+      animation: twinkle var(--d,3s) ease-in-out infinite var(--e,0s);
+    }
+    @keyframes twinkle {
+      0%,100% { opacity:.15; transform:scale(1); }
+      50%     { opacity:1;   transform:scale(2); }
+    }
+
+    .title {
+      color: #f9d71c;
+      font-size: clamp(1.3rem, 3.5vw, 2.4rem);
+      font-weight: 900;
+      text-shadow: 0 0 20px #f9d71c99;
+      margin-bottom: 2.5rem;
+      text-align: center;
+      animation: bob 2.5s ease-in-out infinite;
+    }
+    @keyframes bob {
+      0%,100% { transform: translateY(0); }
+      50%     { transform: translateY(-6px); }
+    }
+
+    .gem-btn {
+      position: relative;
+      border: none; background: none; cursor: pointer;
+      padding: 0;
+    }
+    .gem-face {
+      padding: 1rem 2.8rem;
+      border-radius: 60px;
+      background: linear-gradient(135deg, #ff6ec7, #ff9f43, #ffd32a);
+      font-size: clamp(1rem, 2.8vw, 1.6rem);
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 1px 4px rgba(0,0,0,.3);
+      box-shadow: 0 0 30px #ff9f4388, 0 6px 20px rgba(0,0,0,.4),
+                  inset 0 2px 4px rgba(255,255,255,.45);
+      animation: btn-bounce 1.8s ease-in-out infinite;
+      transition: transform .12s;
+    }
+    .gem-btn:active .gem-face { transform: scale(.93); }
+    @keyframes btn-bounce {
+      0%,100% { transform: translateY(0) scale(1); }
+      50%     { transform: translateY(-9px) scale(1.04); }
+    }
+
+    /* ══ 화면 2: 영상 ══ */
+    #s-video {
+      background: #000;
+      gap: 1.2rem;
+    }
+
+    .video-wrap {
+      /* 화면 너비의 28% (최소 260px ~ 최대 520px) */
+      width: clamp(260px, 28vw, 520px);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 0 50px #00e5ff55, 0 0 100px #00e5ff22;
+    }
+    #guide-video {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .video-msg {
+      color: #9ef;
+      font-size: clamp(.85rem, 2vw, 1.05rem);
+      letter-spacing: .07em;
+      min-height: 1.6em;
+      text-align: center;
+    }
+    .blink { animation: blink .85s step-end infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+
+    /* ══ 화면 3: 미션 카드 ══ */
+    #s-mission { gap: 0; }
+
+    .mission-title {
+      color: #f9d71c;
+      font-size: clamp(1.2rem, 3vw, 2rem);
+      font-weight: 900;
+      text-shadow: 0 0 14px #f9d71c88;
+      margin-bottom: .4rem;
+      animation: bob 2.5s ease-in-out infinite;
+    }
+    .mission-sub {
+      color: #b7e4c7;
+      font-size: clamp(.8rem, 1.8vw, 1rem);
+      margin-bottom: 1.6rem;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: .9rem;
+      padding: 0 1rem;
+      width: min(92vw, 780px);
+    }
+    .card {
+      background: rgba(255,255,255,.11);
+      border: 2px solid rgba(255,255,255,.22);
+      border-radius: 16px;
+      padding: 1.1rem .8rem;
+      display: flex; flex-direction: column;
+      align-items: center; gap: .45rem;
+      cursor: pointer;
+      transition: transform .18s, background .18s, box-shadow .18s;
+      animation: card-pop .45s ease both;
+    }
+    .card:nth-child(1){animation-delay:.04s}
+    .card:nth-child(2){animation-delay:.10s}
+    .card:nth-child(3){animation-delay:.16s}
+    .card:nth-child(4){animation-delay:.22s}
+    .card:nth-child(5){animation-delay:.28s}
+    .card:nth-child(6){animation-delay:.34s}
+    .card:nth-child(7){animation-delay:.40s}
+    .card:nth-child(8){animation-delay:.46s}
+    @keyframes card-pop {
+      from { opacity:0; transform:translateY(20px) scale(.88); }
+      to   { opacity:1; transform:translateY(0)    scale(1);   }
+    }
+    .card:hover {
+      transform: translateY(-5px) scale(1.06);
+      background: rgba(255,255,255,.2);
+      box-shadow: 0 8px 22px rgba(0,0,0,.3);
+    }
+    .card-icon { font-size: 2.2rem; line-height: 1; }
+    .card-label {
+      color: #fff; font-size: clamp(.75rem,1.7vw,.95rem);
+      font-weight: 700; text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 화면 1 -->
+  <section id="s-start" class="screen on">
+    <div class="stars" id="stars"></div>
+    <p class="title">✨ 쿼카의 마법숲에 온 걸 환영해! ✨</p>
+    <button class="gem-btn" id="btn-start">
+      <div class="gem-face">💎 멋진 미션 시작하기! 💎</div>
+    </button>
+  </section>
+
+  <!-- 화면 2 -->
+  <section id="s-video" class="screen">
+    <div class="video-wrap">
+      <video id="guide-video" playsinline controls></video>
+    </div>
+    <p class="video-msg blink" id="video-msg">쿼카가 말하고 있어요! 🐾</p>
+  </section>
+
+  <!-- 화면 3 -->
+  <section id="s-mission" class="screen">
+    <h2 class="mission-title" id="mission-title"></h2>
+    <p class="mission-sub">카드를 골라서 미션을 완성해 봐! 🌟</p>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <script>
+    /* ── 화면 전환 ── */
+    function show(id) {
+      document.querySelectorAll('.screen').forEach(el => {
+        el.classList.toggle('on', el.id === id);
+      });
+    }
+
+    /* ── 별 배경 ── */
+    const bg = document.getElementById('stars');
+    for (let i = 0; i < 80; i++) {
+      const s = document.createElement('div');
+      s.className = 'star';
+      const sz = (2 + Math.random() * 3).toFixed(0);
+      s.style.cssText =
+        `left:${(Math.random()*100).toFixed(1)}%;` +
+        `top:${(Math.random()*100).toFixed(1)}%;` +
+        `width:${sz}px;height:${sz}px;` +
+        `--d:${(2+Math.random()*3).toFixed(1)}s;` +
+        `--e:${(Math.random()*4).toFixed(1)}s`;
+      bg.appendChild(s);
+    }
+
+    /* ── 미션 카드 구성 ── */
+    document.getElementById('mission-title').textContent = GAME_CONFIG.missionLabel;
+    document.getElementById('s-mission').style.background = GAME_CONFIG.missionBg;
+    const cardGrid = document.getElementById('cards');
+    GAME_CONFIG.cards.forEach(c => {
+      const el = document.createElement('div');
+      el.className = 'card';
+      el.innerHTML = `<span class="card-icon">${c.emoji}</span><span class="card-label">${c.text}</span>`;
+      el.addEventListener('click', () => {
+        el.style.background = 'rgba(249,215,28,.35)';
+        el.style.borderColor = '#f9d71c';
+      });
+      cardGrid.appendChild(el);
+    });
+
+    /* ── 버튼 클릭 → 영상 ── */
+    document.getElementById('btn-start').addEventListener('click', () => {
+      show('s-video');
+
+      const video  = document.getElementById('guide-video');
+      const msgEl  = document.getElementById('video-msg');
+      let   timerGo = null;
+
+      function goMission() {
+        clearTimeout(timerGo);
+        video.pause();
+        show('s-mission');
+      }
+
+      video.src = GAME_CONFIG.videoSrc;
+
+      video.addEventListener('loadeddata', () => {
+        msgEl.textContent = '쿼카가 말하고 있어요! 🐾';
+        video.play().catch(() => {
+          msgEl.textContent = '▶ 화면을 눌러서 영상을 시작해 주세요!';
+          msgEl.classList.add('blink');
+        });
+      }, { once: true });
+
+      video.addEventListener('error', () => {
+        msgEl.classList.remove('blink');
+        msgEl.textContent = '⚠ 영상 파일을 찾을 수 없어요 — 파일명을 확인해 주세요';
+        msgEl.style.color = '#f66';
+      }, { once: true });
+
+      video.addEventListener('ended', goMission, { once: true });
+
+      /* 영상이 너무 길거나 오류시 자동 넘김 */
+      timerGo = setTimeout(goMission, GAME_CONFIG.videoTimeout);
+
+      video.load();
+    });
+  </script>
+</body>
+</html>

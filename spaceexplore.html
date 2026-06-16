@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>우주 공간 탐구 퀴즈</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;700;900&display=swap');
+        
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: #020617;
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(30, 58, 138, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(126, 34, 206, 0.2) 0%, transparent 50%);
+            color: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .glass-card {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .option-btn {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .option-btn:hover:not(:disabled) {
+            background: rgba(59, 130, 246, 0.2);
+            border-color: rgba(59, 130, 246, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .correct {
+            background: rgba(34, 197, 94, 0.2) !important;
+            border-color: #22c55e !important;
+            color: #4ade80 !important;
+        }
+
+        .incorrect {
+            background: rgba(239, 68, 68, 0.2) !important;
+            border-color: #ef4444 !important;
+            color: #f87171 !important;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.5;
+            animation: twinkle var(--duration) infinite ease-in-out;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="stars-container" class="fixed inset-0 pointer-events-none"></div>
+
+    <div class="container max-w-2xl mx-auto px-4 z-10">
+        <!-- Start Screen -->
+        <div id="start-screen" class="glass-card p-10 rounded-3xl text-center shadow-2xl">
+            <div class="text-7xl mb-6">🚀</div>
+            <h1 class="text-4xl font-extrabold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400 uppercase tracking-tighter">
+                우주 공간 탐구 미션
+            </h1>
+            <p class="text-slate-400 mb-8 leading-relaxed">
+                태양계 8개 행성을 탐사하며 데이터를 수집하세요.<br>
+                각 행성의 특징을 나타내는 퀴즈를 모두 맞히는 것이 목표입니다.
+            </p>
+            <button onclick="startQuiz()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-blue-900/50">
+                미션 시작하기
+            </button>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div id="quiz-screen" class="glass-card p-8 rounded-3xl shadow-2xl hidden">
+            <div class="flex justify-between items-center mb-8">
+                <div class="flex items-center gap-3">
+                    <span id="current-emoji" class="text-4xl">🪐</span>
+                    <div>
+                        <p id="planet-name" class="text-blue-400 text-xs font-bold uppercase tracking-widest leading-none">Planet</p>
+                        <h2 id="planet-title" class="text-xl font-bold">행성 이름</h2>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="text-slate-500 text-xs font-medium">탐사 진행도</p>
+                    <p class="text-sm font-bold text-slate-300"><span id="current-step">1</span> / 8</p>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="w-full bg-slate-800 h-1.5 rounded-full mb-8 overflow-hidden">
+                <div id="progress-bar" class="bg-blue-500 h-full transition-all duration-500" style="width: 12.5%;"></div>
+            </div>
+
+            <div id="question-text" class="text-xl font-bold mb-8 min-h-[3.5rem] leading-snug text-slate-100">
+                질문이 표시됩니다.
+            </div>
+
+            <div id="options-container" class="grid grid-cols-1 gap-3">
+                <!-- Options injected by JS -->
+            </div>
+
+            <div id="feedback-area" class="mt-8 text-center hidden">
+                <p id="feedback-text" class="font-bold text-lg mb-4"></p>
+                <button id="next-btn" onclick="nextQuestion()" class="w-full bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-xl font-bold transition-all">
+                    다음 행성으로 이동 ➔
+                </button>
+            </div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="glass-card p-10 rounded-3xl text-center shadow-2xl hidden">
+            <div id="result-emoji" class="text-7xl mb-6">🏆</div>
+            <h2 class="text-3xl font-bold mb-2">탐사 완료!</h2>
+            <p class="text-slate-400 mb-8">당신이 수집한 우주 데이터의 정확도는 다음과 같습니다.</p>
+            
+            <div class="bg-slate-900/50 rounded-2xl p-6 mb-8">
+                <p class="text-slate-400 text-sm mb-1 uppercase">최종 점수</p>
+                <div class="text-5xl font-black text-blue-400"><span id="final-score">0</span> / 8</div>
+            </div>
+
+            <button onclick="location.reload()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-4 rounded-2xl transition-all">
+                다시 탐사하기
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                planet: "수성",
+                emoji: "☄️",
+                question: "태양계 행성 중 태양과 가장 가까운 행성이며, 달처럼 표면에 운석 구덩이가 많은 행성은?",
+                options: ["금성", "수성", "화성", "해왕성"],
+                answer: 1
+            },
+            {
+                planet: "금성",
+                emoji: "🌕",
+                question: "두꺼운 이산화탄소 대기로 덮여 있어 온실 효과가 매우 강하며, 밤하늘에서 가장 밝게 보이는 행성은?",
+                options: ["수성", "지구", "금성", "목성"],
+                answer: 2
+            },
+            {
+                planet: "지구",
+                emoji: "🌍",
+                question: "액체 상태의 물이 존재하며 생명체가 살고 있는 태양계의 유일한 행성은?",
+                options: ["화성", "지구", "금성", "토성"],
+                answer: 1
+            },
+            {
+                planet: "화성",
+                emoji: "🔴",
+                question: "표면이 붉은색 흙(산화철)으로 덮여 있고, 과거에 물이 흐른 흔적이 발견된 행성은?",
+                options: ["목성", "화성", "수성", "금성"],
+                answer: 1
+            },
+            {
+                planet: "목성",
+                emoji: "🪐",
+                question: "태양계에서 가장 크며, 표면에 가로 줄무늬와 거대한 소용돌이인 '대적점'이 있는 행성은?",
+                options: ["토성", "해왕성", "천왕성", "목성"],
+                answer: 3
+            },
+            {
+                planet: "토성",
+                emoji: "🪐",
+                question: "얼음과 암석 파편으로 이루어진 뚜렷하고 거대한 고리를 가지고 있는 아름다운 행성은?",
+                options: ["천왕성", "토성", "목성", "금성"],
+                answer: 1
+            },
+            {
+                planet: "천왕성",
+                emoji: "💎",
+                question: "대기 중에 메테인이 포함되어 청록색으로 보이며, 자전축이 옆으로 누운 채 공전하는 행성은?",
+                options: ["천왕성", "해왕성", "토성", "지구"],
+                answer: 0
+            },
+            {
+                planet: "해왕성",
+                emoji: "🔵",
+                question: "태양계의 가장 바깥쪽에 위치하며, 표면에 '대흑점'이라는 소용돌이가 나타나는 푸른색 행성은?",
+                options: ["천왕성", "명왕성", "해왕성", "목성"],
+                answer: 2
+            }
+        ];
+
+        let currentStep = 0;
+        let score = 0;
+        let canAnswer = true;
+
+        function createStars() {
+            const container = document.getElementById('stars-container');
+            for (let i = 0; i < 150; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                const size = Math.random() * 2 + 1 + 'px';
+                star.style.width = size;
+                star.style.height = size;
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.setProperty('--duration', Math.random() * 3 + 2 + 's');
+                container.appendChild(star);
+            }
+        }
+
+        function startQuiz() {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const q = questions[currentStep];
+            canAnswer = true;
+            
+            document.getElementById('current-emoji').innerText = q.emoji;
+            document.getElementById('planet-title').innerText = q.planet;
+            document.getElementById('current-step').innerText = currentStep + 1;
+            document.getElementById('question-text').innerText = q.question;
+            document.getElementById('progress-bar').style.width = ((currentStep + 1) / questions.length * 100) + '%';
+            
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+            
+            q.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "option-btn w-full text-left p-5 rounded-2xl border border-white/10 glass-card text-slate-300 font-medium flex items-center gap-4";
+                btn.innerHTML = `
+                    <span class="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-900/30 text-blue-400 font-bold text-sm">${idx + 1}</span>
+                    <span>${opt}</span>
+                `;
+                btn.onclick = () => checkAnswer(idx, btn);
+                container.appendChild(btn);
+            });
+
+            document.getElementById('feedback-area').classList.add('hidden');
+        }
+
+        function checkAnswer(idx, selectedBtn) {
+            if (!canAnswer) return;
+            canAnswer = false;
+
+            const q = questions[currentStep];
+            const allBtns = document.querySelectorAll('.option-btn');
+            
+            if (idx === q.answer) {
+                score++;
+                selectedBtn.classList.add('correct');
+                document.getElementById('feedback-text').innerText = "✨ 정확한 데이터입니다! 탐사 성공.";
+                document.getElementById('feedback-text').className = "font-bold text-lg mb-4 text-green-400";
+            } else {
+                selectedBtn.classList.add('incorrect');
+                allBtns[q.answer].classList.add('correct');
+                document.getElementById('feedback-text').innerText = "⚠️ 데이터 오류! 올바른 정보가 아닙니다.";
+                document.getElementById('feedback-text').className = "font-bold text-lg mb-4 text-red-400";
+            }
+
+            allBtns.forEach(btn => btn.disabled = true);
+            document.getElementById('feedback-area').classList.remove('hidden');
+        }
+
+        function nextQuestion() {
+            currentStep++;
+            if (currentStep < questions.length) {
+                loadQuestion();
+            } else {
+                showResult();
+            }
+        }
+
+        function showResult() {
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+            document.getElementById('final-score').innerText = score;
+
+            const emoji = document.getElementById('result-emoji');
+            if (score === 8) {
+                emoji.innerText = "👑";
+            } else if (score >= 5) {
+                emoji.innerText = "⭐";
+            } else {
+                emoji.innerText = "👨‍🚀";
+            }
+        }
+
+        window.onload = createStars;
+    </script>
+</body>
+</html>

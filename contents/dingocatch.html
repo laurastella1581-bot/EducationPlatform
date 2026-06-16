@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dingo Catch Adventure</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            touch-action: none;
+        }
+        canvas {
+            display: block;
+            background: linear-gradient(to bottom, #87CEEB, #E0F7FA);
+        }
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            color: #333;
+        }
+        .menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.72);
+            backdrop-filter: blur(5px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            pointer-events: auto;
+            padding: 1rem;
+        }
+        .modal-box {
+            background: #fff;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 420px;
+            overflow: hidden;
+            border: 4px solid #16a34a;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.35);
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn {
+            from { transform: scale(0.7); opacity: 0; }
+            to   { transform: scale(1);   opacity: 1; }
+        }
+        .dingo-header {
+            background: linear-gradient(135deg, #16a34a, #15803d);
+            padding: 1.5rem;
+            text-align: center;
+        }
+        .rule-item {
+            background: #f0fdf4;
+            border-left: 4px solid #16a34a;
+            border-radius: 8px;
+            padding: 0.5rem 0.8rem;
+            margin: 0.35rem 0;
+            font-size: 0.9rem;
+            color: #14532d;
+            font-weight: 600;
+            font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+        }
+        .btn {
+            width: 100%;
+            background: linear-gradient(135deg, #16a34a, #15803d);
+            color: white;
+            padding: 0.9rem;
+            border-radius: 14px;
+            font-size: 1.3rem;
+            font-weight: 900;
+            cursor: pointer;
+            transition: all 0.15s;
+            border: none;
+            box-shadow: 0 5px 0 #14532d;
+            font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+        }
+        .btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 1px 0 #14532d;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="ui-layer">
+        <div class="flex justify-between items-start pointer-events-none">
+            <div class="bg-white/80 p-4 rounded-2xl shadow-sm border border-white">
+                <div class="text-sm font-bold text-gray-500 uppercase tracking-wider">Score</div>
+                <div id="scoreLabel" class="text-3xl font-black text-pink-500">0</div>
+            </div>
+            <div class="bg-white/80 p-4 rounded-2xl shadow-sm border border-white text-right">
+                <div class="text-sm font-bold text-gray-500 uppercase tracking-wider">Best</div>
+                <div id="bestLabel" class="text-3xl font-black text-gray-700">0</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 시작 화면 -->
+    <div id="startMenu" class="menu-overlay">
+        <div class="modal-box">
+            <div class="dingo-header">
+                <div style="font-size:3rem;margin-bottom:0.3rem;">🐕</div>
+                <h1 style="font-size:2rem;font-weight:900;color:white;margin:0;">딩고 캐치!</h1>
+                <p style="color:rgba(255,255,255,0.85);font-size:0.82rem;margin-top:4px;">5세 이상 · 1명 · 순발력 반응 게임</p>
+            </div>
+            <div style="padding:1.2rem 1.5rem;">
+                <p style="font-size:0.72rem;font-weight:900;color:#15803d;text-transform:uppercase;letter-spacing:0.1em;text-align:center;margin-bottom:0.8rem;">게임 방법</p>
+                <div class="rule-item">1️⃣ 마우스(또는 터치)로 강아지 딩고를 좌우로 움직입니다.</div>
+                <div class="rule-item">2️⃣ 하늘에서 떨어지는 간식 🦴🍗🥨을 받으세요! (+10점)</div>
+                <div class="rule-item">3️⃣ 별⭐을 잡으면 보너스 +50점!</div>
+                <div class="rule-item">4️⃣ 폭탄 💣은 절대 닿으면 안돼요! 게임 오버!</div>
+                <div class="rule-item">5️⃣ 점수를 최대한 높이 쌓아보세요 🏆</div>
+            </div>
+            <div style="padding:0 1.5rem 1.5rem;">
+                <button class="btn" onclick="startGame()">🐕 게임 시작!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 게임 오버 화면 -->
+    <div id="gameOverMenu" class="menu-overlay" style="display: none;">
+        <h2 class="text-5xl font-black text-red-500 mb-2">GAME OVER</h2>
+        <p id="finalScore" class="text-2xl text-gray-700 mb-8">최종 점수: 0</p>
+        <button class="btn" onclick="startGame()">다시 도전</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreLabel = document.getElementById('scoreLabel');
+        const bestLabel = document.getElementById('bestLabel');
+        const startMenu = document.getElementById('startMenu');
+        const gameOverMenu = document.getElementById('gameOverMenu');
+        const finalScoreLabel = document.getElementById('finalScore');
+
+        let score = 0;
+        let highScore = 0;
+        let gameActive = false;
+        let animationId;
+        
+        const config = {
+            spawnRate: 0.02,
+            gravity: 0.1,
+            maxSpeed: 8,
+            minSpeed: 3
+        };
+
+        const player = {
+            x: 0,
+            y: 0,
+            width: 80,
+            height: 80,
+            targetX: 0,
+            emoji: '🐶'
+        };
+
+        let items = [];
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            player.y = canvas.height - 120;
+            player.x = canvas.width / 2 - player.width / 2;
+            player.targetX = player.x;
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+
+        // 컨트롤 핸들러
+        const updateTarget = (e) => {
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            player.targetX = clientX - player.width / 2;
+        };
+
+        window.addEventListener('mousemove', updateTarget);
+        window.addEventListener('touchmove', updateTarget, { passive: false });
+
+        class Item {
+            constructor() {
+                this.width = 40;
+                this.height = 40;
+                this.x = Math.random() * (canvas.width - this.width);
+                this.y = -this.height;
+                this.speed = config.minSpeed + Math.random() * (config.maxSpeed - config.minSpeed);
+                
+                const rand = Math.random();
+                if (rand < 0.7) {
+                    this.type = 'food';
+                    this.content = ['🦴', '🍗', '🥨', '🍪'][Math.floor(Math.random() * 4)];
+                    this.points = 10;
+                } else if (rand < 0.85) {
+                    this.type = 'bonus';
+                    this.content = '⭐';
+                    this.points = 50;
+                } else {
+                    this.type = 'bomb';
+                    this.content = '💣';
+                    this.points = 0;
+                }
+            }
+
+            update() {
+                this.y += this.speed;
+            }
+
+            draw() {
+                ctx.font = '40px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(this.content, this.x + this.width / 2, this.y + this.height / 2);
+            }
+        }
+
+        function startGame() {
+            score = 0;
+            items = [];
+            gameActive = true;
+            scoreLabel.innerText = score;
+            startMenu.style.display = 'none';
+            gameOverMenu.style.display = 'none';
+            
+            cancelAnimationFrame(animationId);
+            gameLoop();
+        }
+
+        function gameOver() {
+            gameActive = false;
+            if (score > highScore) {
+                highScore = score;
+                bestLabel.innerText = highScore;
+            }
+            finalScoreLabel.innerText = `최종 점수: ${score}`;
+            gameOverMenu.style.display = 'flex';
+        }
+
+        function spawnItems() {
+            if (Math.random() < config.spawnRate + (score / 10000)) {
+                items.push(new Item());
+            }
+        }
+
+        function update() {
+            if (!gameActive) return;
+
+            // 플레이어 부드러운 이동
+            player.x += (player.targetX - player.x) * 0.15;
+            
+            // 경계 제한
+            if (player.x < 0) player.x = 0;
+            if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
+
+            spawnItems();
+
+            for (let i = items.length - 1; i >= 0; i--) {
+                const item = items[i];
+                item.update();
+
+                // 충돌 검사
+                if (
+                    item.x < player.x + player.width - 10 &&
+                    item.x + item.width > player.x + 10 &&
+                    item.y < player.y + player.height - 10 &&
+                    item.y + item.height > player.y + 10
+                ) {
+                    if (item.type === 'bomb') {
+                        gameOver();
+                    } else {
+                        score += item.points;
+                        scoreLabel.innerText = score;
+                        items.splice(i, 1);
+                    }
+                    continue;
+                }
+
+                // 화면 밖으로 나감
+                if (item.y > canvas.height) {
+                    items.splice(i, 1);
+                }
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 배경 장식 (구름 효과 등)
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.beginPath();
+            ctx.arc(100, 100, 50, 0, Math.PI * 2);
+            ctx.arc(150, 100, 60, 0, Math.PI * 2);
+            ctx.arc(200, 100, 50, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 아이템 그리기
+            items.forEach(item => item.draw());
+
+            // 플레이어 그리기
+            ctx.font = '70px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(player.emoji, player.x + player.width / 2, player.y + player.height / 2);
+            
+            // 바닥 지면
+            ctx.fillStyle = '#8BC34A';
+            ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
+        }
+
+        function gameLoop() {
+            if (!gameActive) return;
+            update();
+            draw();
+            animationId = requestAnimationFrame(gameLoop);
+        }
+
+        // 초기 드로잉
+        draw();
+    </script>
+</body>
+</html>

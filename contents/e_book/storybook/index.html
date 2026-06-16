@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>과학 동화: 연잎 위 나만의 오후</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap');
+        
+        body {
+            font-family: 'Nanum Gothic', sans-serif;
+            background-color: #f1f5f9;
+        }
+
+        .book-container {
+            transition: all 0.3s ease;
+        }
+
+        .bg-gradient-transition {
+            transition: background 0.7s ease-in-out;
+        }
+
+        .image-glow {
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1));
+        }
+
+        /* 과학 비밀 노트 잘림 방지 및 스크롤 설정 */
+        .content-scroll {
+            scrollbar-width: thin;
+            scrollbar-color: #22c55e #f1f5f9;
+        }
+
+        .badge-animation {
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .snap-animation {
+            animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
+
+        @keyframes ping {
+            75%, 100% {
+                transform: scale(1.5);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-0">
+
+    <div class="w-full bg-white overflow-hidden border-[10px] border-green-600 relative flex flex-col min-h-[700px] aspect-[16/10] book-container">
+        
+        <!-- 헤더 -->
+        <header class="bg-green-600 p-5 text-white flex justify-between items-center shadow-md z-10">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-book-open text-3xl"></i>
+                <h1 class="font-extrabold text-2xl md:text-3xl">과학 동화: 연잎 위 나만의 오후</h1>
+            </div>
+            <span id="page-indicator" class="bg-white/20 text-white px-5 py-2 rounded-full text-lg font-bold backdrop-blur-sm">
+                1 / 6 페이지
+            </span>
+        </header>
+
+        <!-- 메인 콘텐츠 영역 -->
+        <main id="main-content" class="flex-1 flex flex-col lg:flex-row bg-gradient-to-br from-blue-50 to-green-50 transition-colors duration-700 overflow-hidden">
+            
+            <!-- 왼쪽: 이미지 패널 -->
+            <div class="flex-1 flex items-center justify-center p-8 relative lg:border-r-2 border-black/10 bg-white/30 shadow-[inset_-10px_0_20px_rgba(0,0,0,0.05)]">
+                <div class="w-full h-full bg-white rounded-3xl shadow-lg flex items-center justify-center p-4 relative overflow-hidden border-4 border-white">
+                    <img id="page-image" src="1.png" alt="동화 이미지" class="max-h-full max-w-full object-contain transition-all duration-700 rounded-xl image-glow">
+                    
+                    <!-- 오버레이 효과 (JS에서 제어) -->
+                    <div id="float-badge" class="absolute bottom-6 left-6 bg-blue-600/90 text-white text-sm px-4 py-2 rounded-full shadow-lg font-black backdrop-blur-sm badge-animation hidden">
+                        물 위를 둥둥! 🌊
+                    </div>
+                    <div id="snap-badge" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-rose-600/90 text-white text-xl px-8 py-3 rounded-full shadow-2xl font-black backdrop-blur-sm snap-animation hidden">
+                        덥석! 👅
+                    </div>
+                </div>
+            </div>
+
+            <!-- 오른쪽: 텍스트 패널 -->
+            <div class="flex-1 flex flex-col p-8 md:p-10 bg-white/10 backdrop-blur-md shadow-[inset_10px_0_20px_rgba(0,0,0,0.05)]">
+                <!-- 동화 본문 -->
+                <div class="bg-white/80 p-8 rounded-[2rem] shadow-md border border-white/60 mb-6 flex-grow overflow-y-auto content-scroll">
+                    <h2 class="text-3xl font-black text-green-900 mb-6 border-b-4 border-green-500/50 pb-4 flex items-center gap-4">
+                        <span id="page-number-circle" class="w-12 h-12 bg-green-600 text-white rounded-xl flex items-center justify-center text-xl shadow-lg transform -rotate-3 flex-shrink-0">1</span>
+                        <span id="page-title">연잎 위, 나만의 맛있는 오후</span>
+                    </h2>
+                    <p id="page-content" class="text-gray-900 text-2xl leading-relaxed whitespace-pre-wrap font-bold tracking-tight">
+                        안녕! 내 이름은 금개구리야. 나는 지금 우리 집 앞마당인 커다란 연잎 위에 앉아 있어. 햇볕이 어찌나 따스한지, 등 뒤가 보드라워져서 낮잠 자기 딱 좋은 날씨지 뭐야.
+                    </p>
+                </div>
+
+                <!-- 과학 비밀 노트 -->
+                <div class="flex-shrink-0 bg-amber-50 border-l-[12px] border-amber-400 p-6 rounded-r-[2rem] shadow-xl transform rotate-1">
+                    <div class="flex items-center gap-3 text-amber-800 font-black text-xl mb-3">
+                        <i class="fa-solid fa-circle-info text-amber-600 animate-pulse"></i>
+                        <span>꼬마 과학자의 비밀 노트</span>
+                    </div>
+                    <p id="scientist-note" class="text-amber-950 font-bold text-xl leading-snug italic">
+                        금개구리는 연잎 위에서 햇볕을 쬐며 체온을 조절해요. 연잎은 개구리에게 아주 훌륭한 쉼터가 되어준답니다.
+                    </p>
+                </div>
+            </div>
+        </main>
+
+        <!-- 내비게이션 버튼 -->
+        <button id="prev-btn" class="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 p-4 md:p-5 rounded-full shadow-2xl z-30 transition-all active:scale-90 bg-gray-200 text-gray-400 cursor-not-allowed scale-75 opacity-50">
+            <i class="fa-solid fa-chevron-left text-4xl"></i>
+        </button>
+
+        <button id="next-btn" class="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 p-4 md:p-5 rounded-full shadow-2xl z-30 transition-all active:scale-90 bg-white/95 hover:bg-green-50 text-green-700 border-4 border-green-200 hover:scale-110">
+            <i class="fa-solid fa-chevron-right text-4xl"></i>
+        </button>
+
+        <!-- 하단 진행 표시줄 -->
+        <div class="h-4 bg-gray-200 w-full relative border-t-4 border-black/5">
+            <div id="progress-bar" class="h-full bg-green-500 transition-all duration-1000 shadow-[0_0_20px_rgba(34,197,94,0.7)]" style="width: 16.66%;"></div>
+            <div id="frog-marker" class="absolute top-1/2 -translate-y-1/2 transition-all duration-1000 text-5xl drop-shadow-md" style="left: calc(16.66% - 25px);">
+                🐸
+            </div>
+        </div>
+    </div>
+
+    <!-- 하단 점 내비게이션 -->
+    <div class="fixed bottom-10 flex flex-col items-center gap-6">
+        <div id="dots-container" class="flex gap-4">
+            <!-- JS에서 생성됨 -->
+        </div>
+    </div>
+
+    <script>
+        const pages = [
+            {
+                title: "연잎 위, 나만의 맛있는 오후",
+                content: "안녕! 내 이름은 금개구리야. 나는 지금 우리 집 앞마당인 커다란 연잎 위에 앉아 있어. 햇볕이 어찌나 따스한지, 등 뒤가 보드라워져서 낮잠 자기 딱 좋은 날씨지 뭐야.",
+                image: "1.png",
+                bg: "from-blue-50 to-green-50",
+                scientistNote: "금개구리는 연잎 위에서 햇볕을 쬐며 체온을 조절해요. 연잎은 개구리에게 아주 훌륭한 쉼터가 되어준답니다."
+            },
+            {
+                title: "물 위를 걷는 소금쟁이",
+                content: "그때, 내 옆을 '슈우웅-'하고 미끄러지듯 지나가는 친구가 있었어. 바로 소금쟁이야. 소금쟁이는 물 위를 마치 스케이트를 타듯 아주 자유롭게 다니거든.\n\n\"안녕, 소금쟁이야! 넌 어떻게 그렇게 물 위를 걷니? 발이 젖지도 않고 말이야. 정말 부럽다!\"",
+                image: "2.png",
+                bg: "from-blue-100 to-cyan-50",
+                scientistNote: "소금쟁이는 가벼운 몸과 다리의 특별한 구조 덕분에 물의 표면장력을 이용해 가라앉지 않고 걸을 수 있어요."
+            },
+            {
+                title: "소금쟁이의 비밀, 솜털",
+                content: "소금쟁이가 멈춰 서서 내 다리를 보더니 웃으며 말했어.\n\n\"금개구리야, 나한테는 다리에 아주 미세한 솜털들이 나 있거든. 이 솜털들이 물을 튕겨내서 내가 가라앉지 않고 물 위를 걸을 수 있게 해주는 거야.\"",
+                image: "3.png",
+                bg: "from-blue-50 to-blue-100",
+                scientistNote: "다리에 난 수많은 미세한 털들이 공기를 머금어 물을 밀어내기 때문에 발이 물에 젖지 않는 것이랍니다."
+            },
+            {
+                title: "나만의 특별한 재능",
+                content: "나는 내 물갈퀴 다리를 보며 한숨을 쉬었어. 하지만 소금쟁이는 나를 위로해 주었지.\n\n\"하지만 넌 끈적한 혀로 곤충을 낚아채는 최고의 사냥꾼이잖아! 다 각자의 장점이 있는걸.\"",
+                image: "4.png",
+                bg: "from-green-50 to-yellow-50",
+                scientistNote: "개구리는 물 위를 걷지는 못하지만, 길고 끈적한 혀를 이용해 누구보다 빠르게 먹이를 잡을 수 있는 재능이 있어요."
+            },
+            {
+                title: "덥석! 사냥 성공",
+                content: "\"지잉~ 지잉~\" 날개 소리가 들렸어! 곤충 친구가 내 코앞까지 왔을 때, 나는 혀를 쏘옥 내밀었어.\n\n\"앗! 덥석!\"\n\n내 길쭉하고 끈적끈적한 혀에 곤충 친구가 '철썩' 붙어버렸어. 꿀꺽! 정말 맛있어!",
+                image: "5.png",
+                bg: "from-green-100 to-blue-50",
+                scientistNote: "개구리의 혀는 0.1초 만에 튀어나올 정도로 빨라요. 끈적한 액체가 묻어 있어 먹이가 도망갈 수 없답니다."
+            },
+            {
+                title: "행복한 낮잠 시간",
+                content: "\"잘 먹었다! 소금쟁이야, 넌 물 위를 걷는 멋쟁이 사냥꾼이고, 나는 혀로 낚아채는 멋진 사냥꾼이네!\"\n\n나는 이제 다시 따스한 햇볕을 받으며 연잎 위에 누웠어. 졸음이 솔솔 밀려와. 모두들 잘 자!",
+                image: "6.png",
+                bg: "from-orange-50 to-blue-50",
+                scientistNote: "모든 생물은 저마다 살아가는 데 필요한 특별한 무기를 가지고 있어요. 우리도 우리만의 장점이 있겠죠?"
+            }
+        ];
+
+        let currentPage = 0;
+
+        const mainContent = document.getElementById('main-content');
+        const pageImage = document.getElementById('page-image');
+        const pageTitle = document.getElementById('page-title');
+        const pageContent = document.getElementById('page-content');
+        const pageIndicator = document.getElementById('page-indicator');
+        const pageNumberCircle = document.getElementById('page-number-circle');
+        const scientistNote = document.getElementById('scientist-note');
+        const progressBar = document.getElementById('progress-bar');
+        const frogMarker = document.getElementById('frog-marker');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const dotsContainer = document.getElementById('dots-container');
+        const floatBadge = document.getElementById('float-badge');
+        const snapBadge = document.getElementById('snap-badge');
+
+        // 점 내비게이션 초기화
+        pages.forEach((_, idx) => {
+            const dot = document.createElement('button');
+            dot.className = `h-4 rounded-full transition-all duration-500 shadow-md ${idx === 0 ? 'bg-green-600 w-16' : 'bg-gray-300 w-5 hover:bg-green-400'}`;
+            dot.onclick = () => renderPage(idx);
+            dotsContainer.appendChild(dot);
+        });
+
+        function renderPage(index) {
+            currentPage = index;
+            const page = pages[currentPage];
+
+            // 텍스트 업데이트
+            pageTitle.innerText = page.title;
+            pageContent.innerText = page.content;
+            scientistNote.innerText = page.scientistNote;
+            pageIndicator.innerText = `${currentPage + 1} / ${pages.length} 페이지`;
+            pageNumberCircle.innerText = currentPage + 1;
+
+            // 이미지 업데이트
+            pageImage.src = page.image;
+            
+            // 배경 그라데이션 업데이트
+            mainContent.className = `flex-1 flex flex-col lg:flex-row bg-gradient-to-br ${page.bg} transition-colors duration-700 overflow-hidden`;
+
+            // 진행 바 업데이트
+            const progress = ((currentPage + 1) / pages.length) * 100;
+            progressBar.style.width = `${progress}%`;
+            frogMarker.style.left = `calc(${progress}% - 25px)`;
+
+            // 배지 효과 제어
+            floatBadge.classList.toggle('hidden', !(currentPage === 1 || currentPage === 2));
+            snapBadge.classList.toggle('hidden', currentPage !== 4);
+
+            // 버튼 상태 업데이트
+            if (currentPage === 0) {
+                prevBtn.disabled = true;
+                prevBtn.className = "absolute left-4 md:left-8 top-1/2 -translate-y-1/2 p-4 md:p-5 rounded-full shadow-2xl z-30 transition-all bg-gray-200 text-gray-400 cursor-not-allowed scale-75 opacity-50";
+            } else {
+                prevBtn.disabled = false;
+                prevBtn.className = "absolute left-4 md:left-8 top-1/2 -translate-y-1/2 p-4 md:p-5 rounded-full shadow-2xl z-30 transition-all active:scale-90 bg-white/95 hover:bg-green-50 text-green-700 border-4 border-green-200 hover:scale-110";
+            }
+
+            if (currentPage === pages.length - 1) {
+                nextBtn.disabled = true;
+                nextBtn.className = "absolute right-4 md:right-8 top-1/2 -translate-y-1/2 p-4 md:p-5 rounded-full shadow-2xl z-30 transition-all bg-gray-200 text-gray-400 cursor-not-allowed scale-75 opacity-50";
+            } else {
+                nextBtn.disabled = false;
+                nextBtn.className = "absolute right-4 md:right-8 top-1/2 -translate-y-1/2 p-4 md:p-5 rounded-full shadow-2xl z-30 transition-all active:scale-90 bg-white/95 hover:bg-green-50 text-green-700 border-4 border-green-200 hover:scale-110";
+            }
+
+            // 하단 점 상태 업데이트
+            Array.from(dotsContainer.children).forEach((dot, idx) => {
+                dot.className = `h-4 rounded-full transition-all duration-500 shadow-md ${idx === currentPage ? 'bg-green-600 w-16' : 'bg-gray-300 w-5 hover:bg-green-400'}`;
+            });
+        }
+
+        prevBtn.onclick = () => { if (currentPage > 0) renderPage(currentPage - 1); };
+        nextBtn.onclick = () => { if (currentPage < pages.length - 1) renderPage(currentPage + 1); };
+
+        // 초기 페이지 렌더링
+        window.onload = () => renderPage(0);
+    </script>
+</body>
+</html>

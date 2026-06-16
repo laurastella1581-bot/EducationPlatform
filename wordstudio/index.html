@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pond Adventure - Theater Script</title>
+    <!-- Tailwind CSS Play CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+            100% { transform: translateY(0px); }
+        }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        .selection-highlight { background-color: #FFE4BC; }
+    </style>
+</head>
+<body class="bg-[#FDFCFB]">
+
+  <!-- con01 서브헤더 -->
+  <div style="position:fixed;top:0;left:0;right:0;z-index:9999;background:#f0fdf4;border-bottom:2px solid #bbf7d0;padding:6px 16px;">
+    <div style="max-width:900px;margin:0 auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <span style="font-size:10px;font-weight:900;color:#166534;background:#dcfce7;border:1.5px solid #86efac;border-radius:999px;padding:2px 10px;flex-shrink:0;">📌 con01</span>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="con-btn" data-label="🔬 자연관찰놀이" onclick="showAllCon()" style="background:#fff;border:1.5px solid #86efac;border-radius:999px;padding:3px 11px;font-size:10px;font-weight:800;color:#166534;cursor:pointer;transition:all 0.2s;">🔬 자연관찰놀이</button>
+        <button class="con-btn" data-label="📖 국어 동화코너" onclick="showAllCon()" style="background:#fff;border:1.5px solid #86efac;border-radius:999px;padding:3px 11px;font-size:10px;font-weight:800;color:#166534;cursor:pointer;transition:all 0.2s;">📖 국어 동화코너</button>
+        <button class="con-btn" data-label="📚 English story book" onclick="showAllCon()" style="background:#fff;border:1.5px solid #86efac;border-radius:999px;padding:3px 11px;font-size:10px;font-weight:800;color:#166534;cursor:pointer;transition:all 0.2s;">📚 English story book</button>
+        <button class="con-btn" data-label="🗣️ 쿼카의 영어 Q&A 영어라운지" onclick="showAllCon()" style="background:#fff;border:1.5px solid #86efac;border-radius:999px;padding:3px 11px;font-size:10px;font-weight:800;color:#166534;cursor:pointer;transition:all 0.2s;">🗣️ 쿼카의 영어 Q&A 영어라운지</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    var conShown = false;
+    function showAllCon() {
+      conShown = !conShown;
+      document.querySelectorAll('.con-btn').forEach(function(b) {
+        if (conShown) { b.textContent = b.dataset.label + ' · con01'; b.style.background = '#16a34a'; b.style.color = '#fff'; }
+        else { b.textContent = b.dataset.label; b.style.background = '#fff'; b.style.color = '#166534'; }
+      });
+    }
+  </script>
+
+    <div id="root"></div>
+
+    <!-- React and Libraries -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script type="text/babel">
+        const { useState, useEffect, useCallback, useMemo } = React;
+        const { motion, AnimatePresence } = window.Motion;
+
+        const SCRIPT_TEXT = `[Scene 1 : At the Pond]
+(Goldie is sitting on a chair/cushion acting like a lily pad, stretching in the sun.)
+Narrator : It is a peaceful afternoon at the pond. Goldie is relaxing.
+Goldie : (Happily) Ah, what a beautiful day! The sun is so warm on my back.
+
+[Scene 2 : Meeting Skater]
+(Skater enters, moving smoothly like he's skating.)
+Skater : Whoosh! Look at me go!
+Goldie : (Surprised) Wow, Skater! You are so fast! How do you walk on water?
+Skater : (Shows legs) See these tiny hairs on my legs? They help me float!
+Goldie : (A bit sad) I wish I could walk on water too.
+Skater : (Pats Goldie’s shoulder) Don’t be sad! You are the best hunter in this pond!
+
+[Scene 3 : The Big Hunt]
+(The Insect enters, flying around making "Buzz" sounds.)
+Goldie : (Whispering) Shh! Look! Dinner is coming.
+(Goldie crouches down and stays very still. When the Insect is close...)
+Goldie : SNAP!
+(Goldie pretends to throw a long tongue out and grabs the Insect.)
+Goldie : Gotcha! Mmm, so yummy!
+Skater : (Clapping) Great job, Goldie! You really are the best hunter!
+Goldie : (Bow) Thank you, thank you! I guess being a frog is pretty great after all.`;
+
+        const LEVEL_1_WORDS = 'pond sun water legs hunter back hairs best lunch frogs small hair tiny fast walk fish home food jump play';
+        const LEVEL_2_WORDS = 'peaceful afternoon relaxing beautiful smoothly skating surprised whispering crouches pretends yummy clapping through adventure special hunting';
+
+        function App() {
+            const [mode, setMode] = useState('level1');
+            const [highlightedWordId, setHighlightedWordId] = useState(null);
+            const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+            const [voices, setVoices] = useState([]);
+            const [selectedVoice, setSelectedVoice] = useState(null);
+            const [rate, setRate] = useState(1);
+            const [pitch, setPitch] = useState(1);
+
+            useEffect(() => {
+                const loadVoices = () => {
+                    const v = window.speechSynthesis.getVoices();
+                    setVoices(v);
+                    const defaultVoice = v.find(voice => voice.lang.includes('en-US')) || v[0];
+                    if (defaultVoice) setSelectedVoice(defaultVoice.name);
+                };
+                loadVoices();
+                window.speechSynthesis.onvoiceschanged = loadVoices;
+            }, []);
+
+            const speak = useCallback((text, id) => {
+                window.speechSynthesis.cancel();
+                const cleanWord = text.replace(/[^a-zA-Z]/g, '');
+                if (!cleanWord) return;
+
+                const utterance = new SpeechSynthesisUtterance(cleanWord);
+                if (selectedVoice) {
+                    const voice = voices.find(v => v.name === selectedVoice);
+                    if (voice) utterance.voice = voice;
+                }
+                utterance.rate = rate;
+                utterance.pitch = pitch;
+                utterance.onstart = () => setHighlightedWordId(id);
+                utterance.onend = () => setHighlightedWordId(null);
+                utterance.onerror = () => setHighlightedWordId(null);
+                window.speechSynthesis.speak(utterance);
+            }, [selectedVoice, rate, pitch, voices]);
+
+            const parseScript = (text) => {
+                return text.split('\n').filter(line => line.trim() !== '').map((line, index) => {
+                    if (line.startsWith('[Scene')) return { id: `line-${index}`, type: 'scene', text: line };
+                    if (line.startsWith('(') && line.endsWith(')')) return { id: `line-${index}`, type: 'direction', text: line };
+                    if (line.includes(':')) {
+                        const [speaker, ...rest] = line.split(':');
+                        return { id: `line-${index}`, type: 'dialogue', speaker: speaker.trim(), text: rest.join(':').trim() };
+                    }
+                    return { id: `line-${index}`, type: 'direction', text: line };
+                });
+            };
+
+            const scriptParts = useMemo(() => parseScript(SCRIPT_TEXT), []);
+
+            const renderWords = (text, lineId) => {
+                return text.split(/(\s+)/).map((part, i) => {
+                    if (/^\s+$/.test(part)) return <span key={i}>{part}</span>;
+                    const wordId = `${lineId}-${i}`;
+                    const isHigh = highlightedWordId === wordId;
+                    return (
+                        <motion.span
+                            key={i}
+                            whileHover={{ scale: 1.15, color: '#FF6321' }}
+                            onClick={(e) => { e.stopPropagation(); speak(part, wordId); }}
+                            className={`cursor-pointer transition-all px-0.5 rounded-sm relative inline-block ${isHigh ? 'bg-[#1A1A1A] text-white font-bold scale-110 shadow-xl px-1.5 z-10' : ''}`}
+                        >
+                            {part}
+                        </motion.span>
+                    );
+                });
+            };
+
+            return (
+                <div className="min-h-screen text-[#1A1A1A] font-sans">
+                    {/* Header */}
+                    <header className="border-b border-[#E5E5E5] bg-white/90 backdrop-blur-xl sticky top-0 z-40">
+                        <div className="max-w-5xl mx-auto px-6 h-20 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-[#1A1A1A] rounded-2xl flex items-center justify-center shadow-lg transform -rotate-3 transition-transform">
+                                    <div className="text-white">🎭</div>
+                                </div>
+                                <div className="flex flex-col">
+                                    <h1 className="text-xl font-black tracking-tighter leading-none uppercase">Pond Theater</h1>
+                                    <span className="text-[10px] font-bold text-[#FF6321] tracking-[0.3em] uppercase opacity-70">Interactive HTML Edition</span>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={() => setIsSidebarOpen(true)}
+                                className="flex items-center gap-3 px-5 py-2.5 bg-[#F5F5F5] hover:bg-[#1A1A1A] hover:text-white rounded-full transition-all text-xs font-black uppercase tracking-widest border border-[#E5E5E5]"
+                            >
+                                Audio Settings
+                            </button>
+                        </div>
+                    </header>
+
+                    <main className="max-w-5xl mx-auto px-6 py-16 flex flex-col gap-16">
+                        {/* Nav */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                            {['level1', 'level2', 'script'].map((l, i) => (
+                                <button 
+                                    key={l}
+                                    onClick={() => setMode(l)}
+                                    className={`p-8 rounded-[2.5rem] border-2 transition-all text-left flex flex-col gap-4 ${mode === l ? 'border-[#1A1A1A] bg-[#1A1A1A] text-white shadow-2xl scale-[1.02]' : 'border-[#E5E5E5] bg-white'}`}
+                                >
+                                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-sm font-black transform rotate-12 ${mode === l ? 'bg-white text-[#1A1A1A]' : 'bg-[#F5F5F5]'}`}>{i + 1}</div>
+                                    <h3 className="font-black text-xl leading-tight uppercase">{l === 'script' ? 'Performance' : `Step ${i + 1}`}</h3>
+                                    <p className="text-xs opacity-50 font-semibold">{l === 'script' ? 'The Structured Stage' : 'Master Vocabulary'}</p>
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Stage */}
+                        <div className="bg-white border-2 border-[#1A1A1A] rounded-[4rem] shadow-[20px_20px_0px_rgba(0,0,0,0.03)] overflow-hidden">
+                            <div className="p-10 sm:p-20">
+                                <AnimatePresence mode="wait">
+                                    {mode === 'script' ? (
+                                        <motion.article key="script" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-12 max-w-2xl mx-auto font-serif">
+                                            {scriptParts.map((part) => (
+                                                <div key={part.id} className="relative">
+                                                    {part.type === 'scene' && (
+                                                        <div className="text-center mb-16 space-y-4">
+                                                            <h2 className="text-4xl font-black text-[#1A1A1A] italic leading-none">{renderWords(part.text, part.id)}</h2>
+                                                            <div className="h-0.5 w-12 bg-[#FF6321] mx-auto mt-6" />
+                                                        </div>
+                                                    )}
+                                                    {part.type === 'direction' && (
+                                                        <div className="flex justify-center my-6"><p className="text-[#999999] text-sm italic font-medium max-w-md text-center">{renderWords(part.text, part.id)}</p></div>
+                                                    )}
+                                                    {part.type === 'dialogue' && (
+                                                        <div className={`flex flex-col gap-3 py-6 px-4 rounded-3xl transition-colors hover:bg-[#FDFCFB] ${part.speaker === 'Narrator' ? 'bg-[#F9F9F9] border-y my-4' : ''}`}>
+                                                            <span className={`text-[11px] font-black uppercase tracking-widest ${part.speaker === 'Goldie' ? 'text-[#FF9F1C]' : part.speaker === 'Skater' ? 'text-[#2EC4B6]' : 'text-[#666666]'}`}>{part.speaker}</span>
+                                                            <div className="text-2xl sm:text-3xl font-medium">{renderWords(part.text, part.id)}</div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </motion.article>
+                                    ) : (
+                                        <motion.div key={mode} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-wrap gap-4 justify-center py-10">
+                                            {(mode === 'level1' ? LEVEL_1_WORDS : LEVEL_2_WORDS).split(' ').map((word, i) => {
+                                                const wordId = `w-${i}`;
+                                                return <button key={i} onClick={() => speak(word, wordId)} className={`px-8 py-4 rounded-3xl text-2xl font-black border-2 transition-all ${highlightedWordId === wordId ? 'bg-[#1A1A1A] text-white shadow-xl' : 'bg-white border-[#E5E5E5] hover:border-[#1A1A1A]'}`}>{word}</button>;
+                                            })}
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+                        </div>
+                    </main>
+
+                    {/* Sidebar */}
+                    <AnimatePresence>
+                        {isSidebarOpen && (
+                            <React.Fragment>
+                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 0.8 }} exit={{ opacity: 0 }} onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-black z-50" />
+                                <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} className="fixed right-0 top-0 bottom-0 w-full sm:w-96 bg-[#FDFCFB] z-[60] p-12 flex flex-col gap-10">
+                                    <div className="flex items-center justify-between border-b-4 border-[#1A1A1A] pb-8">
+                                        <h2 className="text-3xl font-black">AUDIO</h2>
+                                        <button onClick={() => setIsSidebarOpen(false)} className="text-2xl font-black">✕</button>
+                                    </div>
+                                    <div className="flex flex-col gap-8">
+                                        <div className="space-y-4">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-[#999999]">Voice</label>
+                                            <select value={selectedVoice} onChange={(e) => setSelectedVoice(e.target.value)} className="w-full p-4 border-2 border-[#1A1A1A] rounded-2xl font-bold">
+                                                {voices.filter(v => v.lang.startsWith('en')).map(v => <option key={v.name} value={v.name}>{v.name}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-[#999999]">Speed: {rate}x</label>
+                                            <input type="range" min="0.5" max="1.5" step="0.1" value={rate} onChange={e => setRate(e.target.value)} className="w-full" />
+                                        </div>
+                                    </div>
+                                    <button onClick={() => speak('Test Complete', 'test')} className="mt-auto bg-[#FF6321] text-white p-6 rounded-[2.5rem] font-black text-xl hover:scale-105 transition-transform">TEST SOUND</button>
+                                </motion.div>
+                            </React.Fragment>
+                        )}
+                    </AnimatePresence>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

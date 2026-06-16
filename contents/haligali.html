@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>할리갈리 (Halli Galli)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #1a472a;
+            color: white;
+            font-family: 'Pretendard', sans-serif;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+        .card {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            aspect-ratio: 2/3;
+            width: 100px;
+        }
+        @media (min-width: 768px) {
+            .card { width: 140px; }
+        }
+        .bell-ring {
+            animation: shake 0.1s infinite;
+        }
+        @keyframes shake {
+            0% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.1) rotate(5deg); }
+            75% { transform: scale(1.1) rotate(-5deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+        .fruit-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            height: 100%;
+            width: 100%;
+            padding: 10%;
+        }
+
+        /* 시작 모달 */
+        .start-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.75);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            backdrop-filter: blur(4px);
+        }
+        .start-modal.hidden { display: none; }
+        .start-modal-box {
+            background: #fff;
+            color: #1a202c;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 420px;
+            overflow: hidden;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+            border: 4px solid #f59e0b;
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn {
+            from { transform: scale(0.7); opacity: 0; }
+            to   { transform: scale(1);   opacity: 1; }
+        }
+        .modal-header {
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            padding: 1.5rem;
+            text-align: center;
+        }
+        .rule-item {
+            background: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            border-radius: 8px;
+            padding: 0.5rem 0.8rem;
+            margin: 0.35rem 0;
+            font-size: 0.9rem;
+            color: #78350f;
+            font-weight: 600;
+        }
+        .game-start-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            color: white;
+            font-size: 1.3rem;
+            font-weight: 900;
+            padding: 0.9rem;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            box-shadow: 0 5px 0 #b45309;
+            transition: all 0.15s;
+            font-family: inherit;
+        }
+        .game-start-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 1px 0 #b45309;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center h-screen p-4">
+
+    <!-- 게임 시작 모달 -->
+    <div id="startModal" class="start-modal">
+        <div class="start-modal-box">
+            <div class="modal-header">
+                <div style="font-size:3rem;margin-bottom:0.3rem;">🔔</div>
+                <h2 style="font-size:2rem;font-weight:900;color:white;margin:0;">할리갈리!</h2>
+                <p style="color:rgba(255,255,255,0.85);font-size:0.85rem;margin-top:4px;">4세 이상 · 2~6명 · 순발력 게임</p>
+            </div>
+            <div style="padding:1.2rem 1.5rem;">
+                <p style="font-size:0.75rem;font-weight:900;color:#92400e;text-transform:uppercase;letter-spacing:0.1em;text-align:center;margin-bottom:0.8rem;">게임 방법</p>
+                <div class="rule-item">1️⃣ 카드를 동일하게 나눠 뒤집어 쌓습니다.</div>
+                <div class="rule-item">2️⃣ 돌아가며 한 장씩 앞면으로 뒤집습니다.</div>
+                <div class="rule-item">3️⃣ 같은 과일의 합이 정확히 5개이면 종을 치세요!</div>
+                <div class="rule-item">4️⃣ 틀리면 카드 1장을 벌칙으로 냅니다.</div>
+                <div class="rule-item">5️⃣ 카드를 모두 모으면 승리! 🏆</div>
+            </div>
+            <div style="padding:0 1.5rem 1.5rem;">
+                <button class="game-start-btn" onclick="startGame()">🔔 게임 시작!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI 정보 -->
+    <div class="absolute top-4 left-4 right-4 flex justify-between items-center bg-black/30 p-3 rounded-xl backdrop-blur-sm">
+        <div class="flex items-center gap-3">
+            <div class="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center text-xl font-bold">AI</div>
+            <div>
+                <p class="text-sm opacity-80">컴퓨터</p>
+                <p class="font-bold">남은 카드: <span id="ai-count">28</span></p>
+            </div>
+        </div>
+        <div id="game-status" class="text-lg font-bold text-yellow-400">당신의 차례!</div>
+    </div>
+
+    <!-- 게임 필드 -->
+    <div class="relative w-full max-w-2xl flex flex-col items-center justify-center gap-8">
+        
+        <!-- AI 카드 놓는 곳 -->
+        <div id="ai-played" class="card bg-white rounded-lg flex items-center justify-center relative overflow-hidden">
+            <div class="text-gray-200 text-4xl opacity-20 font-bold">Halli</div>
+        </div>
+
+        <!-- 중앙 종 -->
+        <button id="bell-btn" class="w-32 h-32 md:w-40 md:h-40 bg-gradient-to-b from-gray-200 to-gray-400 rounded-full shadow-2xl flex items-center justify-center border-8 border-gray-600 hover:scale-105 active:scale-95 transition-transform relative">
+            <div class="w-16 h-8 bg-gray-300 rounded-t-full absolute -top-4 shadow-inner border border-gray-400"></div>
+            <span class="text-4xl text-gray-800">🔔</span>
+        </button>
+
+        <!-- 플레이어 카드 놓는 곳 -->
+        <div id="player-played" class="card bg-white rounded-lg flex items-center justify-center relative overflow-hidden">
+            <div class="text-gray-200 text-4xl opacity-20 font-bold">Galli</div>
+        </div>
+    </div>
+
+    <!-- 플레이어 컨트롤 -->
+    <div class="fixed bottom-4 left-0 right-0 px-4 flex flex-col items-center gap-4">
+        <div class="bg-black/30 p-3 rounded-xl backdrop-blur-sm w-full max-w-xs flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-xl font-bold">Me</div>
+                <div>
+                    <p class="text-sm opacity-80">나</p>
+                    <p class="font-bold">남은 카드: <span id="player-count">28</span></p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="flex gap-4 w-full max-w-xs">
+            <button id="flip-btn" class="flex-1 bg-yellow-500 hover:bg-yellow-400 text-white font-bold py-4 rounded-2xl shadow-lg transform transition active:scale-95 text-lg">
+                카드 뒤집기
+            </button>
+        </div>
+        <p class="text-xs opacity-60">팁: 스페이스바를 눌러 종을 칠 수 있습니다!</p>
+    </div>
+
+    <!-- 알림 오버레이 -->
+    <div id="modal" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center z-50 p-6">
+        <div class="bg-white text-gray-900 p-8 rounded-3xl max-w-sm w-full text-center">
+            <h2 id="modal-title" class="text-3xl font-bold mb-4 text-red-600">게임 종료</h2>
+            <p id="modal-desc" class="text-lg mb-8">내용</p>
+            <button onclick="resetGame()" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl">다시 시작</button>
+        </div>
+    </div>
+
+    <script>
+        const FRUITS = {
+            '🍓': 'strawberry',
+            '🍌': 'banana',
+            '🍏': 'lime',
+            '🍇': 'plum'
+        };
+        const FRUIT_KEYS = Object.keys(FRUITS);
+        
+        let playerDeck = [];
+        let aiDeck = [];
+        let playerPlayed = null;
+        let aiPlayed = null;
+        let pot = [];
+        let turn = 'player'; // 'player' or 'ai'
+        let isGameOver = false;
+        let aiReactionTimeout = null;
+
+        // 사운드 시뮬레이션
+        function playSound(type) {
+            // 실제 브라우저 정책상 오디오를 미리 준비해야 하나, 여기선 진동이나 시각 효과로 대체
+            const bell = document.getElementById('bell-btn');
+            if (type === 'bell') {
+                bell.classList.add('bell-ring');
+                setTimeout(() => bell.classList.remove('bell-ring'), 300);
+            }
+        }
+
+        function createDeck() {
+            let deck = [];
+            FRUIT_KEYS.forEach(fruit => {
+                // 한 과일당 1개(5장), 2개(3장), 3개(3장), 4개(2장), 5개(1장) 대략적인 비율
+                [1,1,1,1,1,2,2,2,3,3,3,4,4,5].forEach(count => {
+                    deck.push({ fruit, count });
+                });
+            });
+            return deck.sort(() => Math.random() - 0.5);
+        }
+
+        function renderCard(containerId, cardData) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            if (!cardData) {
+                container.innerHTML = `<div class="text-gray-200 text-4xl opacity-20 font-bold">${containerId.includes('player') ? 'Galli' : 'Halli'}</div>`;
+                return;
+            }
+
+            const grid = document.createElement('div');
+            grid.className = 'fruit-grid';
+            
+            // 과일 배치 로직 (간단화)
+            const positions = [0,1,2,3,4,5,6,7,8].sort(() => Math.random() - 0.5);
+            for (let i = 0; i < cardData.count; i++) {
+                const span = document.createElement('div');
+                span.className = 'text-2xl md:text-3xl flex items-center justify-center';
+                span.innerText = cardData.fruit;
+                grid.appendChild(span);
+            }
+            container.appendChild(grid);
+        }
+
+        function updateUI() {
+            document.getElementById('player-count').innerText = playerDeck.length;
+            document.getElementById('ai-count').innerText = aiDeck.length;
+            document.getElementById('game-status').innerText = turn === 'player' ? '당신의 차례!' : 'AI가 생각 중...';
+            
+            if (playerDeck.length === 0 || aiDeck.length === 0) {
+                endGame();
+            }
+        }
+
+        function checkWinCondition() {
+            const counts = {};
+            [playerPlayed, aiPlayed].forEach(card => {
+                if (card) {
+                    counts[card.fruit] = (counts[card.fruit] || 0) + card.count;
+                }
+            });
+            
+            return Object.values(counts).some(count => count === 5);
+        }
+
+        function ringBell(ringer) {
+            if (isGameOver) return;
+            playSound('bell');
+            clearTimeout(aiReactionTimeout);
+
+            const isCorrect = checkWinCondition();
+
+            if (isCorrect) {
+                // 정답: 바닥의 카드를 모두 가져감
+                const reward = [...pot];
+                if (playerPlayed) reward.push(playerPlayed);
+                if (aiPlayed) reward.push(aiPlayed);
+                
+                if (ringer === 'player') {
+                    playerDeck.push(...reward.sort(() => Math.random() - 0.5));
+                    showMessage("성공! 카드를 가져갑니다.", "success");
+                } else {
+                    aiDeck.push(...reward.sort(() => Math.random() - 0.5));
+                    showMessage("AI가 먼저 쳤습니다!", "error");
+                }
+                
+                pot = [];
+                playerPlayed = null;
+                aiPlayed = null;
+                renderCard('player-played', null);
+                renderCard('ai-played', null);
+            } else {
+                // 오답: 상대방에게 카드 한 장을 줌
+                if (ringer === 'player') {
+                    if (playerDeck.length > 0) aiDeck.push(playerDeck.shift());
+                    showMessage("틀렸습니다! 벌칙 카드 1장", "error");
+                } else {
+                    if (aiDeck.length > 0) playerDeck.push(aiDeck.shift());
+                    showMessage("AI의 실수! 보너스 카드 1장", "success");
+                }
+            }
+            updateUI();
+        }
+
+        function showMessage(msg, type) {
+            const status = document.getElementById('game-status');
+            status.innerText = msg;
+            status.style.color = type === 'success' ? '#4ade80' : '#f87171';
+            setTimeout(() => {
+                status.style.color = '#facc15';
+                updateUI();
+            }, 1500);
+        }
+
+        function flipCard() {
+            if (turn !== 'player' || isGameOver) return;
+
+            if (playerDeck.length > 0) {
+                if (playerPlayed) pot.push(playerPlayed);
+                playerPlayed = playerDeck.shift();
+                renderCard('player-played', playerPlayed);
+                
+                turn = 'ai';
+                updateUI();
+                checkAIReaction();
+
+                // AI 차례 진행
+                setTimeout(() => {
+                    if (isGameOver) return;
+                    if (aiDeck.length > 0) {
+                        if (aiPlayed) pot.push(aiPlayed);
+                        aiPlayed = aiDeck.shift();
+                        renderCard('ai-played', aiPlayed);
+                        turn = 'player';
+                        updateUI();
+                        checkAIReaction();
+                    }
+                }, 1000);
+            }
+        }
+
+        function checkAIReaction() {
+            if (checkWinCondition()) {
+                // AI 반응 속도 (0.7초 ~ 1.5초)
+                const delay = Math.random() * 800 + 700;
+                aiReactionTimeout = setTimeout(() => {
+                    ringBell('ai');
+                }, delay);
+            }
+        }
+
+        function resetGame() {
+            const fullDeck = createDeck();
+            playerDeck = fullDeck.slice(0, 28);
+            aiDeck = fullDeck.slice(28);
+            playerPlayed = null;
+            aiPlayed = null;
+            pot = [];
+            turn = 'player';
+            isGameOver = false;
+            
+            document.getElementById('modal').classList.add('hidden');
+            renderCard('player-played', null);
+            renderCard('ai-played', null);
+            updateUI();
+        }
+
+        function endGame() {
+            isGameOver = true;
+            const winner = playerDeck.length > aiDeck.length ? "플레이어 승리!" : "AI 승리!";
+            document.getElementById('modal-title').innerText = winner;
+            document.getElementById('modal-desc').innerText = `최종 카드 수 - 나: ${playerDeck.length}, AI: ${aiDeck.length}`;
+            document.getElementById('modal-title').style.color = playerDeck.length > aiDeck.length ? '#16a34a' : '#dc2626';
+            document.getElementById('modal').classList.remove('hidden');
+        }
+
+        // 이벤트 리스너
+        document.getElementById('flip-btn').addEventListener('click', flipCard);
+        document.getElementById('bell-btn').addEventListener('click', () => ringBell('player'));
+        
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                ringBell('player');
+            }
+        });
+
+        function startGame() {
+            document.getElementById('startModal').classList.add('hidden');
+            resetGame();
+        }
+
+        // 초기화: 모달만 표시, 게임은 시작 버튼 후 시작
+        window.onload = () => {
+            document.getElementById('startModal').classList.remove('hidden');
+        };
+    </script>
+</body>
+</html>

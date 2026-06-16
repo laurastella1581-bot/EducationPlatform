@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>6 Nimmt! - 젝스님트 연습 (1:1)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Jua&display=swap');
+        body {
+            font-family: 'Jua', sans-serif;
+            background-color: #e2e8f0;
+        }
+        .font-number {
+            font-family: 'Black Han Sans', sans-serif;
+        }
+        .card {
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            user-select: none;
+        }
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        .card.selected {
+            border: 6px solid #ef4444;
+            transform: translateY(-15px);
+            box-shadow: 0 15px 30px rgba(239, 68, 68, 0.4);
+        }
+        .card.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        .row-container {
+            min-height: 160px;
+        }
+        .scroll-hide::-webkit-scrollbar {
+            display: none;
+        }
+        /* 애니메이션 효과 */
+        @keyframes pulse-blue {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .active-turn {
+            animation: pulse-blue 2s infinite;
+        }
+    </style>
+</head>
+<body class="p-2 md:p-6">
+    <div id="game-app" class="max-w-6xl mx-auto bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col h-[95vh]">
+        
+        <!-- Header: Large Scores -->
+        <div class="bg-indigo-700 text-white p-6 flex justify-between items-center shrink-0 border-b-4 border-indigo-900">
+            <h1 class="text-3xl font-bold">🐂 젝스님트 연습 (1:1)</h1>
+            <div id="score-board" class="flex gap-6">
+                <!-- Scores injected here -->
+            </div>
+        </div>
+
+        <!-- Main Game Area -->
+        <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-8 scroll-hide bg-slate-50">
+            
+            <!-- 4 Rows on the Table -->
+            <div id="game-rows" class="space-y-4">
+                <!-- Rows will be injected here with larger cards -->
+            </div>
+
+            <!-- Game Messages (Important for Learning) -->
+            <div id="status-msg" class="bg-blue-600 text-white p-5 rounded-2xl text-center text-xl font-bold shadow-lg mx-4">
+                연습을 시작합니다! 내고 싶은 카드를 선택하세요.
+            </div>
+
+            <!-- Round Reveal Area -->
+            <div class="px-4">
+                <div class="text-sm text-slate-500 mb-2 font-bold">이번 라운드 제출된 카드</div>
+                <div id="round-reveal" class="flex justify-center gap-6 min-h-[140px] bg-white p-6 rounded-3xl border-4 border-dashed border-slate-200">
+                    <p class="text-slate-300 self-center text-lg">카드를 내면 여기에 공개됩니다.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Player Actions: Large Interaction Area -->
+        <div class="bg-slate-200 p-6 border-t-2 border-slate-300 shrink-0">
+            <div class="flex flex-col gap-6">
+                <div id="player-hand" class="flex flex-wrap justify-center gap-3">
+                    <!-- Large player cards -->
+                </div>
+                <div class="flex justify-center gap-6">
+                    <button id="btn-play" class="bg-red-500 hover:bg-red-600 text-white px-12 py-5 rounded-2xl font-bold text-2xl shadow-xl transition-all transform active:scale-95 disabled:bg-slate-400 disabled:shadow-none disabled:cursor-not-allowed">
+                        선택한 카드 제출
+                    </button>
+                    <button id="btn-restart" class="bg-slate-600 hover:bg-slate-700 text-white px-6 py-5 rounded-2xl font-bold text-xl shadow-lg transition-all">
+                        처음부터
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Selection Modal -->
+        <div id="row-modal" class="fixed inset-0 bg-slate-900/80 hidden flex items-center justify-center z-50 p-6 backdrop-blur-sm">
+            <div class="bg-white p-8 rounded-[3rem] max-w-lg w-full text-center shadow-2xl border-8 border-indigo-500">
+                <h2 class="text-3xl font-bold mb-4 text-indigo-700 underline decoration-indigo-200">행 선택 (벌점 규칙)</h2>
+                <p class="mb-8 text-xl text-slate-700 leading-relaxed">
+                    내신 카드가 모든 행의 마지막 숫자보다 작습니다!<br>
+                    <span class="text-red-500 font-bold">벌점을 받고 비울 행을 선택하세요.</span>
+                </p>
+                <div id="modal-options" class="grid grid-cols-1 gap-4">
+                    <!-- Row buttons -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const CARD_TOTAL = 104;
+        const INITIAL_HAND_SIZE = 10;
+        const PLAYER_COUNT = 2; // 1:1 대결
+
+        let deck = [];
+        let rows = [[], [], [], []];
+        let hands = [[], []]; 
+        let scores = [0, 0];
+        let selectedIdx = -1;
+        let roundPlayedCards = []; 
+        let isProcessing = false;
+
+        function getBullheads(num) {
+            if (num === 55) return 7;
+            if (num % 11 === 0) return 5;
+            if (num % 10 === 0) return 3;
+            if (num % 5 === 0) return 2;
+            return 1;
+        }
+
+        // 대형 카드 UI 생성
+        function createCardUI(num, options = {}) {
+            const bulls = getBullheads(num);
+            const isSelected = options.selected || false;
+            const isDisabled = options.disabled || false;
+            const isSmall = options.small || false;
+
+            let bgColor = "bg-white";
+            let textColor = "text-slate-900";
+            let borderColor = "border-slate-300";
+
+            if (bulls >= 7) { bgColor = "bg-rose-600"; textColor = "text-white"; borderColor = "border-rose-800"; }
+            else if (bulls >= 5) { bgColor = "bg-orange-500"; textColor = "text-white"; borderColor = "border-orange-700"; }
+            else if (bulls >= 3) { bgColor = "bg-amber-400"; textColor = "text-slate-900"; borderColor = "border-amber-600"; }
+            else if (bulls >= 2) { bgColor = "bg-sky-400"; textColor = "text-white"; borderColor = "border-sky-600"; }
+
+            const div = document.createElement('div');
+            // 크기 대폭 확대 (w-14 -> w-20, h-20 -> h-32)
+            const sizeClass = isSmall ? 'w-16 h-24 text-sm' : 'w-20 h-32 md:w-24 md:h-36';
+            const fontClass = isSmall ? 'text-2xl' : 'text-4xl';
+            
+            div.className = `card ${sizeClass} ${bgColor} ${textColor} rounded-2xl shadow-lg flex flex-col items-center justify-between p-2 border-4 ${borderColor} relative ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`;
+            
+            if (!options.hidden) {
+                div.innerHTML = `
+                    <div class="font-number font-bold self-start leading-none">${num}</div>
+                    <div class="flex flex-wrap justify-center gap-0.5 my-1">
+                        ${'🐂'.repeat(bulls)}
+                    </div>
+                    <div class="font-number font-bold self-end rotate-180 leading-none">${num}</div>
+                `;
+            } else {
+                div.className = `card ${sizeClass} bg-indigo-800 rounded-2xl shadow-inner border-4 border-indigo-950`;
+                div.innerHTML = `<div class="w-full h-full flex items-center justify-center text-white text-3xl">🐂</div>`;
+            }
+
+            if (options.onClick) div.onclick = options.onClick;
+
+            return div;
+        }
+
+        function initGame() {
+            deck = Array.from({length: CARD_TOTAL}, (_, i) => i + 1);
+            shuffle(deck);
+            
+            rows = [[], [], [], []];
+            hands = [[], []];
+            scores = [0, 0];
+            roundPlayedCards = [];
+            selectedIdx = -1;
+            isProcessing = false;
+
+            for (let i = 0; i < PLAYER_COUNT; i++) {
+                hands[i] = deck.splice(0, INITIAL_HAND_SIZE).sort((a, b) => a - b);
+            }
+
+            for (let i = 0; i < 4; i++) {
+                rows[i].push(deck.splice(0, 1)[0]);
+            }
+
+            updateUI();
+            setMessage("연습 시작! 자신의 패에서 카드를 한 장 선택하세요.");
+        }
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function updateUI() {
+            // Score Board
+            const scoreBoard = document.getElementById('score-board');
+            scoreBoard.innerHTML = '';
+            const names = ['나 (Player)', 'AI 상대'];
+            scores.forEach((s, i) => {
+                const div = document.createElement('div');
+                div.className = `flex flex-col items-center px-6 py-2 rounded-2xl shadow-inner ${i === 0 ? 'bg-indigo-900 border-2 border-indigo-400' : 'bg-indigo-800'}`;
+                div.innerHTML = `<span class="text-sm font-bold opacity-80 mb-1">${names[i]}</span><span class="text-3xl font-number">${s}</span>`;
+                scoreBoard.appendChild(div);
+            });
+
+            // Rows
+            const rowsContainer = document.getElementById('game-rows');
+            rowsContainer.innerHTML = '';
+            rows.forEach((row, i) => {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = "flex items-center gap-3 bg-white p-4 rounded-3xl row-container overflow-x-auto shadow-sm border-2 border-slate-100";
+                
+                const rowLabel = document.createElement('div');
+                rowLabel.className = "shrink-0 w-12 h-12 flex items-center justify-center bg-indigo-100 text-indigo-700 rounded-full font-bold text-xl mr-2 border-2 border-indigo-200";
+                rowLabel.innerText = i + 1;
+                rowDiv.appendChild(rowLabel);
+
+                row.forEach(cardNum => {
+                    rowDiv.appendChild(createCardUI(cardNum, {small: true}));
+                });
+                
+                for(let j=row.length; j<6; j++) {
+                    const placeholder = document.createElement('div');
+                    placeholder.className = `w-16 h-24 border-4 border-dashed border-slate-200 rounded-2xl shrink-0 flex items-center justify-center text-slate-200 font-bold text-2xl ${j===5 ? 'bg-red-50 border-red-100 text-red-100' : ''}`;
+                    if(j===5) placeholder.innerText = "!";
+                    rowDiv.appendChild(placeholder);
+                }
+
+                rowsContainer.appendChild(rowDiv);
+            });
+
+            // Player Hand
+            const handContainer = document.getElementById('player-hand');
+            handContainer.innerHTML = '';
+            hands[0].forEach((cardNum, idx) => {
+                handContainer.appendChild(createCardUI(cardNum, {
+                    selected: selectedIdx === idx,
+                    disabled: isProcessing,
+                    onClick: () => {
+                        if (isProcessing) return;
+                        selectedIdx = idx;
+                        updateUI();
+                    }
+                }));
+            });
+
+            document.getElementById('btn-play').disabled = (selectedIdx === -1 || isProcessing);
+            
+            // Reveal Area
+            const revealArea = document.getElementById('round-reveal');
+            if (roundPlayedCards.length === 0) {
+                revealArea.innerHTML = `<p class="text-slate-300 self-center text-xl">카드를 내면 여기에 공개됩니다.</p>`;
+            } else {
+                revealArea.innerHTML = '';
+                roundPlayedCards.forEach(item => {
+                    const cardWrapper = document.createElement('div');
+                    cardWrapper.className = "flex flex-col items-center gap-2";
+                    cardWrapper.appendChild(createCardUI(item.card, {small: false}));
+                    const nameTag = document.createElement('div');
+                    nameTag.className = "text-lg font-bold px-3 py-1 bg-slate-100 rounded-full";
+                    nameTag.innerText = names[item.playerId];
+                    cardWrapper.appendChild(nameTag);
+                    revealArea.appendChild(cardWrapper);
+                });
+            }
+        }
+
+        function setMessage(msg, type = "normal") {
+            const el = document.getElementById('status-msg');
+            el.innerText = msg;
+            if(type === "danger") {
+                el.className = "bg-red-600 text-white p-5 rounded-2xl text-center text-xl font-bold shadow-lg mx-4";
+            } else if(type === "success") {
+                el.className = "bg-emerald-600 text-white p-5 rounded-2xl text-center text-xl font-bold shadow-lg mx-4";
+            } else {
+                el.className = "bg-indigo-600 text-white p-5 rounded-2xl text-center text-xl font-bold shadow-lg mx-4";
+            }
+        }
+
+        async function playTurn() {
+            if (selectedIdx === -1 || isProcessing) return;
+            isProcessing = true;
+
+            const playerCard = hands[0].splice(selectedIdx, 1)[0];
+            roundPlayedCards = [{playerId: 0, card: playerCard}];
+            selectedIdx = -1;
+
+            // AI Logic: 현재 놓인 행들의 마지막 카드들과 가장 가까운 큰 숫자를 내려고 노력
+            let aiPickIdx = 0;
+            let minAiDiff = 999;
+            const lastCards = rows.map(r => r[r.length-1]);
+            
+            hands[1].forEach((c, idx) => {
+                lastCards.forEach(lc => {
+                    if(c > lc && (c - lc) < minAiDiff) {
+                        minAiDiff = c - lc;
+                        aiPickIdx = idx;
+                    }
+                });
+            });
+            const aiCard = hands[1].splice(aiPickIdx, 1)[0];
+            roundPlayedCards.push({playerId: 1, card: aiCard});
+
+            roundPlayedCards.sort((a, b) => a.card - b.card);
+            updateUI();
+            setMessage("제출된 카드를 공개합니다! 오름차순으로 배치됩니다.");
+
+            for (const item of roundPlayedCards) {
+                await delay(1500);
+                await processCard(item.playerId, item.card);
+                updateUI();
+            }
+
+            if (hands[0].length === 0) {
+                const win = scores[0] <= scores[1];
+                setMessage(`게임 종료! 나: ${scores[0]}점 / AI: ${scores[1]}점. ${win ? '당신이 이겼습니다! 🎉' : 'AI가 이겼습니다. 더 연습해보세요!'}`, win ? "success" : "danger");
+                isProcessing = true;
+            } else {
+                isProcessing = false;
+                setMessage("다음 라운드! 카드를 선택하세요.");
+                updateUI();
+            }
+        }
+
+        async function processCard(playerId, card) {
+            const names = ['당신', 'AI'];
+            let bestRowIdx = -1;
+            let minDiff = 999;
+
+            for (let i = 0; i < 4; i++) {
+                const lastCard = rows[i][rows[i].length - 1];
+                if (card > lastCard) {
+                    const diff = card - lastCard;
+                    if (diff < minDiff) {
+                        minDiff = diff;
+                        bestRowIdx = i;
+                    }
+                }
+            }
+
+            if (bestRowIdx === -1) {
+                setMessage(`${names[playerId]}의 ${card}번 카드가 너무 작습니다! 행을 선택해야 합니다.`, "danger");
+                if (playerId === 0) {
+                    const pickedRowIdx = await waitForRowSelection();
+                    takeRow(playerId, pickedRowIdx, card);
+                } else {
+                    let minBulls = 999;
+                    let aiPickIdx = 0;
+                    rows.forEach((r, idx) => {
+                        const b = r.reduce((acc, curr) => acc + getBullheads(curr), 0);
+                        if (b < minBulls) { minBulls = b; aiPickIdx = idx; }
+                    });
+                    takeRow(playerId, aiPickIdx, card);
+                }
+            } else {
+                if (rows[bestRowIdx].length >= 5) {
+                    setMessage(`${bestRowIdx + 1}번 행의 6번째 카드가 되어버렸습니다! 행을 가져갑니다.`, "danger");
+                    await delay(1000);
+                    takeRow(playerId, bestRowIdx, card);
+                } else {
+                    setMessage(`${names[playerId]}의 ${card}번 카드가 ${bestRowIdx + 1}번 행에 놓였습니다.`, "normal");
+                    rows[bestRowIdx].push(card);
+                }
+            }
+        }
+
+        function takeRow(playerId, rowIdx, newCard) {
+            const bullheads = rows[rowIdx].reduce((acc, curr) => acc + getBullheads(curr), 0);
+            scores[playerId] += bullheads;
+            rows[rowIdx] = [newCard];
+            const names = ['당신', 'AI'];
+            setMessage(`${names[playerId]} 님이 ${rowIdx + 1}번 행을 먹고 벌점 ${bullheads}점을 획득했습니다!`, "danger");
+        }
+
+        function waitForRowSelection() {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('row-modal');
+                const optionsCont = document.getElementById('modal-options');
+                optionsCont.innerHTML = '';
+                modal.classList.remove('hidden');
+
+                rows.forEach((row, i) => {
+                    const btn = document.createElement('button');
+                    const bullCount = row.reduce((acc, curr) => acc + getBullheads(curr), 0);
+                    btn.className = "flex justify-between items-center bg-slate-50 hover:bg-red-50 p-6 rounded-3xl border-4 border-slate-200 hover:border-red-400 transition-all font-bold text-xl";
+                    btn.innerHTML = `
+                        <div class="flex items-center gap-4">
+                            <span class="w-10 h-10 bg-indigo-600 text-white rounded-full flex items-center justify-center">${i + 1}</span>
+                            <span>행 (${row.length}개 카드)</span>
+                        </div>
+                        <span class="text-red-600 text-2xl font-number">🐂 ${bullCount}점</span>
+                    `;
+                    btn.onclick = () => {
+                        modal.classList.add('hidden');
+                        resolve(i);
+                    };
+                    optionsCont.appendChild(btn);
+                });
+            });
+        }
+
+        function delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+        document.getElementById('btn-play').onclick = playTurn;
+        document.getElementById('btn-restart').onclick = () => {
+            if(confirm("연습을 처음부터 다시 시작하시겠습니까?")) initGame();
+        };
+
+        window.onload = initGame;
+    </script>
+</body>
+</html>

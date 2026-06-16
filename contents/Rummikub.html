@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>루미큐브 온라인 - Rummikub Online</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 폰트 및 기본 스타일 */
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            user-select: none;
+            overflow: hidden;
+            margin: 0;
+        }
+
+        /* 타일 스타일링 */
+        .tile {
+            width: 42px;
+            height: 60px;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.1rem;
+            cursor: grab;
+            position: relative;
+            background: #fffdfa;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.4), inset 0 -3px 0 rgba(0,0,0,0.1);
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+
+        .tile:active {
+            cursor: grabbing;
+            transform: scale(1.1);
+            z-index: 100;
+        }
+
+        /* 타일 색상 */
+        .tile.red { color: #d32f2f; }
+        .tile.blue { color: #1976d2; }
+        .tile.orange { color: #f57c00; }
+        .tile.black { color: #212121; }
+        .tile.joker { color: #7b1fa2; }
+
+        /* 조커 심볼 */
+        .joker-face {
+            font-size: 1.4rem;
+        }
+
+        /* 그리드 슬롯 스타일 */
+        .slot {
+            width: 48px;
+            height: 66px;
+            border: 1px solid rgba(255,255,255,0.05);
+            background: rgba(255,255,255,0.02);
+            transition: background 0.2s;
+        }
+        .slot:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        /* 스크롤바 커스텀 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 10px;
+        }
+
+        .dragging {
+            opacity: 0.4;
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen">
+
+    <!-- 상단 바 -->
+    <header class="p-4 bg-zinc-900 border-b border-zinc-800 flex justify-between items-center shadow-lg">
+        <div class="flex items-center gap-6">
+            <h1 class="text-2xl font-black text-yellow-500 tracking-tighter">RUMMIKUB</h1>
+            <div id="status-bar" class="flex gap-4 text-xs font-medium uppercase tracking-widest text-zinc-500">
+                <div>남은 타일: <span id="deck-count" class="text-white">0</span></div>
+                <div>상태: <span id="meld-status" class="text-orange-500 font-bold">등록 필요 (30점)</span></div>
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <button id="btn-sort-num" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-4 py-2 rounded text-xs font-bold transition">숫자 정렬</button>
+            <button id="btn-sort-color" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-4 py-2 rounded text-xs font-bold transition">색상 정렬</button>
+            <div class="w-px h-8 bg-zinc-700 mx-1"></div>
+            <button id="btn-draw" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded text-xs font-black transition">타일 가져오기</button>
+            <button id="btn-finish" class="bg-green-600 hover:bg-green-500 text-white px-5 py-2 rounded text-xs font-black transition shadow-lg shadow-green-900/20">턴 종료</button>
+        </div>
+    </header>
+
+    <!-- 게임 보드 -->
+    <main id="board" class="flex-grow p-4 grid grid-cols-20 grid-rows-8 gap-1 overflow-auto bg-[#18181b] content-start">
+        <!-- JS가 슬롯을 생성합니다 -->
+    </main>
+
+    <!-- 내 패 (Rack) -->
+    <footer class="p-4 bg-zinc-900 border-t border-zinc-800 shadow-2xl">
+        <div id="rack" class="flex gap-1 min-w-max h-20 items-center overflow-x-auto px-2">
+            <!-- JS가 내 패 슬롯을 생성합니다 -->
+        </div>
+    </footer>
+
+    <!-- 알림 메시지 -->
+    <div id="toast" class="fixed bottom-24 left-1/2 -translate-x-1/2 bg-zinc-800 text-white px-8 py-3 rounded-full shadow-2xl border border-zinc-700 opacity-0 pointer-events-none transition-all duration-300 z-50 text-sm font-bold">
+        메시지
+    </div>
+
+    <script>
+        /**
+         * 루미큐브 핵심 로직 및 UI 핸들링
+         */
+        
+        const COLORS = ['red', 'blue', 'orange', 'black'];
+        const BOARD_COLS = 20;
+        const BOARD_ROWS = 8;
+        const RACK_SLOTS = 24 * 2; // 두 줄 정도의 여유 공간
+
+        let deck = [];
+        let boardState = Array(BOARD_ROWS * BOARD_COLS).fill(null);
+        let rackState = Array(RACK_SLOTS).fill(null);
+        let hasMeld = false; // 30점 등록 여부
+
+        const boardEl = document.getElementById('board');
+        const rackEl = document.getElementById('rack');
+        const deckCountEl = document.getElementById('deck-count');
+        const meldStatusEl = document.getElementById('meld-status');
+        const toastEl = document.getElementById('toast');
+
+        // 게임 초기화
+        function init() {
+            createDeck();
+            shuffle(deck);
+            
+            // 초기 타일 14장 지급
+            const initialTiles = deck.splice(0, 14);
+            initialTiles.forEach((tile, i) => rackState[i] = tile);
+            
+            setupGrid();
+            render();
+            updateStats();
+            showToast("게임을 시작합니다. 첫 등록은 30점 이상입니다!");
+        }
+
+        function createDeck() {
+            deck = [];
+            let id = 0;
+            COLORS.forEach(color => {
+                for (let i = 1; i <= 13; i++) {
+                    deck.push({ id: id++, num: i, color: color, isJoker: false });
+                    deck.push({ id: id++, num: i, color: color, isJoker: false });
+                }
+            });
+            // 조커 2개
+            deck.push({ id: id++, num: 0, color: 'joker', isJoker: true });
+            deck.push({ id: id++, num: 0, color: 'joker', isJoker: true });
+        }
+
+        function shuffle(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+        }
+
+        function setupGrid() {
+            // 보드 슬롯 생성
+            boardEl.innerHTML = '';
+            for (let i = 0; i < BOARD_ROWS * BOARD_COLS; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'slot rounded flex items-center justify-center';
+                slot.dataset.index = i;
+                slot.dataset.type = 'board';
+                slot.addEventListener('dragover', e => e.preventDefault());
+                slot.addEventListener('drop', onDrop);
+                boardEl.appendChild(slot);
+            }
+
+            // 패 슬롯 생성
+            rackEl.innerHTML = '';
+            for (let i = 0; i < RACK_SLOTS; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'slot rounded flex-shrink-0 flex items-center justify-center border-zinc-800 bg-zinc-800/30';
+                slot.dataset.index = i;
+                slot.dataset.type = 'rack';
+                slot.addEventListener('dragover', e => e.preventDefault());
+                slot.addEventListener('drop', onDrop);
+                rackEl.appendChild(slot);
+            }
+        }
+
+        function render() {
+            // 보드 타일 배치
+            const boardSlots = boardEl.querySelectorAll('.slot');
+            boardSlots.forEach((slot, i) => {
+                slot.innerHTML = '';
+                if (boardState[i]) {
+                    slot.appendChild(createTileUI(boardState[i], i, 'board'));
+                }
+            });
+
+            // 패 타일 배치
+            const rackSlots = rackEl.querySelectorAll('.slot');
+            rackSlots.forEach((slot, i) => {
+                slot.innerHTML = '';
+                if (rackState[i]) {
+                    slot.appendChild(createTileUI(rackState[i], i, 'rack'));
+                }
+            });
+        }
+
+        function createTileUI(tile, index, parentType) {
+            const el = document.createElement('div');
+            el.className = `tile ${tile.color}`;
+            el.draggable = true;
+            
+            if (tile.isJoker) {
+                el.innerHTML = '<span class="joker-face">☺</span>';
+            } else {
+                el.innerText = tile.num;
+            }
+
+            el.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('application/json', JSON.stringify({
+                    id: tile.id,
+                    fromIndex: index,
+                    fromType: parentType
+                }));
+                el.classList.add('dragging');
+            });
+
+            el.addEventListener('dragend', () => el.classList.remove('dragging'));
+
+            return el;
+        }
+
+        function onDrop(e) {
+            e.preventDefault();
+            const targetType = e.currentTarget.dataset.type;
+            const targetIndex = parseInt(e.currentTarget.dataset.index);
+            const data = JSON.parse(e.dataTransfer.getData('application/json'));
+
+            let movingTile = null;
+            if (data.fromType === 'board') {
+                movingTile = boardState[data.fromIndex];
+                boardState[data.fromIndex] = null;
+            } else {
+                movingTile = rackState[data.fromIndex];
+                rackState[data.fromIndex] = null;
+            }
+
+            // 스왑 (자리에 이미 타일이 있는 경우)
+            if (targetType === 'board') {
+                if (boardState[targetIndex]) {
+                    const temp = boardState[targetIndex];
+                    if (data.fromType === 'board') boardState[data.fromIndex] = temp;
+                    else rackState[data.fromIndex] = temp;
+                }
+                boardState[targetIndex] = movingTile;
+            } else {
+                if (rackState[targetIndex]) {
+                    const temp = rackState[targetIndex];
+                    if (data.fromType === 'board') boardState[data.fromIndex] = temp;
+                    else rackState[data.fromIndex] = temp;
+                }
+                rackState[targetIndex] = movingTile;
+            }
+
+            render();
+        }
+
+        function showToast(msg) {
+            toastEl.innerText = msg;
+            toastEl.style.opacity = '1';
+            toastEl.style.bottom = '6rem';
+            setTimeout(() => {
+                toastEl.style.opacity = '0';
+                toastEl.style.bottom = '5.5rem';
+            }, 2500);
+        }
+
+        function updateStats() {
+            deckCountEl.innerText = deck.length;
+            if (hasMeld) {
+                meldStatusEl.innerText = "등록 완료";
+                meldStatusEl.className = "text-green-500 font-bold";
+            }
+        }
+
+        // --- 검증 로직 ---
+        function getGroups() {
+            const groups = [];
+            for (let r = 0; r < BOARD_ROWS; r++) {
+                let current = [];
+                for (let c = 0; c < BOARD_COLS; c++) {
+                    const tile = boardState[r * BOARD_COLS + c];
+                    if (tile) {
+                        current.push(tile);
+                    } else {
+                        if (current.length > 0) {
+                            groups.push(current);
+                            current = [];
+                        }
+                    }
+                }
+                if (current.length > 0) groups.push(current);
+            }
+            return groups;
+        }
+
+        function validateGroup(group) {
+            if (group.length < 3) return false;
+            
+            const realTiles = group.filter(t => !t.isJoker);
+            if (realTiles.length === 0) return true;
+
+            // 세트 검사 (같은 숫자, 다른 색상)
+            const isSet = realTiles.every(t => t.num === realTiles[0].num);
+            if (isSet) {
+                const colors = new Set(realTiles.map(t => t.color));
+                return colors.size === realTiles.length && group.length <= 4;
+            }
+
+            // 런 검사 (같은 색상, 연속된 숫자)
+            const color = realTiles[0].color;
+            const sameColor = realTiles.every(t => t.color === color);
+            if (sameColor) {
+                // 조커 위치를 고려한 숫자 검증
+                let nums = group.map(t => t.isJoker ? null : t.num);
+                let firstValIdx = nums.findIndex(n => n !== null);
+                let startNum = nums[firstValIdx] - firstValIdx;
+
+                if (startNum < 1 || startNum + group.length - 1 > 13) return false;
+                for (let i = 0; i < nums.length; i++) {
+                    if (nums[i] !== null && nums[i] !== startNum + i) return false;
+                }
+                return true;
+            }
+            return false;
+        }
+
+        function getGroupScore(group) {
+            const realTiles = group.filter(t => !t.isJoker);
+            if (realTiles.length === 0) return 0;
+            
+            const isSet = realTiles.every(t => t.num === realTiles[0].num);
+            if (isSet) return realTiles[0].num * group.length;
+
+            let nums = group.map(t => t.isJoker ? null : t.num);
+            let firstValIdx = nums.findIndex(n => n !== null);
+            let startNum = nums[firstValIdx] - firstValIdx;
+            let sum = 0;
+            for(let i=0; i<group.length; i++) sum += (startNum + i);
+            return sum;
+        }
+
+        // --- 버튼 이벤트 ---
+        document.getElementById('btn-draw').addEventListener('click', () => {
+            if (deck.length === 0) {
+                showToast("남은 타일이 없습니다.");
+                return;
+            }
+            const emptyIdx = rackState.indexOf(null);
+            if (emptyIdx === -1) {
+                showToast("패를 놓을 자리가 없습니다.");
+                return;
+            }
+            rackState[emptyIdx] = deck.shift();
+            render();
+            updateStats();
+            showToast("타일을 가져왔습니다.");
+        });
+
+        document.getElementById('btn-finish').addEventListener('click', () => {
+            const groups = getGroups();
+            if (groups.length === 0) {
+                showToast("보드에 타일이 없습니다.");
+                return;
+            }
+
+            let allOk = true;
+            let total = 0;
+            for (const g of groups) {
+                if (!validateGroup(g)) {
+                    allOk = false;
+                    break;
+                }
+                total += getGroupScore(g);
+            }
+
+            if (!allOk) {
+                showToast("조합이 규칙에 맞지 않습니다 (최소 3개 연속/세트).");
+                return;
+            }
+
+            if (!hasMeld) {
+                if (total < 30) {
+                    showToast(`등록 점수 부족: 현재 ${total} / 필요 30`);
+                    return;
+                }
+                hasMeld = true;
+                updateStats();
+                showToast("등록 성공!");
+            } else {
+                showToast("턴 종료 완료.");
+            }
+
+            // 승리 확인
+            if (rackState.every(s => s === null)) {
+                alert("축하합니다! 모든 타일을 내려놓으셨습니다!");
+                init();
+            }
+        });
+
+        document.getElementById('btn-sort-num').addEventListener('click', () => {
+            let tiles = rackState.filter(t => t !== null);
+            tiles.sort((a, b) => {
+                if (a.isJoker) return 1;
+                if (b.isJoker) return -1;
+                return a.num - b.num || COLORS.indexOf(a.color) - COLORS.indexOf(b.color);
+            });
+            rackState.fill(null);
+            tiles.forEach((t, i) => rackState[i] = t);
+            render();
+        });
+
+        document.getElementById('btn-sort-color').addEventListener('click', () => {
+            let tiles = rackState.filter(t => t !== null);
+            tiles.sort((a, b) => {
+                if (a.isJoker) return 1;
+                if (b.isJoker) return -1;
+                return COLORS.indexOf(a.color) - COLORS.indexOf(b.color) || a.num - b.num;
+            });
+            rackState.fill(null);
+            tiles.forEach((t, i) => rackState[i] = t);
+            render();
+        });
+
+        window.onload = init;
+    </script>
+</body>
+</html>

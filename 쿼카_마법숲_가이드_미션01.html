@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>쿼카 마법숲 가이드 미션01</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #fff;
+            margin: 0;
+            overflow: hidden;
+        }
+        video {
+            width: 100vw;
+            height: 100vh;
+            object-fit: contain;
+            display: block;
+        }
+        #close-msg {
+            display: none;
+            color: #fff;
+            font-size: 1.2rem;
+            text-align: center;
+            padding: 20px;
+        }
+        #close-msg button {
+            margin-top: 12px;
+            padding: 10px 28px;
+            background: #16a34a;
+            color: #fff;
+            border: none;
+            border-radius: 999px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <video id="guide-video" controls autoplay>
+        <source src="쿼카_마법숲_가이드_미션01.mp4" type="video/mp4">
+        이 브라우저는 비디오 재생을 지원하지 않습니다.
+    </video>
+    <div id="close-msg">
+        <p>영상이 끝났습니다. 창을 닫는 중...</p>
+        <button onclick="window.close()">창 닫기</button>
+    </div>
+    <script>
+        var video = document.getElementById('guide-video');
+        video.addEventListener('ended', function () {
+            window.close();
+            // 브라우저가 window.close()를 막은 경우 안내 메시지 표시
+            setTimeout(function () {
+                document.getElementById('close-msg').style.display = 'block';
+            }, 500);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>수학 어드벤처 퀘스트</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
+        
+        body {
+            font-family: 'Jua', sans-serif;
+            background-color: #f0f9ff;
+            touch-action: manipulation;
+        }
+
+        .game-card {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .board-tile {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .tile-active {
+            background-color: #3b82f6;
+            color: white;
+            box-shadow: 0 0 15px #3b82f6;
+            transform: scale(1.1);
+        }
+
+        .tile-passed {
+            background-color: #10b981;
+            color: white;
+        }
+
+        .tile-pending {
+            background-color: #e5e7eb;
+            color: #9ca3af;
+        }
+
+        .btn-bounce:active {
+            transform: scale(0.95);
+        }
+
+        @keyframes bounce-subtle {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .player-icon {
+            animation: bounce-subtle 2s infinite ease-in-out;
+        }
+
+        /* 시작 모달 */
+        .start-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.72);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            backdrop-filter: blur(4px);
+        }
+        .start-modal.hidden { display: none; }
+        .start-modal-box {
+            background: #fff;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 400px;
+            overflow: hidden;
+            border: 4px solid #3b82f6;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.35);
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn {
+            from { transform: scale(0.7); opacity: 0; }
+            to   { transform: scale(1);   opacity: 1; }
+        }
+        .quiz-header {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            padding: 1.5rem;
+            text-align: center;
+        }
+        .rule-item {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            border-radius: 8px;
+            padding: 0.5rem 0.8rem;
+            margin: 0.35rem 0;
+            font-size: 0.9rem;
+            color: #1e3a8a;
+            font-weight: 600;
+        }
+        .level-btn {
+            display: block;
+            width: 100%;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 900;
+            cursor: pointer;
+            margin-bottom: 8px;
+            font-family: 'Jua', sans-serif;
+            transition: all 0.15s;
+        }
+        .level-btn:active { transform: scale(0.96); }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- 게임 시작 모달 -->
+    <div id="startModal" class="start-modal">
+        <div class="start-modal-box">
+            <div class="quiz-header">
+                <div style="font-size:3rem;margin-bottom:0.3rem;">🏆</div>
+                <h2 style="font-size:1.9rem;font-weight:900;color:white;margin:0;">수학 퀴즈 어드벤처</h2>
+                <p style="color:rgba(255,255,255,0.85);font-size:0.82rem;margin-top:4px;">6세 이상 · 혼자 도전 · 수학 퀴즈 게임</p>
+            </div>
+            <div style="padding:1.2rem 1.5rem;">
+                <p style="font-size:0.72rem;font-weight:900;color:#1d4ed8;text-transform:uppercase;letter-spacing:0.1em;text-align:center;margin-bottom:0.8rem;">게임 방법</p>
+                <div class="rule-item">1️⃣ 난이도(초급·중급·고급)를 선택합니다.</div>
+                <div class="rule-item">2️⃣ 5문제가 주어지고 4개 보기 중 정답을 고릅니다.</div>
+                <div class="rule-item">3️⃣ 정답 +20점, 오답 -5점으로 점수가 계산됩니다.</div>
+                <div class="rule-item">4️⃣ 5문제를 모두 풀면 최종 점수를 확인하세요! 🏆</div>
+                <p style="font-size:0.8rem;font-weight:800;color:#1d4ed8;text-align:center;margin:0.8rem 0 0.5rem;">난이도를 선택해 바로 시작!</p>
+                <button class="level-btn" style="background:linear-gradient(135deg,#4ade80,#16a34a);color:white;box-shadow:0 4px 0 #14532d;" onclick="startGameModal('beginner')">🌱 초급 — 더하기 / 빼기</button>
+                <button class="level-btn" style="background:linear-gradient(135deg,#fbbf24,#d97706);color:white;box-shadow:0 4px 0 #92400e;" onclick="startGameModal('intermediate')">⚔️ 중급 — 곱하기 / 나누기</button>
+                <button class="level-btn" style="background:linear-gradient(135deg,#f87171,#dc2626);color:white;box-shadow:0 4px 0 #991b1b;margin-bottom:0;" onclick="startGameModal('advanced')">💎 고급 — 복합 / 논리</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-container" class="max-w-md w-full bg-white rounded-3xl p-6 game-card relative overflow-hidden">
+        
+        <!-- Level Selection Screen -->
+        <div id="screen-setup" class="text-center">
+            <div class="mb-6">
+                <span class="text-5xl">🎲</span>
+                <h1 class="text-3xl font-bold text-blue-600 mt-2">수학 어드벤처</h1>
+                <p class="text-gray-500">난이도를 선택하고 모험을 시작하세요!</p>
+            </div>
+            
+            <div class="space-y-4">
+                <button onclick="startGame('beginner')" class="w-full py-4 bg-green-400 hover:bg-green-500 text-white rounded-2xl text-xl font-bold transition btn-bounce shadow-lg shadow-green-100">
+                    🌱 초급 (더하기/빼기)
+                </button>
+                <button onclick="startGame('intermediate')" class="w-full py-4 bg-yellow-400 hover:bg-yellow-500 text-white rounded-2xl text-xl font-bold transition btn-bounce shadow-lg shadow-yellow-100">
+                    ⚔️ 중급 (곱하기/나누기)
+                </button>
+                <button onclick="startGame('advanced')" class="w-full py-4 bg-red-400 hover:bg-red-500 text-white rounded-2xl text-xl font-bold transition btn-bounce shadow-lg shadow-red-100">
+                    💎 고급 (복합/논리)
+                </button>
+            </div>
+        </div>
+
+        <!-- Game Play Screen -->
+        <div id="screen-play" class="hidden">
+            <!-- Header Stats -->
+            <div class="flex justify-between items-center mb-6">
+                <button onclick="showSetup()" class="text-gray-400 hover:text-gray-600">🏠 나가기</button>
+                <div class="flex gap-4">
+                    <span id="stat-level" class="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm">초급</span>
+                    <span id="stat-score" class="bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-sm">점수: 0</span>
+                </div>
+            </div>
+
+            <!-- Board View -->
+            <div id="board" class="flex flex-wrap gap-2 justify-center mb-8">
+                <!-- Tiles will be injected here -->
+            </div>
+
+            <!-- Question Card -->
+            <div class="bg-blue-50 rounded-2xl p-8 mb-6 text-center relative border-2 border-blue-100">
+                <div id="question-text" class="text-2xl font-bold text-gray-800 mb-6">
+                    $5 + 7 = ?$
+                </div>
+                <div id="options-grid" class="grid grid-cols-2 gap-4">
+                    <!-- Options will be injected here -->
+                </div>
+            </div>
+
+            <div id="feedback-message" class="text-center h-6 font-bold text-lg"></div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="screen-result" class="hidden text-center">
+            <div class="mb-6">
+                <span id="result-emoji" class="text-6xl">🏆</span>
+                <h2 class="text-3xl font-bold text-gray-800 mt-4">모험 완료!</h2>
+                <p id="result-score" class="text-xl text-blue-600 mt-2">최종 점수: 100점</p>
+            </div>
+            <button onclick="showSetup()" class="w-full py-4 bg-blue-500 text-white rounded-2xl text-xl font-bold hover:bg-blue-600 transition btn-bounce">
+                다시 하기
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Game Data ---
+        const questions = {
+            beginner: [
+                { q: "5 + 8 = ?", options: ["11", "12", "13", "14"], a: "13" },
+                { q: "15 - 7 = ?", options: ["6", "7", "8", "9"], a: "8" },
+                { q: "10 + ( ) = 17", options: ["5", "6", "7", "8"], a: "7" },
+                { q: "20 - 4 - 3 = ?", options: ["11", "13", "15", "17"], a: "13" },
+                { q: "시계의 짧은 바늘이 3, 긴 바늘이 12면?", options: ["1시", "2시", "3시", "6시"], a: "3시" }
+            ],
+            intermediate: [
+                { q: "8 × 7 = ?", options: ["54", "56", "58", "64"], a: "56" },
+                { q: "45 ÷ 5 = ?", options: ["7", "8", "9", "10"], a: "9" },
+                { q: "12 × 4 = ?", options: ["36", "44", "48", "52"], a: "48" },
+                { q: "3 + 5 × 2 = ?", options: ["13", "16", "10", "20"], a: "13" },
+                { q: "100의 절반의 절반은?", options: ["50", "25", "15", "10"], a: "25" }
+            ],
+            advanced: [
+                { q: "x + 12 = 30, x는?", options: ["16", "18", "20", "22"], a: "18" },
+                { q: "2, 4, 8, 16, ( )", options: ["20", "24", "32", "64"], a: "32" },
+                { q: "정사각형의 둘레가 20cm면 한 변은?", options: ["4cm", "5cm", "10cm", "20cm"], a: "5cm" },
+                { q: "3 × (4 + 6) ÷ 2 = ?", options: ["15", "18", "24", "30"], a: "15" },
+                { q: "가장 작은 소수(Prime Number)는?", options: ["0", "1", "2", "3"], a: "2" }
+            ]
+        };
+
+        // --- Game State ---
+        let currentLevel = 'beginner';
+        let currentIdx = 0;
+        let score = 0;
+        let activeQuestions = [];
+
+        // --- UI Elements ---
+        const screens = {
+            setup: document.getElementById('screen-setup'),
+            play: document.getElementById('screen-play'),
+            result: document.getElementById('screen-result')
+        };
+
+        function showScreen(screenKey) {
+            Object.values(screens).forEach(s => s.classList.add('hidden'));
+            screens[screenKey].classList.remove('hidden');
+        }
+
+        // --- Core Logic ---
+        function startGame(level) {
+            currentLevel = level;
+            currentIdx = 0;
+            score = 0;
+            activeQuestions = [...questions[level]];
+            
+            document.getElementById('stat-level').innerText = 
+                level === 'beginner' ? '초급 🌱' : (level === 'intermediate' ? '중급 ⚔️' : '고급 💎');
+            updateScore();
+            initBoard();
+            renderQuestion();
+            showScreen('play');
+        }
+
+        function showSetup() {
+            showScreen('setup');
+        }
+
+        function initBoard() {
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+            for (let i = 0; i < activeQuestions.length; i++) {
+                const tile = document.createElement('div');
+                tile.id = `tile-${i}`;
+                tile.className = 'board-tile tile-pending';
+                tile.innerText = i + 1;
+                board.appendChild(tile);
+            }
+            updateBoard();
+        }
+
+        function updateBoard() {
+            for (let i = 0; i < activeQuestions.length; i++) {
+                const tile = document.getElementById(`tile-${i}`);
+                if (i < currentIdx) {
+                    tile.className = 'board-tile tile-passed';
+                    tile.innerHTML = '✓';
+                } else if (i === currentIdx) {
+                    tile.className = 'board-tile tile-active';
+                    tile.innerHTML = '<span class="player-icon">👤</span>';
+                } else {
+                    tile.className = 'board-tile tile-pending';
+                    tile.innerHTML = i + 1;
+                }
+            }
+        }
+
+        function renderQuestion() {
+            if (currentIdx >= activeQuestions.length) {
+                endGame();
+                return;
+            }
+
+            const qData = activeQuestions[currentIdx];
+            document.getElementById('question-text').innerText = qData.q;
+            
+            const optionsGrid = document.getElementById('options-grid');
+            optionsGrid.innerHTML = '';
+            
+            qData.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "py-4 bg-white border-2 border-blue-200 rounded-xl hover:bg-blue-100 hover:border-blue-400 transition font-bold text-lg btn-bounce";
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(opt);
+                optionsGrid.appendChild(btn);
+            });
+            
+            document.getElementById('feedback-message').innerText = '';
+        }
+
+        function checkAnswer(selected) {
+            const qData = activeQuestions[currentIdx];
+            const feedback = document.getElementById('feedback-message');
+            
+            if (selected === qData.a) {
+                score += 20;
+                updateScore();
+                feedback.innerText = "정답입니다! 🎉";
+                feedback.className = "text-center h-6 font-bold text-lg text-green-500";
+                
+                setTimeout(() => {
+                    currentIdx++;
+                    updateBoard();
+                    renderQuestion();
+                }, 800);
+            } else {
+                feedback.innerText = "다시 생각해보세요! 🤔";
+                feedback.className = "text-center h-6 font-bold text-lg text-red-500";
+                // 감점 로직 (선택사항)
+                score = Math.max(0, score - 5);
+                updateScore();
+            }
+        }
+
+        function updateScore() {
+            document.getElementById('stat-score').innerText = `점수: ${score}`;
+        }
+
+        function startGameModal(level) {
+            document.getElementById('startModal').classList.add('hidden');
+            startGame(level);
+        }
+
+        window.onload = () => {
+            document.getElementById('startModal').classList.remove('hidden');
+        };
+
+        function endGame() {
+            document.getElementById('result-score').innerText = `최종 점수: ${score}점`;
+            const emoji = score >= 80 ? "🏆" : (score >= 50 ? "🥈" : "🥉");
+            document.getElementById('result-emoji').innerText = emoji;
+            showScreen('result');
+        }
+    </script>
+</body>
+</html>

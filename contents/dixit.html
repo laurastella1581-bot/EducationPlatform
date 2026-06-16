@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dixit Online - 스토리텔링 게임</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e94560;
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .card-inner {
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+
+        .card:hover .card-inner {
+            transform: translateY(-10px) scale(1.05);
+        }
+
+        .selected-card {
+            border: 4px solid #f8b400 !important;
+            box-shadow: 0 0 20px #f8b400;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+        }
+
+        .game-status-bar {
+            border-bottom: 2px solid #e94560;
+        }
+
+        /* 시작 모달 */
+        .start-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.82);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            backdrop-filter: blur(6px);
+        }
+        .start-modal.hidden { display: none; }
+        .start-modal-box {
+            background: #16213e;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 420px;
+            overflow: hidden;
+            border: 3px solid #e94560;
+            box-shadow: 0 0 50px rgba(233,69,96,0.3), 0 25px 60px rgba(0,0,0,0.5);
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn {
+            from { transform: scale(0.7); opacity: 0; }
+            to   { transform: scale(1);   opacity: 1; }
+        }
+        .dixit-header {
+            background: linear-gradient(135deg, #1a1a2e, #e94560);
+            padding: 1.6rem;
+            text-align: center;
+        }
+        .rule-item {
+            background: rgba(233,69,96,0.08);
+            border-left: 4px solid #e94560;
+            border-radius: 8px;
+            padding: 0.5rem 0.8rem;
+            margin: 0.35rem 0;
+            font-size: 0.88rem;
+            color: #fca5a5;
+            font-weight: 600;
+        }
+        .dixit-start-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #e94560, #c2185b);
+            color: white;
+            font-size: 1.3rem;
+            font-weight: 900;
+            padding: 0.9rem;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            box-shadow: 0 5px 0 #880e4f;
+            transition: all 0.15s;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+        .dixit-start-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 1px 0 #880e4f;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1a1a2e;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #e94560;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <!-- 게임 시작 모달 -->
+    <div id="startModal" class="start-modal">
+        <div class="start-modal-box">
+            <div class="dixit-header">
+                <div style="font-size:3rem;margin-bottom:0.3rem;">🎴</div>
+                <h2 style="font-size:2rem;font-weight:900;color:white;margin:0;letter-spacing:-0.5px;">DIXIT</h2>
+                <p style="color:rgba(255,255,255,0.8);font-size:0.82rem;margin-top:4px;">6세 이상 · 3~6명 · 상상력 스토리텔링 게임</p>
+            </div>
+            <div style="padding:1.2rem 1.5rem;">
+                <p style="font-size:0.72rem;font-weight:900;color:#e94560;text-transform:uppercase;letter-spacing:0.1em;text-align:center;margin-bottom:0.8rem;">게임 방법</p>
+                <div class="rule-item">1️⃣ 스토리텔러가 손패에서 카드 1장을 고릅니다.</div>
+                <div class="rule-item">2️⃣ 그 카드를 연상시키는 단어·문장을 제시어로 말합니다.</div>
+                <div class="rule-item">3️⃣ 다른 플레이어도 제시어에 어울리는 자기 카드를 냅니다.</div>
+                <div class="rule-item">4️⃣ 섞인 카드 중 스토리텔러의 카드를 투표로 찾아요.</div>
+                <div class="rule-item">5️⃣ 정답을 맞추면 +3점! 5라운드 후 최다 점수 승리 🏆</div>
+            </div>
+            <div style="padding:0 1.5rem 1.5rem;">
+                <button class="dixit-start-btn" onclick="startGame()">🎴 게임 시작!</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="app" class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-8 game-status-bar pb-4">
+            <div>
+                <h1 class="text-3xl font-bold tracking-tighter text-white">DIXIT <span class="text-pink-500">ONLINE</span></h1>
+                <p class="text-sm text-gray-400">상상력을 자극하는 스토리텔링 게임</p>
+            </div>
+            <div class="text-right">
+                <div class="text-xl font-bold text-yellow-400">SCORE: <span id="player-score">0</span></div>
+                <div class="text-xs text-gray-400">Round: <span id="round-number">1</span>/5</div>
+            </div>
+        </header>
+
+        <!-- Game Area -->
+        <main>
+            <!-- Game Phase: Instruction -->
+            <div id="instruction-panel" class="glass-panel p-6 mb-8 text-center">
+                <h2 id="phase-title" class="text-2xl mb-2 font-bold text-white">당신은 이번 라운드의 스토리텔러입니다!</h2>
+                <p id="phase-desc" class="text-gray-300 italic">카드를 하나 선택하고 그 카드를 연상시키는 단어나 문장을 입력하세요.</p>
+            </div>
+
+            <!-- Clue Input (Hidden by default) -->
+            <div id="clue-container" class="hidden glass-panel p-6 mb-8 flex flex-col md:flex-row gap-4 items-center justify-center">
+                <input type="text" id="clue-input" placeholder="제시어를 입력하세요..." class="bg-gray-800 text-white px-4 py-2 rounded-lg w-full md:w-64 border border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-600">
+                <button onclick="submitClue()" class="bg-pink-600 hover:bg-pink-700 text-white px-8 py-2 rounded-lg font-bold transition-all transform active:scale-95">제시어 확정</button>
+            </div>
+
+            <!-- Voting Buttons (Hidden by default) -->
+            <div id="vote-container" class="hidden mb-8 text-center">
+                <button onclick="confirmVote()" class="bg-yellow-500 hover:bg-yellow-600 text-black px-12 py-3 rounded-full font-bold text-xl shadow-lg transition-all transform active:scale-95">투표하기</button>
+            </div>
+
+            <!-- Table (Common Cards) -->
+            <div id="table-area" class="hidden mb-12">
+                <h3 class="text-white mb-4 text-center font-bold">테이블 위의 카드들 (누가 스토리텔러의 카드일까요?)</h3>
+                <div id="table-cards" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                    <!-- Cards will be injected here -->
+                </div>
+            </div>
+
+            <!-- Player Hand -->
+            <div id="hand-area">
+                <h3 class="text-white mb-4 font-bold border-l-4 border-pink-500 pl-3">나의 카드 (내 손패)</h3>
+                <div id="hand-cards" class="flex flex-wrap justify-center gap-4">
+                    <!-- Player cards will be injected here -->
+                </div>
+            </div>
+        </main>
+
+        <!-- Modals/Overlays -->
+        <div id="result-modal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center hidden z-50 p-4">
+            <div class="bg-gray-900 border-2 border-yellow-500 p-8 rounded-2xl max-w-md w-full text-center">
+                <h2 id="result-title" class="text-3xl font-bold text-white mb-4">라운드 결과</h2>
+                <div id="result-content" class="text-gray-300 mb-6"></div>
+                <button onclick="nextRound()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-bold">다음 라운드 진행</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Game State ---
+        let state = {
+            score: 0,
+            round: 1,
+            maxRounds: 5,
+            hand: [],
+            table: [],
+            phase: 'storyteller', // 'storyteller', 'waiting', 'voting', 'result'
+            selectedCardId: null,
+            storytellerCardId: null,
+            clue: '',
+            deck: []
+        };
+
+        // --- Card Generation (Abstract SVG Assets) ---
+        function generateCard(id) {
+            const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7D794', '#786FA6', '#F8a5c2'];
+            const shapes = ['circle', 'rect', 'path', 'polygon'];
+            
+            const randomColor = () => colors[Math.floor(Math.random() * colors.length)];
+            
+            let svgContent = '';
+            // Background
+            svgContent += `<rect width="200" height="300" fill="${randomColor()}" opacity="0.2" />`;
+            
+            // Random shapes for abstract art
+            for (let i = 0; i < 6; i++) {
+                const shape = shapes[Math.floor(Math.random() * shapes.length)];
+                const color = randomColor();
+                const x = Math.random() * 150;
+                const y = Math.random() * 250;
+                const size = 30 + Math.random() * 80;
+                
+                if (shape === 'circle') {
+                    svgContent += `<circle cx="${x}" cy="${y}" r="${size/2}" fill="${color}" opacity="0.6" />`;
+                } else if (shape === 'rect') {
+                    svgContent += `<rect x="${x}" y="${y}" width="${size}" height="${size}" rx="10" fill="${color}" opacity="0.6" transform="rotate(${Math.random()*360} ${x} ${y})" />`;
+                } else {
+                    svgContent += `<polygon points="${x},${y} ${x+size},${y+size/2} ${x+size/2},${y+size}" fill="${color}" opacity="0.6" transform="rotate(${Math.random()*360} ${x} ${y})" />`;
+                }
+            }
+
+            const svg = `
+                <svg width="100%" height="100%" viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="grad${id}" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#ffffff11;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#00000022;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    <rect width="200" height="300" fill="url(#grad${id})" rx="15" />
+                    ${svgContent}
+                    <rect width="190" height="290" x="5" y="5" fill="none" stroke="white" stroke-width="2" rx="10" opacity="0.3" />
+                </svg>
+            `;
+            
+            return { id, svg, clue: `추상화 ${id}` };
+        }
+
+        // --- Core Logic ---
+
+        function initGame() {
+            state.deck = Array.from({length: 50}, (_, i) => generateCard(i));
+            shuffle(state.deck);
+            drawInitialHand();
+            updateUI();
+        }
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function drawInitialHand() {
+            state.hand = state.deck.splice(0, 6);
+        }
+
+        function updateUI() {
+            document.getElementById('player-score').innerText = state.score;
+            document.getElementById('round-number').innerText = state.round;
+
+            const handContainer = document.getElementById('hand-cards');
+            handContainer.innerHTML = '';
+            state.hand.forEach(card => {
+                const cardDiv = document.createElement('div');
+                cardDiv.className = `card w-32 h-48 md:w-40 md:h-60 bg-gray-800 rounded-2xl cursor-pointer overflow-hidden relative shadow-xl transition-all border-2 border-transparent ${state.selectedCardId === card.id ? 'selected-card' : ''}`;
+                cardDiv.innerHTML = card.svg;
+                cardDiv.onclick = () => selectCard(card.id);
+                handContainer.appendChild(cardDiv);
+            });
+
+            const tableArea = document.getElementById('table-area');
+            const tableContainer = document.getElementById('table-cards');
+            if (state.phase === 'voting' || state.phase === 'result') {
+                tableArea.classList.remove('hidden');
+                tableContainer.innerHTML = '';
+                state.table.forEach(card => {
+                    const cardDiv = document.createElement('div');
+                    cardDiv.className = `card w-full aspect-[2/3] bg-gray-800 rounded-xl cursor-pointer overflow-hidden relative shadow-lg border-2 border-transparent ${state.selectedCardId === card.id ? 'selected-card' : ''}`;
+                    cardDiv.innerHTML = card.svg;
+                    cardDiv.onclick = () => selectCard(card.id);
+                    tableContainer.appendChild(cardDiv);
+                });
+            } else {
+                tableArea.classList.add('hidden');
+            }
+
+            // Phase specific UI
+            const instructionTitle = document.getElementById('phase-title');
+            const instructionDesc = document.getElementById('phase-desc');
+            const clueContainer = document.getElementById('clue-container');
+            const voteContainer = document.getElementById('vote-container');
+
+            if (state.phase === 'storyteller') {
+                instructionTitle.innerText = "당신은 스토리텔러입니다!";
+                instructionDesc.innerText = "카드를 하나 선택하고 제시어를 입력하세요.";
+                clueContainer.classList.remove('hidden');
+                voteContainer.classList.add('hidden');
+            } else if (state.phase === 'voting') {
+                instructionTitle.innerText = "제시어: " + state.clue;
+                instructionDesc.innerText = "위의 카드 중 스토리텔러의 카드를 찾아 투표하세요.";
+                clueContainer.classList.add('hidden');
+                voteContainer.classList.remove('hidden');
+            }
+        }
+
+        function selectCard(id) {
+            state.selectedCardId = id;
+            updateUI();
+        }
+
+        function submitClue() {
+            const input = document.getElementById('clue-input');
+            if (!state.selectedCardId) {
+                showMessage("카드를 먼저 선택해주세요!");
+                return;
+            }
+            if (!input.value.trim()) {
+                showMessage("제시어를 입력해주세요!");
+                return;
+            }
+
+            state.clue = input.value;
+            state.storytellerCardId = state.selectedCardId;
+            
+            // AI가 카드 3개를 냅니다
+            const storytellerCard = state.hand.find(c => c.id === state.selectedCardId);
+            state.hand = state.hand.filter(c => c.id !== state.selectedCardId);
+            
+            state.table = [storytellerCard];
+            for(let i=0; i<3; i++) {
+                state.table.push(state.deck.pop());
+            }
+            shuffle(state.table);
+
+            // 스토리텔러 페이즈가 끝나면 바로 투표(결과) 페이즈로 이동 (1인 개발용 단순화)
+            // 실제 딕싯은 다른 플레이어의 카드를 보는 과정이 있으나 여기선 시뮬레이션
+            state.phase = 'voting';
+            state.selectedCardId = null;
+            input.value = '';
+            updateUI();
+        }
+
+        function confirmVote() {
+            if (!state.selectedCardId) {
+                showMessage("투표할 카드를 선택해주세요!");
+                return;
+            }
+
+            calculateScore();
+        }
+
+        function calculateScore() {
+            const isCorrect = state.selectedCardId === state.storytellerCardId;
+            let roundPoints = 0;
+            let resultMsg = "";
+
+            if (isCorrect) {
+                roundPoints = 3;
+                resultMsg = "정답입니다! 스토리텔러의 의도를 정확히 파악하셨군요. (+3점)";
+            } else {
+                roundPoints = 0;
+                resultMsg = "아쉽게도 틀렸습니다. 스토리텔러의 카드가 아니었습니다. (+0점)";
+            }
+
+            state.score += roundPoints;
+            showResult(resultMsg);
+        }
+
+        function showResult(msg) {
+            const modal = document.getElementById('result-modal');
+            const content = document.getElementById('result-content');
+            
+            content.innerHTML = `
+                <p class='text-xl mb-4'>${msg}</p>
+                <div class='flex justify-center gap-4 mb-4'>
+                    <div class='text-center'>
+                        <p class='text-xs text-gray-400 mb-1'>정답 카드</p>
+                        <div class='w-24 h-36 mx-auto bg-gray-700 rounded-lg overflow-hidden border-2 border-yellow-500'>
+                            ${state.table.find(c => c.id === state.storytellerCardId).svg}
+                        </div>
+                    </div>
+                </div>
+            `;
+            modal.classList.remove('hidden');
+        }
+
+        function nextRound() {
+            if (state.round >= state.maxRounds) {
+                alert(`게임 종료! 최종 점수: ${state.score}점`);
+                location.reload();
+                return;
+            }
+
+            state.round++;
+            state.phase = 'storyteller';
+            state.selectedCardId = null;
+            state.table = [];
+            
+            // 부족한 카드 채우기
+            while(state.hand.length < 6) {
+                state.hand.push(state.deck.pop());
+            }
+
+            document.getElementById('result-modal').classList.add('hidden');
+            updateUI();
+        }
+
+        function showMessage(msg) {
+            const msgBox = document.createElement('div');
+            msgBox.className = "fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-full shadow-2xl z-[100] animate-bounce";
+            msgBox.innerText = msg;
+            document.body.appendChild(msgBox);
+            setTimeout(() => msgBox.remove(), 2000);
+        }
+
+        function startGame() {
+            document.getElementById('startModal').classList.add('hidden');
+            initGame();
+        }
+
+        window.onload = () => {
+            document.getElementById('startModal').classList.remove('hidden');
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>마법숲의 비밀: 핍듀와 스타랏</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&family=Gaegu:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Nanum Gothic', sans-serif;
+            background-color: #fffbeb;
+        }
+        
+        .gaegu {
+            font-family: 'Gaegu', cursive;
+        }
+
+        .book-container {
+            min-height: 500px;
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(245, 158, 11, 0.1);
+            border-top: 4px solid #f59e0b;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-4 md:p-8">
+
+    <!-- Header -->
+    <div class="max-w-4xl w-full flex justify-between items-center mb-6 z-10">
+        <div class="flex items-center gap-3 text-amber-900">
+            <i class="fa-solid fa-book-open text-3xl text-amber-600"></i>
+            <h1 class="text-2xl md:text-3xl font-bold gaegu">마법숲의 비밀: 핍듀와 스타랏</h1>
+        </div>
+        <div id="page-indicator" class="text-amber-700 font-semibold bg-white px-4 py-2 rounded-full shadow-sm">
+            1 / 5 페이지
+        </div>
+    </div>
+
+    <!-- Book Container -->
+    <div class="max-w-5xl w-full bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row book-container border-4 border-amber-200 z-10">
+        
+        <!-- Left Side: Illustration -->
+        <div id="image-section" class="w-full md:w-1/2 flex flex-col items-center justify-center relative min-h-[350px] overflow-hidden" style="background:linear-gradient(135deg,#fef3c7,#fde68a);">
+            <img id="scene-img" src="" alt="" style="width:100%; height:100%; object-fit:cover; position:absolute; inset:0;" onerror="this.style.display='none'; document.getElementById('scene-emoji-fallback').style.display='block';">
+            <div id="scene-emoji-fallback" style="display:none; font-size:120px; line-height:1; filter:drop-shadow(0 8px 16px rgba(0,0,0,0.15));">🌿</div>
+        </div>
+
+        <!-- Right Side: Text -->
+        <div class="w-full md:w-1/2 p-8 flex flex-col justify-between bg-white border-l-0 md:border-l-2 border-amber-100">
+            <div class="fade-in" id="text-content">
+                <h2 id="scene-title" class="text-2xl font-bold text-amber-800 mb-4 border-b-2 border-amber-100 pb-2 gaegu">
+                    1. 사라지는 핍듀의 비밀
+                </h2>
+                <p id="scene-text" class="text-lg leading-relaxed text-slate-700 mb-6">
+                    지금 우리 곁에 있는 마법숲, 늑대 탐정님과 쿼카 삼남매가 지도를 펼쳤어요...
+                </p>
+            </div>
+
+            <!-- Math Box -->
+            <div class="bg-amber-50 p-5 rounded-2xl border-2 border-dashed border-amber-300">
+                <div class="flex items-center gap-2 mb-2 text-amber-700 font-bold">
+                    <i class="fa-solid fa-calculator"></i>
+                    <span>오늘의 마법 규칙</span>
+                </div>
+                <p id="math-rule" class="text-lg text-amber-900 font-bold italic">
+                    100씩 뛰어 세기: 100 -> 200 -> 300...
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Controls -->
+    <div class="mt-8 flex items-center gap-4 z-10">
+        <button id="prev-btn" onclick="prevPage()" class="p-4 rounded-full shadow-lg bg-white text-amber-600 hover:bg-amber-100 transition-all active:scale-95 disabled:bg-slate-200 disabled:text-slate-400">
+            <i class="fa-solid fa-chevron-left text-2xl"></i>
+        </button>
+
+        <div id="dots-container" class="flex items-center gap-2 px-4">
+            <!-- Dots added by JS -->
+        </div>
+
+        <button id="next-btn" onclick="nextPage()" class="p-4 rounded-full shadow-lg bg-amber-500 text-white hover:bg-amber-600 transition-all active:scale-95 disabled:bg-slate-200 disabled:text-slate-400">
+            <i class="fa-solid fa-chevron-right text-2xl"></i>
+        </button>
+    </div>
+
+    <!-- Love Message -->
+    <div id="love-message" class="hidden mt-12 text-center">
+        <div class="bg-rose-100 text-rose-700 px-8 py-3 rounded-2xl shadow-md border-2 border-rose-200 flex items-center gap-3 animate-bounce">
+            <i class="fa-solid fa-heart text-rose-500"></i>
+            <span class="font-bold">가장 큰 마법은 서로를 아끼는 마음이에요!</span>
+        </div>
+    </div>
+
+    <div class="mt-12 text-slate-500 text-sm italic text-center max-w-xl">
+        * 이 책은 초등학교 2-3학년 교과 과정인 뛰어 세기, 곱셈, 배수 개념을 담고 있습니다. <br>
+        * AI 이미지 생성 중에는 잠시만 기다려 주세요.
+    </div>
+
+    <script>
+        const apiKey = ""; // API key will be provided at runtime
+        let currentPage = 0;
+        const imagesCache = {};
+        const loadingStatus = {};
+
+        const scenes = [
+            {
+                title: "1. 사라지는 핍듀의 비밀",
+                content: "지금 우리 곁에 있는 마법숲, 늑대 탐정님과 쿼카 삼남매가 지도를 펼쳤어요. 숲의 보물 '핍듀' 열매가 자꾸 사라지고 있거든요! 늑대 탐정님이 돋보기를 들고 말했어요. \"얘들아, 규칙을 찾았어! 1주에 100개, 2주에 200개... 매주 100개씩 더 늘어나며 사라지고 있어!\"",
+                math: "100씩 뛰어 세기: 100 → 200 → 300...",
+                image: "../마법숲동화1.png"
+            },
+            {
+                title: "2. 거인 정령의 피리 소리",
+                content: "쿼카들이 걱정하고 있을 때, 전설 속 거인 정령님이 나타났어요! 거인 정령님이 신비로운 피리를 불자 '스타랏' 보석이 생겨났지요. 피리를 한 번 불면 3개, 두 번 불면 6개... 정령님이 불 때마다 스타랏이 '3의 배수'로 늘어났답니다.",
+                math: "3의 배수 마법: 3, 6, 9, 12...",
+                image: "../마법숲동화2.png"
+            },
+            {
+                title: "3. 행진과 더하기 마법",
+                content: "정령님을 따라 쿼카 친구들과 고슴도치가 줄을 지어 걸어가요. 정령님이 말했어요. \"친구들의 사랑을 더해보렴!\" 쿼카들이 서로의 손을 꼭 잡고 사랑을 모을 때마다 바구니 속 스타랏이 100개씩 쑥쑥 더해졌어요!",
+                math: "사랑의 더하기: 원래 개수 + 100 + 100...",
+                image: "../마법숲동화3.png"
+            },
+            {
+                title: "4. 믿음의 곱하기 기적",
+                content: "드디어 생명의 나무 앞! 친구들의 아끼는 마음이 최고가 되자 정령님이 외쳤어요. \"믿음의 곱하기 마법!\" 그 순간 바구니 속 스타랏이 순식간에 100배로 불어났어요! 온 평원이 눈부신 별빛으로 가득 찼답니다.",
+                math: "믿음의 곱하기: 스타랏 개수 × 100!",
+                image: "../마법숲동화4.png"
+            },
+            {
+                title: "5. 다시 찾은 행복",
+                content: "기적이 일어났어요! 스타랏의 빛을 받은 덩굴마다 핍듀 열매가 다시 풍성하게 열렸어요. 쿼카와 친구들은 이제 알게 되었어요. 자연의 힘에 우리의 사랑을 '곱하면' 더 큰 행복이 찾아온다는 것을요. 마법숲은 오늘도 행복한 웃음소리로 가득하답니다.",
+                math: "자연 + 사랑 = 행복! 🌿",
+                image: "../마법숲동화5.png"
+            }
+        ];
+
+        function updateUI() {
+            const scene = scenes[currentPage];
+
+            document.getElementById('scene-title').innerText = scene.title;
+            document.getElementById('scene-text').innerText = scene.content;
+            document.getElementById('math-rule').innerText = scene.math;
+            document.getElementById('page-indicator').innerText = `${currentPage + 1} / ${scenes.length} 페이지`;
+
+            const img = document.getElementById('scene-img');
+            const fallback = document.getElementById('scene-emoji-fallback');
+            img.style.display = 'block';
+            fallback.style.display = 'none';
+            img.src = scene.image;
+            img.alt = scene.title;
+
+            document.getElementById('prev-btn').disabled = (currentPage === 0);
+            document.getElementById('next-btn').disabled = (currentPage === scenes.length - 1);
+
+            const dotsContainer = document.getElementById('dots-container');
+            dotsContainer.innerHTML = '';
+            scenes.forEach((_, i) => {
+                const dot = document.createElement('div');
+                dot.className = `h-3 rounded-full transition-all ${i === currentPage ? 'w-10 bg-amber-500' : 'w-3 bg-amber-200'}`;
+                dotsContainer.appendChild(dot);
+            });
+
+            const loveMsg = document.getElementById('love-message');
+            if (currentPage >= 3) {
+                loveMsg.classList.remove('hidden');
+            } else {
+                loveMsg.classList.add('hidden');
+            }
+
+            const textContent = document.getElementById('text-content');
+            textContent.classList.remove('fade-in');
+            void textContent.offsetWidth;
+            textContent.classList.add('fade-in');
+        }
+
+        function nextPage() {
+            if (currentPage < scenes.length - 1) {
+                currentPage++;
+                updateUI();
+            }
+        }
+
+        function prevPage() {
+            if (currentPage > 0) {
+                currentPage--;
+                updateUI();
+            }
+        }
+
+        // Initialize
+        window.onload = updateUI;
+    </script>
+</body>
+</html>

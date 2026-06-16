@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Frame 10 — 와이어프레임</title>
+  <style>
+    /* ── 기본 리셋 ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #f0f0f0;
+      font-family: 'Malgun Gothic', sans-serif;
+      font-size: 13px;
+      color: #333;
+    }
+
+    /* ── 캔버스 (모바일/태블릿 세로형 기준) ── */
+    .canvas {
+      width: 786px;          /* 원본 1572 ÷ 2 */
+      margin: 32px auto;
+      background: #fff;
+      border: 2px solid #999;
+      position: relative;
+    }
+
+    /* ── 공통 박스 스타일 ── */
+    .wf-box {
+      border: 1.5px solid #888;
+      background: #e8e8e8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 12px;
+      color: #444;
+      line-height: 1.4;
+      padding: 4px;
+    }
+    .wf-box.dark  { background: #bbb; }
+    .wf-box.light { background: #f4f4f4; }
+    .wf-box.img   { background: #d0d0d0; font-style: italic; color: #666; }
+    .wf-label {
+      font-size: 10px;
+      color: #888;
+      margin: 2px 0 4px 0;
+      padding-left: 2px;
+    }
+
+    /* ── 섹션 구분선 ── */
+    .section {
+      padding: 12px 16px;
+      border-bottom: 2px dashed #bbb;
+    }
+    .section-title {
+      font-size: 11px;
+      font-weight: bold;
+      color: #999;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      border-left: 3px solid #aaa;
+      padding-left: 6px;
+    }
+
+    /* ── 레이아웃 헬퍼 ── */
+    .row   { display: flex; gap: 8px; margin-bottom: 8px; }
+    .col   { flex: 1; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+
+    /* ── 치수 메모 ── */
+    .note {
+      font-size: 10px;
+      color: #aaa;
+      text-align: right;
+      margin-top: 2px;
+    }
+  </style>
+</head>
+<body>
+<div class="canvas">
+
+  <!-- ════════════════════════════════════
+       SECTION 1 : HEADER / 온보딩
+  ════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">① Header / 온보딩</div>
+
+    <!-- 로그인 버튼 (우상단 고정) -->
+    <div class="row" style="justify-content: flex-end; margin-bottom:6px;">
+      <div class="wf-box dark" style="width:130px; height:28px; font-size:11px;">
+        회원가입 / 로그인
+      </div>
+    </div>
+
+    <!-- 프로필 + 타이틀 -->
+    <div class="row" style="align-items:center; gap:12px;">
+      <div class="wf-box img" style="width:90px; height:90px; flex-shrink:0;">
+        사진/캐릭터<br>넣기<br>[90×90]
+      </div>
+      <div style="flex:1;">
+        <div class="wf-box light" style="height:56px; font-size:14px; font-weight:bold;">
+          호기심 가득한 쿼카 친구들의 모험
+        </div>
+        <div class="note">Hero Title · h2 정도</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ════════════════════════════════════
+       SECTION 2 : 지능 카테고리 네비게이션
+  ════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">② 다중지능 카테고리 탭 (3×3 Grid)</div>
+
+    <div class="grid-3">
+      <div class="wf-box" style="height:52px;">논리수학지능놀이</div>
+      <div class="wf-box" style="height:52px;">공간/시각지능놀이</div>
+      <div class="wf-box" style="height:52px;">신체운동지능놀이</div>
+      <div class="wf-box" style="height:52px;">언어지능놀이</div>
+      <div class="wf-box" style="height:52px;">음악/미술지능놀이</div>
+      <div class="wf-box" style="height:52px;">대인관계지능</div>
+      <div class="wf-box" style="height:52px;">자기이해지능</div>
+      <div class="wf-box" style="height:52px;">자연친화지능</div>
+      <div class="wf-box dark" style="height:52px; font-weight:bold;">✦ New Play</div>
+    </div>
+    <div class="note">선택 시 하이라이트 / active state 필요</div>
+  </div>
+
+
+  <!-- ════════════════════════════════════
+       SECTION 3 : 콘텐츠 카드 리스트
+  ════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">③ 프로그램 카드 리스트 (수평 스크롤 or 2열)</div>
+
+    <!-- 카드 1: 수학 -->
+    <div class="wf-label">카드 — 수학놀이창고</div>
+    <div class="row" style="align-items:stretch;">
+      <div class="wf-box img" style="width:90px; height:72px; flex-shrink:0;">[썸네일]</div>
+      <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+        <div class="wf-box light" style="height:24px; font-size:11px;">논리수학지능놀이</div>
+        <div class="wf-box" style="flex:1; font-size:11px; text-align:left; padding:4px 6px; align-items:flex-start;">
+          쿼카의 수학놀이창고<br>
+          <span style="font-size:10px;color:#666">신나게 놀다보면 수학이 놀이처럼 재미있어줘요!~^^</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 카드 2: 탐험대 -->
+    <div class="wf-label" style="margin-top:6px;">카드 — 숲속 탐험대</div>
+    <div class="row" style="align-items:stretch;">
+      <div class="wf-box img" style="width:90px; height:72px; flex-shrink:0;">[썸네일]</div>
+      <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+        <div class="wf-box light" style="height:24px; font-size:11px;">자연친화놀이 / 공간·신체·대인관계</div>
+        <div class="wf-box" style="flex:1; font-size:11px; text-align:left; padding:4px 6px; align-items:flex-start;">
+          쿼카의 숲속 탐험대<br>
+          <span style="font-size:10px;color:#666">숲속의 신비를 풀고, 숨겨진 세상을 여행하고 수많은 경험과 지혜를 배워요!</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 카드 3: 언어마술 숲 -->
+    <div class="wf-label" style="margin-top:6px;">카드 — 언어마술 숲</div>
+    <div class="row" style="align-items:stretch;">
+      <div class="wf-box img" style="width:90px; height:72px; flex-shrink:0;">[썸네일]</div>
+      <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+        <div class="wf-box light" style="height:24px; font-size:11px;">언어지능놀이 (한국어)</div>
+        <div class="wf-box" style="flex:1; font-size:11px; text-align:left; padding:4px 6px; align-items:flex-start;">
+          생각하는 쿼카의 언어마술 숲<br>
+          <span style="font-size:10px;color:#666">이야기와 함께 언어감각을 키워가는 생각주머니</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 카드 4: 영어 동화극장 -->
+    <div class="wf-label" style="margin-top:6px;">카드 — 영어 동화극장</div>
+    <div class="row" style="align-items:stretch;">
+      <div class="wf-box img" style="width:90px; height:72px; flex-shrink:0;">[썸네일]</div>
+      <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+        <div class="wf-box light" style="height:24px; font-size:11px;">언어지능놀이 (영어)</div>
+        <div class="wf-box" style="flex:1; font-size:11px; text-align:left; padding:4px 6px; align-items:flex-start;">
+          쿼카의 숲속 영어 동화극장<br>
+          <span style="font-size:10px;color:#666">탭! 하는 순간 펼쳐지는 신비한 영어 이야기</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ④ 영어 레벨 트리 — 영어 동화극장 카드 바로 아래 -->
+    <div style="border: 2px solid #888; background:#f9f9f9; margin: 6px 0 10px 0; padding: 10px 12px;">
+      <div class="section-title" style="margin-bottom:10px;">④ 영어 레벨 트리 (Sprout → Sapling → Canopy)</div>
+
+      <!-- 레벨 흐름 화살표 표시 -->
+      <div style="display:flex; align-items:center; justify-content:center; gap:6px; margin-bottom:10px;">
+        <div class="wf-box dark" style="width:80px; height:28px; font-size:11px; font-weight:bold;">🌱 Sprout</div>
+        <span style="color:#999; font-size:16px;">→</span>
+        <div class="wf-box dark" style="width:80px; height:28px; font-size:11px; font-weight:bold;">🌿 Sapling</div>
+        <span style="color:#999; font-size:16px;">→</span>
+        <div class="wf-box dark" style="width:80px; height:28px; font-size:11px; font-weight:bold;">🌳 Canopy</div>
+      </div>
+
+      <!-- Sprout 행 -->
+      <div class="row" style="align-items:stretch; gap:8px; margin-bottom:0;">
+        <div class="wf-box dark" style="width:110px; flex-shrink:0; font-weight:bold; font-size:11px; flex-direction:column; height:auto; padding:6px 4px;">
+          🌱 Sprout<br><span style="font-weight:normal;font-size:10px;">새싹 단계</span>
+        </div>
+        <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+          <div class="wf-box light" style="height:24px; font-size:10px;">씨앗 줍기 — 작은 단어에서 세상의 첫 이름 발견</div>
+          <div class="grid-3">
+            <div class="wf-box" style="height:36px; font-size:10px;">English<br>Story Book</div>
+            <div class="wf-box" style="height:36px; font-size:10px;">English<br>Play House</div>
+            <div class="wf-box" style="height:36px; font-size:10px;">단어 맞추기<br>말하기 게임</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 구분선 -->
+      <div style="border-top:1px dashed #ccc; margin:8px 0;"></div>
+
+      <!-- Sapling 행 -->
+      <div class="row" style="align-items:stretch; gap:8px; margin-bottom:0;">
+        <div class="wf-box dark" style="width:110px; flex-shrink:0; font-weight:bold; font-size:11px; flex-direction:column; height:auto; padding:6px 4px;">
+          🌿 Sapling<br><span style="font-weight:normal;font-size:10px;">어린 나무</span>
+        </div>
+        <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+          <div class="wf-box light" style="height:24px; font-size:10px;">잎새 엮기 — 문장의 줄기를 세우고, 나만의 이야기</div>
+          <div class="grid-3">
+            <div class="wf-box" style="height:36px; font-size:10px;">애니메이션</div>
+            <div class="wf-box" style="height:36px; font-size:10px;">문장 만들기<br>게임</div>
+            <div class="wf-box" style="height:36px; font-size:10px;">말하기 게임</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 구분선 -->
+      <div style="border-top:1px dashed #ccc; margin:8px 0;"></div>
+
+      <!-- Canopy 행 -->
+      <div class="row" style="align-items:stretch; gap:8px; margin-bottom:0;">
+        <div class="wf-box dark" style="width:110px; flex-shrink:0; font-weight:bold; font-size:11px; flex-direction:column; height:auto; padding:6px 4px;">
+          🌳 Canopy<br><span style="font-weight:normal;font-size:10px;">숲의 지붕</span>
+        </div>
+        <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+          <div class="wf-box light" style="height:24px; font-size:10px;">별 따기 — 더 넓은 세상을 향해 꿈을 펼쳐요</div>
+          <div class="grid-3">
+            <div class="wf-box" style="height:36px; font-size:10px;">만나요</div>
+            <div class="wf-box" style="height:36px; font-size:10px;">펼쳐요</div>
+            <div class="wf-box" style="height:36px; font-size:10px;">놀아요</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="note" style="margin-top:6px;">레벨은 잠금(Lock) 해제 방식 고려 가능</div>
+    </div>
+
+    <div class="note">카드 더 있을 수 있음 — 스크롤 or "더보기" 처리 필요</div>
+  </div>
+
+
+  <!-- ════════════════════════════════════
+       SECTION 4 : 성장 리포트
+  ════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">⑤ Growth Report — 꼬마쿼카 성장 리포트</div>
+
+    <div class="row" style="gap:12px; align-items:flex-start;">
+
+      <!-- 왼쪽: 입력 폼 -->
+      <div style="flex:1.2; display:flex; flex-direction:column; gap:6px;">
+        <div class="wf-box dark" style="height:28px; font-size:12px; font-weight:bold;">
+          Growth Report · 꼬마쿼카 성장 리포트
+        </div>
+
+        <div class="wf-label">1. 어떤 놀이를 함께 했나요?</div>
+        <div class="wf-box light" style="height:28px; font-size:11px;">지능영역 선택 [드롭다운]</div>
+        <div class="wf-box light" style="height:28px; font-size:11px;">상세 놀이 이름 [드롭다운]</div>
+
+        <div class="wf-label">2. 아이의 반응을 체크해주세요</div>
+        <div class="wf-box light" style="height:28px; font-size:11px;">☐ 놀이의 규칙을 스스로 이해하고 참여했나요?</div>
+        <div class="wf-box light" style="height:28px; font-size:11px;">☐ 친구 혹은 선생님과 적극적으로 소통했나요?</div>
+
+        <div class="wf-box dark" style="height:44px; font-size:13px; font-weight:bold; margin-top:4px;">
+          내일은 어떤 모험을 떠날까요?
+        </div>
+      </div>
+
+      <!-- 오른쪽: AI 코칭 + 전자책 -->
+      <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+        <div class="wf-box light" style="height:80px; font-size:11px; align-items:flex-start; padding:6px; text-align:left;">
+          잼 AI 선생님의<br>따뜻한 기록 코칭지<br>
+          <span style="color:#aaa; font-size:10px;">[AI 자동 생성 텍스트 영역]</span>
+        </div>
+        <div class="wf-box dark" style="height:40px; font-size:11px; font-weight:bold;">
+          전자책 일지 완성
+        </div>
+        <div class="wf-box" style="height:36px; font-size:10px;">놀이 제안하며 함께 노는 쿼카와 친구들</div>
+        <div class="wf-box" style="height:36px; font-size:10px;">도전하며 성장하는 쿼카</div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ════════════════════════════════════
+       SECTION 6 : 포트폴리오 / 일지
+  ════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">⑥ 쿼카의 모험 포트폴리오 &amp; 일지</div>
+
+    <div class="grid-4" style="margin-bottom:8px;">
+      <div class="wf-box img" style="height:56px; font-size:10px;">활동사진<br>[갤러리]</div>
+      <div class="wf-box light" style="height:56px; font-size:10px;">잼 AI 선생님<br>코멘트</div>
+      <div class="wf-box dark" style="height:56px; font-size:10px; font-weight:bold;">AI 전자책<br>생성</div>
+      <div class="wf-box light" style="height:56px; font-size:10px;">지혜를 기록하는<br>일지</div>
+    </div>
+
+    <div class="row">
+      <div class="wf-box" style="flex:1; height:40px; font-size:11px;">쿼카의 모험 포트폴리오</div>
+    </div>
+    <div class="note">포트폴리오 = 누적 기록 / 성장 타임라인 형태 예상</div>
+  </div>
+
+
+  <!-- ════════════════════════════════════
+       SECTION 7 : FOOTER
+  ════════════════════════════════════ -->
+  <div class="section" style="border-bottom:none;">
+    <div class="section-title">⑦ Footer</div>
+
+    <div class="row">
+      <div class="wf-box light" style="flex:1; height:40px; font-size:11px;">
+        교구 구매처와 도서구입처 정보, 놀이장소, 도서관과 문화센터, 박물관 등의 지도 [지도 연동]
+      </div>
+    </div>
+    <div class="row" style="margin-top:4px;">
+      <div class="wf-box" style="flex:1; height:32px; font-size:10px; color:#aaa;">
+        footer — 로고 / 약관 / 고객센터 / SNS 링크 등
+      </div>
+    </div>
+  </div>
+
+</div><!-- /canvas -->
+
+<!-- ── 범례 ── -->
+<div style="width:786px; margin:12px auto 40px; font-size:11px; color:#888; display:flex; gap:16px; flex-wrap:wrap;">
+  <span style="background:#bbb;border:1px solid #888;display:inline-block;width:14px;height:14px;vertical-align:middle;"></span> 강조/버튼 영역 &nbsp;
+  <span style="background:#e8e8e8;border:1px solid #888;display:inline-block;width:14px;height:14px;vertical-align:middle;"></span> 기본 컨텐츠 박스 &nbsp;
+  <span style="background:#f4f4f4;border:1px solid #888;display:inline-block;width:14px;height:14px;vertical-align:middle;"></span> 입력/라이트 박스 &nbsp;
+  <span style="background:#d0d0d0;border:1px solid #888;display:inline-block;width:14px;height:14px;vertical-align:middle;"></span> 이미지/미디어 영역 &nbsp;
+  &nbsp;| 캔버스 기준: 786px (원본 1572÷2)
+</div>
+
+</body>
+</html>

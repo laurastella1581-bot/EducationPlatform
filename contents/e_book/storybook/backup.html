@@ -1,0 +1,181 @@
+import React, { useState } from 'react';
+import { ChevronLeft, ChevronRight, BookOpen, Info } from 'lucide-react';
+
+const App = () => {
+  const [currentPage, setCurrentPage] = useState(0);
+
+  const pages = [
+    {
+      title: "연잎 위, 나만의 맛있는 오후",
+      content: "안녕! 내 이름은 금개구리야. 나는 지금 우리 집 앞마당인 커다란 연잎 위에 앉아 있어. 햇볕이 어찌나 따스한지, 등 뒤가 보드라워져서 낮잠 자기 딱 좋은 날씨지 뭐야.",
+      image: "image_e95e2d.png",
+      bg: "from-blue-50 to-green-50",
+      scientistNote: "금개구리는 연잎 위에서 햇볕을 쬐며 체온을 조절해요. 연잎은 개구리에게 아주 훌륭한 쉼터가 되어준답니다."
+    },
+    {
+      title: "물 위를 걷는 소금쟁이",
+      content: "그때, 내 옆을 '슈우웅-'하고 미끄러지듯 지나가는 친구가 있었어. 바로 소금쟁이야. 소금쟁이는 물 위를 마치 스케이트를 타듯 아주 자유롭게 다니거든.\n\n\"안녕, 소금쟁이야! 넌 어떻게 그렇게 물 위를 걷니? 발이 젖지도 않고 말이야. 정말 부럽다!\"",
+      image: "소금쟁이.png",
+      bg: "from-blue-100 to-cyan-50",
+      scientistNote: "소금쟁이는 가벼운 몸과 다리의 특별한 구조 덕분에 물의 표면장력을 이용해 가라앉지 않고 걸을 수 있어요."
+    },
+    {
+      title: "소금쟁이의 비밀, 솜털",
+      content: "소금쟁이가 멈춰 서서 내 다리를 보더니 웃으며 말했어.\n\n\"금개구리야, 나한테는 다리에 아주 미세한 솜털들이 나 있거든. 이 솜털들이 물을 튕겨내서 내가 가라앉지 않고 물 위를 걸을 수 있게 해주는 거야.\"",
+      image: "소금쟁이.png",
+      bg: "from-blue-50 to-blue-100",
+      scientistNote: "다리에 난 수많은 미세한 털들이 공기를 머금어 물을 밀어내기 때문에 발이 물에 젖지 않는 것이랍니다."
+    },
+    {
+      title: "나만의 특별한 재능",
+      content: "나는 내 물갈퀴 다리를 보며 한숨을 쉬었어. 하지만 소금쟁이는 나를 위로해 주었지.\n\n\"하지만 넌 끈적한 혀로 곤충을 낚아채는 최고의 사냥꾼이잖아! 다 각자의 장점이 있는걸.\"",
+      image: "금개구리 캐릭터.png",
+      bg: "from-green-50 to-yellow-50",
+      scientistNote: "개구리는 물 위를 걷지는 못하지만, 길고 끈적한 혀를 이용해 누구보다 빠르게 먹이를 잡을 수 있는 재능이 있어요."
+    },
+    {
+      title: "덥석! 사냥 성공",
+      content: "\"지잉~ 지잉~\" 날개 소리가 들렸어! 곤충 친구가 내 코앞까지 왔을 때, 나는 혀를 쏘옥 내밀었어.\n\n\"앗! 덥석!\"\n\n내 길쭉하고 끈적끈적한 혀에 곤충 친구가 '철썩' 붙어버렸어. 꿀꺽! 정말 맛있어!",
+      image: "금개구리 캐릭터.png",
+      bg: "from-green-100 to-blue-50",
+      scientistNote: "개구리의 혀는 0.1초 만에 튀어나올 정도로 빨라요. 끈적한 액체가 묻어 있어 먹이가 도망갈 수 없답니다."
+    },
+    {
+      title: "행복한 낮잠 시간",
+      content: "\"잘 먹었다! 소금쟁이야, 넌 물 위를 걷는 멋쟁이 사냥꾼이고, 나는 혀로 낚아채는 멋진 사냥꾼이네!\"\n\n나는 이제 다시 따스한 햇볕을 받으며 연잎 위에 누웠어. 졸음이 솔솔 밀려와. 모두들 잘 자!",
+      image: "image_e95e2d.png",
+      bg: "from-orange-50 to-blue-50",
+      scientistNote: "모든 생물은 저마다 살아가는 데 필요한 특별한 무기를 가지고 있어요. 우리도 우리만의 장점이 있겠죠?"
+    }
+  ];
+
+  const nextPage = () => {
+    if (currentPage < pages.length - 1) setCurrentPage(currentPage + 1);
+  };
+
+  const prevPage = () => {
+    if (currentPage > 0) setCurrentPage(currentPage - 1);
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-slate-100 p-4 font-sans text-gray-900">
+      {/* 고정된 크기 레이아웃 */}
+      <div className="max-w-6xl w-full bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border-[10px] border-green-600 relative flex flex-col transition-all duration-300 min-h-[700px] aspect-[16/10]">
+        
+        {/* 헤더 */}
+        <div className="bg-green-600 p-5 text-white flex justify-between items-center shadow-md z-10">
+          <div className="flex items-center gap-3">
+            <BookOpen size={32} className="drop-shadow-sm" />
+            <h1 className="font-extrabold text-2xl md:text-3xl">과학 동화: 연잎 위 나만의 오후</h1>
+          </div>
+          <span className="bg-white/20 text-white px-5 py-2 rounded-full text-lg font-bold backdrop-blur-sm">
+            {currentPage + 1} / {pages.length} 페이지
+          </span>
+        </div>
+
+        {/* 메인 콘텐츠 영역 */}
+        <div className={`flex-1 flex flex-col lg:flex-row bg-gradient-to-br ${pages[currentPage].bg} transition-colors duration-700 overflow-hidden`}>
+          
+          {/* 왼쪽: 이미지 패널 */}
+          <div className="flex-1 flex items-center justify-center p-8 relative lg:border-r-2 border-black/10 bg-white/30 shadow-[inset_-10px_0_20px_rgba(0,0,0,0.05)]">
+            <div className="w-full h-full bg-white rounded-3xl shadow-lg flex items-center justify-center p-4 relative overflow-hidden group border-4 border-white">
+              <img 
+                src={pages[currentPage].image} 
+                alt={pages[currentPage].title}
+                className="max-h-full max-w-full object-contain transition-all duration-700 group-hover:scale-105 rounded-xl"
+                onError={(e) => { 
+                  e.target.src = 'https://via.placeholder.com/800x600?text=이미지를+찾을+수+없어요';
+                }}
+              />
+              
+              {/* 이미지 위 오버레이 효과 */}
+              {(currentPage === 1 || currentPage === 2) && (
+                <div className="absolute bottom-6 left-6 bg-blue-600/90 text-white text-sm px-4 py-2 rounded-full animate-bounce shadow-lg font-black backdrop-blur-sm">
+                  물 위를 둥둥! 🌊
+                </div>
+              )}
+              {currentPage === 4 && (
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-rose-600/90 text-white text-xl px-8 py-3 rounded-full animate-ping shadow-2xl font-black backdrop-blur-sm">
+                  덥석! 👅
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 오른쪽: 텍스트 패널 */}
+          <div className="flex-1 flex flex-col p-8 md:p-10 bg-white/10 backdrop-blur-md shadow-[inset_10px_0_20px_rgba(0,0,0,0.05)]">
+            {/* 동화 본문 */}
+            <div className="bg-white/80 p-8 rounded-[2rem] shadow-md border border-white/60 mb-6 flex-grow overflow-y-auto">
+              <h2 className="text-3xl font-black text-green-900 mb-6 border-b-4 border-green-500/50 pb-4 flex items-center gap-4">
+                <span className="w-12 h-12 bg-green-600 text-white rounded-xl flex items-center justify-center text-xl shadow-lg transform -rotate-3 flex-shrink-0">{currentPage + 1}</span>
+                {pages[currentPage].title}
+              </h2>
+              <p className="text-gray-900 text-2xl leading-relaxed whitespace-pre-wrap font-bold tracking-tight">
+                {pages[currentPage].content}
+              </p>
+            </div>
+
+            {/* 과학 비밀 노트 - 영역이 잘리지 않도록 flex-shrink-0 적용 */}
+            <div className="flex-shrink-0 bg-amber-50 border-l-[12px] border-amber-400 p-6 rounded-r-[2rem] shadow-xl transform rotate-1">
+              <div className="flex items-center gap-3 text-amber-800 font-black text-xl mb-3">
+                <Info size={32} className="animate-pulse text-amber-600" />
+                <span>꼬마 과학자의 비밀 노트</span>
+              </div>
+              <p className="text-amber-950 font-bold text-xl leading-snug italic">
+                {pages[currentPage].scientistNote}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* 내비게이션 버튼 */}
+        <button 
+          onClick={prevPage}
+          disabled={currentPage === 0}
+          className={`absolute left-4 md:left-8 top-1/2 -translate-y-1/2 p-4 md:p-5 rounded-full shadow-2xl z-30 transition-all active:scale-90 ${currentPage === 0 ? 'bg-gray-200 text-gray-400 cursor-not-allowed scale-75 opacity-50' : 'bg-white/95 hover:bg-green-50 text-green-700 border-4 border-green-200 hover:scale-110'}`}
+        >
+          <ChevronLeft size={50} strokeWidth={4} />
+        </button>
+
+        <button 
+          onClick={nextPage}
+          disabled={currentPage === pages.length - 1}
+          className={`absolute right-4 md:right-8 top-1/2 -translate-y-1/2 p-4 md:p-5 rounded-full shadow-2xl z-30 transition-all active:scale-90 ${currentPage === pages.length - 1 ? 'bg-gray-200 text-gray-400 cursor-not-allowed scale-75 opacity-50' : 'bg-white/95 hover:bg-green-50 text-green-700 border-4 border-green-200 hover:scale-110'}`}
+        >
+          <ChevronRight size={50} strokeWidth={4} />
+        </button>
+
+        {/* 하단 진행 표시줄 */}
+        <div className="h-4 bg-gray-200 w-full relative border-t-4 border-black/5">
+          <div 
+            className="h-full bg-green-500 transition-all duration-1000 shadow-[0_0_20px_rgba(34,197,94,0.7)]"
+            style={{ width: `${((currentPage + 1) / pages.length) * 100}%` }}
+          ></div>
+          <div 
+            className="absolute top-1/2 -translate-y-1/2 transition-all duration-1000 text-5xl drop-shadow-md"
+            style={{ left: `calc(${((currentPage + 1) / pages.length) * 100}% - 25px)` }}
+          >
+            🐸
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-8 flex flex-col items-center gap-6">
+        <p className="text-green-800 text-lg font-black bg-green-200/50 px-8 py-2 rounded-full shadow-sm animate-pulse border-2 border-green-300">
+          화살표를 눌러 다음 모험을 확인하세요!
+        </p>
+        <div className="flex gap-4">
+          {pages.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setCurrentPage(idx)}
+              className={`h-4 rounded-full transition-all duration-500 shadow-md ${idx === currentPage ? 'bg-green-600 w-16' : 'bg-gray-300 hover:bg-green-400 w-5'}`}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default App;

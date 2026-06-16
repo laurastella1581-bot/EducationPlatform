@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사방치기: 숲속 핍듀 찾아가는길</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
+        
+        body {
+            font-family: 'Jua', sans-serif;
+            background-color: #f0fdf4;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            max-width: 500px;
+            background: linear-gradient(to bottom, #bae6fd 0%, #4ade80 100%);
+            box-shadow: 0 0 50px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        .ui-overlay {
+            position: absolute;
+            top: 30px;
+            left: 0;
+            width: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #166534;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+        }
+
+        #start-screen, #fail-screen {
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.95);
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+        }
+
+        #fail-screen { display: none; background: rgba(254, 226, 226, 0.95); }
+
+        .diff-btn {
+            width: 220px;
+            padding: 15px;
+            margin: 8px;
+            border-radius: 50px;
+            font-size: 1.5rem;
+            color: white;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: 4px solid rgba(0,0,0,0.1);
+            box-shadow: 0 4px 0px rgba(0,0,0,0.2);
+        }
+
+        .diff-btn:hover { transform: scale(1.05); }
+        .diff-btn:active { transform: scale(0.95); box-shadow: none; }
+
+        .jump-btn {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ffffff;
+            padding: 18px 40px;
+            border-radius: 50px;
+            font-size: 1.8rem;
+            color: #15803d;
+            box-shadow: 0 10px 0px #166534, 0 15px 20px rgba(0,0,0,0.2);
+            border: 3px solid #166534;
+            transition: all 0.1s active;
+            pointer-events: auto;
+            cursor: pointer;
+            user-select: none;
+            z-index: 50;
+            display: none;
+        }
+
+        .jump-btn:active {
+            transform: translateX(-50%) translateY(5px);
+            box-shadow: 0 5px 0px #166534;
+        }
+
+        .instruction-tag {
+            position: absolute;
+            bottom: 140px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(21, 128, 61, 0.9);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 1.2rem;
+            pointer-events: none;
+            display: none;
+        }
+
+        #success-modal {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 40px;
+            border-radius: 30px;
+            text-align: center;
+            z-index: 100;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            width: 85%;
+            border: 5px solid #4ade80;
+        }
+
+        .cloud {
+            position: absolute;
+            background: white;
+            border-radius: 50px;
+            opacity: 0.8;
+            pointer-events: none;
+            animation: move linear infinite;
+        }
+
+        @keyframes move {
+            from { transform: translateX(-150px); }
+            to { transform: translateX(600px); }
+        }
+
+        /* ── 게임 시작 모달 ── */
+        #intro-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 9000;
+            background: rgba(5, 46, 22, 0.78);
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .intro-box {
+            background: #f0fdf4;
+            border-radius: 24px;
+            padding: 32px 28px 24px;
+            max-width: 380px;
+            width: 90vw;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 32px 80px rgba(5, 46, 22, 0.3);
+            text-align: center;
+            border: 3px solid #86efac;
+            animation: introPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes intropop {
+            from { opacity: 0; transform: scale(0.85); }
+            to   { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes introPop {
+            from { opacity: 0; transform: scale(0.85); }
+            to   { opacity: 1; transform: scale(1); }
+        }
+
+        .intro-emoji { font-size: 52px; display: block; margin-bottom: 10px; }
+        .intro-title { font-size: 28px; font-weight: 900; color: #14532d; margin-bottom: 4px; }
+        .intro-sub   { font-size: 13px; color: #166534; font-weight: 700; margin-bottom: 18px; }
+
+        .intro-rules {
+            background: #fff;
+            border-radius: 14px;
+            padding: 14px 16px;
+            text-align: left;
+            margin-bottom: 10px;
+            border: 2px solid #86efac;
+        }
+        .intro-rules p  { font-size: 12px; font-weight: 800; color: #15803d; margin-bottom: 8px; }
+        .intro-rules ol { padding-left: 16px; font-size: 12px; color: #374151; line-height: 1.9; margin: 0; }
+
+        .intro-diff {
+            background: #dcfce7;
+            border-radius: 12px;
+            padding: 10px 14px;
+            text-align: left;
+            margin-bottom: 18px;
+            font-size: 12px;
+            color: #166534;
+            border: 1.5px solid #86efac;
+        }
+        .intro-diff b { color: #14532d; }
+
+        .intro-start-btn {
+            width: 100%;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 900;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #16a34a, #15803d);
+            color: white;
+            box-shadow: 0 6px 20px rgba(21, 128, 61, 0.38);
+            letter-spacing: 0.3px;
+            transition: all 0.2s;
+            font-family: 'Jua', sans-serif;
+        }
+        .intro-start-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 28px rgba(21, 128, 61, 0.45);
+        }
+    </style>
+</head>
+<body>
+
+<!-- 게임 시작 모달 -->
+<div id="intro-modal">
+    <div class="intro-box">
+        <span class="intro-emoji">🏃</span>
+        <div class="intro-title">사방치기</div>
+        <div class="intro-sub">한국 전통놀이 · 5세 이상 · 숲속 핍듀를 구하라!</div>
+
+        <div class="intro-rules">
+            <p>📋 게임 방법</p>
+            <ol>
+                <li>난이도를 선택해 게임을 시작해요.</li>
+                <li><strong>"폴짝 점프하기!"</strong> 버튼을 눌러 한 칸씩 이동해요.</li>
+                <li>1·2·5번 칸은 <b>한 발</b>, 3·4·6·7번 칸은 <b>양발</b>로 착지!</li>
+                <li>발판에서 떨어지지 않도록 타이밍을 맞춰요.</li>
+                <li>8번 칸 핍듀에게 도착하면 성공! 🐣</li>
+            </ol>
+        </div>
+
+        <div class="intro-diff">
+            🎯 <b>난이도 안내</b><br>
+            하 — 발판이 넓고 고정돼 있어요 (입문)<br>
+            중 — 발판이 좌우로 흔들려요 (보통)<br>
+            상 — 좁고 빠른 발판 + 공중 착지 타이밍! (도전 🔥)
+        </div>
+
+        <button class="intro-start-btn" onclick="document.getElementById('intro-modal').style.display='none'">
+            🎮 게임 시작하기!
+        </button>
+    </div>
+</div>
+
+<div id="game-container">
+    <div class="cloud w-24 h-8 top-20" style="animation-duration: 20s;"></div>
+    <div class="cloud w-32 h-10 top-40" style="animation-duration: 25s; opacity: 0.5;"></div>
+
+    <!-- 시작 화면 -->
+    <div id="start-screen">
+        <div class="text-6xl mb-4">🏃‍♂️</div>
+        <h1 class="text-6xl text-green-700 mb-2">사방치기</h1>
+        <p class="text-xl text-green-600 mb-10">난이도를 선택해 핍듀를 구하세요!</p>
+        <div onclick="startGame('easy')" class="diff-btn bg-blue-400">하 (순함)</div>
+        <div onclick="startGame('normal')" class="diff-btn bg-green-500">중 (보통)</div>
+        <div onclick="startGame('hard')" class="diff-btn bg-red-600">상 (매움 🔥)</div>
+        <p class="mt-6 text-gray-400 text-sm">'상'은 공중에서 한 번 더 눌러 착지해야 해요!</p>
+    </div>
+
+    <!-- 실패 화면 -->
+    <div id="fail-screen">
+        <div class="text-6xl mb-4">🤕</div>
+        <h1 class="text-5xl text-red-700 mb-2">앗, 낙방!</h1>
+        <p id="fail-msg" class="text-xl text-red-600 mb-10">중심을 잃고 쓰러졌어요...</p>
+        <div onclick="showStartScreen()" class="diff-btn bg-gray-600">처음으로</div>
+    </div>
+
+    <div class="ui-overlay">
+        <h1 class="text-5xl font-bold mb-1">사방치기</h1>
+        <div class="mt-4 bg-white/70 px-4 py-1 rounded-full border border-green-700 flex gap-4">
+            <span>모드: <b id="diff-display">-</b></span>
+            <span>단계: <b id="step-display">대기</b></span>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="instruction" class="instruction-tag">한 발로 폴짝! 🐾</div>
+
+    <div id="jump-btn" class="jump-btn" onclick="handleJump()">
+        폴짝 점프하기!
+    </div>
+
+    <div id="success-modal">
+        <div class="text-6xl mb-4">🐣💖</div>
+        <h2 class="text-4xl text-green-700 mb-2 font-bold">도착 성공!</h2>
+        <p id="success-msg" class="text-xl mb-8 text-gray-600"></p>
+        <button onclick="showStartScreen()" class="bg-green-600 hover:bg-green-700 text-white px-10 py-3 rounded-full text-xl font-bold transition-colors">
+            한 번 더 하기
+        </button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const stepDisplay = document.getElementById('step-display');
+    const diffDisplay = document.getElementById('diff-display');
+    const instructionTag = document.getElementById('instruction');
+    const jumpBtn = document.getElementById('jump-btn');
+    const startScreen = document.getElementById('start-screen');
+    const failScreen = document.getElementById('fail-screen');
+    const successModal = document.getElementById('success-modal');
+
+    let width, height;
+    let currentStep = 0; 
+    let isJumping = false;
+    let jumpState = 'ground'; // ground, rising, peak, falling
+    let isFalling = false;
+    let jumpProgress = 0; 
+    let gameState = 'ready'; 
+    
+    let difficulty = {
+        speed: 0.06,
+        boardWidthRatio: 0.55,
+        moving: false,
+        manualLanding: false,
+        name: ''
+    };
+
+    let character = { x: 0, y: 0, size: 45, rotation: 0 };
+    let startPos = { x: 0, y: 0 };
+    let targetPos = { x: 0, y: 0 };
+
+    let boardXOffsets = [0,0,0,0,0,0,0,0];
+
+    const boardConfig = [
+        { id: 1, type: 'single', label: '1' },
+        { id: 2, type: 'single', label: '2' },
+        { id: 3, type: 'double-left', label: '3' },
+        { id: 4, type: 'double-right', label: '4' },
+        { id: 5, type: 'single', label: '5' },
+        { id: 6, type: 'double-left', label: '6' },
+        { id: 7, type: 'double-right', label: '7' },
+        { id: 8, type: 'goal', label: '핍듀' }
+    ];
+
+    function startGame(mode) {
+        if (mode === 'easy') {
+            difficulty = { speed: 0.04, boardWidthRatio: 0.65, moving: false, manualLanding: false, name: '하' };
+        } else if (mode === 'normal') {
+            difficulty = { speed: 0.08, boardWidthRatio: 0.55, moving: true, manualLanding: false, name: '중' };
+        } else {
+            difficulty = { speed: 0.12, boardWidthRatio: 0.45, moving: true, manualLanding: true, name: '상' };
+        }
+
+        diffDisplay.innerText = difficulty.name;
+        gameState = 'playing';
+        startScreen.style.display = 'none';
+        failScreen.style.display = 'none';
+        jumpBtn.style.display = 'block';
+        instructionTag.style.display = 'block';
+        
+        resetGameParams();
+        updatePositions();
+    }
+
+    function showStartScreen() {
+        gameState = 'ready';
+        startScreen.style.display = 'flex';
+        failScreen.style.display = 'none';
+        successModal.style.display = 'none';
+        jumpBtn.style.display = 'none';
+        instructionTag.style.display = 'none';
+    }
+
+    function handleFail(msg) {
+        gameState = 'fail';
+        isFalling = true;
+        jumpBtn.style.display = 'none';
+        instructionTag.style.display = 'none';
+        document.getElementById('fail-msg').innerText = msg || "중심을 잃고 쓰러졌어요...";
+        
+        setTimeout(() => {
+            failScreen.style.display = 'flex';
+        }, 1000);
+    }
+
+    function resize() {
+        width = canvas.width = window.innerWidth > 500 ? 500 : window.innerWidth;
+        height = canvas.height = window.innerHeight;
+        updatePositions();
+    }
+
+    function updatePositions() {
+        const boardWidth = width * difficulty.boardWidthRatio;
+        const startY = height * 0.78;
+        const stepHeight = height * 0.085;
+        const margin = 12;
+
+        boardConfig.forEach((step, index) => {
+            if (step.type === 'single' || step.type === 'goal') {
+                step.x = width / 2 - boardWidth / 4;
+                step.w = boardWidth / 2;
+                if(index === 0) step.y = startY;
+                if(index === 1) step.y = startY - stepHeight;
+                if(index === 4) step.y = startY - stepHeight * 3;
+                if(index === 7) step.y = startY - stepHeight * 5;
+            } else {
+                step.w = boardWidth / 2;
+                step.x = (step.type === 'double-left') ? width/2 - boardWidth/2 : width/2;
+                step.y = (index < 4) ? startY - stepHeight * 2 : startY - stepHeight * 4;
+            }
+            step.h = stepHeight - margin;
+        });
+
+        if (jumpState === 'ground' && !isFalling) {
+            if (currentStep === 0) {
+                character.x = width / 2;
+                character.y = startY + 120;
+            } else {
+                const target = boardConfig[currentStep - 1];
+                character.x = width / 2; 
+                character.y = target.y + target.h / 2;
+            }
+        }
+    }
+
+    function drawBoard() {
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = '28px Jua';
+
+        boardConfig.forEach((step, index) => {
+            const isCompleted = (index + 1 <= currentStep);
+            
+            if (difficulty.moving && !isCompleted) {
+                const speedMult = difficulty.name === '상' ? 1.5 : 1.0;
+                boardXOffsets[index] = Math.sin(Date.now() / 200 * speedMult + index) * (width * 0.2);
+            } else {
+                boardXOffsets[index] = 0;
+            }
+
+            const drawX = step.x + boardXOffsets[index];
+
+            ctx.fillStyle = 'rgba(0,0,0,0.1)';
+            ctx.beginPath();
+            ctx.roundRect(drawX + 4, step.y + 4, step.w, step.h, 15);
+            ctx.fill();
+
+            ctx.fillStyle = isCompleted ? '#22c55e' : 'rgba(255, 255, 255, 0.9)';
+            
+            // 현재 조준해야 할 발판 강조
+            const isTarget = (index + 1 === currentStep + 1);
+            ctx.strokeStyle = isTarget ? '#ef4444' : '#166534';
+            ctx.lineWidth = isTarget ? 6 : 4;
+            
+            ctx.beginPath();
+            ctx.roundRect(drawX, step.y, step.w, step.h, 15);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = isCompleted ? 'white' : '#166534';
+            ctx.fillText(step.label, drawX + step.w / 2, step.y + step.h / 2);
+        });
+
+        const goal = boardConfig[7];
+        const goalX = goal.x + boardXOffsets[7] + goal.w/2;
+        ctx.font = '50px Arial';
+        ctx.fillText('🐣', goalX, goal.y - 45);
+    }
+
+    function drawCharacter() {
+        ctx.save();
+        
+        let displayX = character.x;
+        let displayY = character.y;
+
+        const isDoubleStep = (currentStep === 3 || currentStep === 4 || currentStep === 6 || currentStep === 7);
+
+        if (isJumping) {
+            const jumpHeight = 120;
+            const t = jumpProgress;
+            displayX = startPos.x + (targetPos.x - startPos.x) * t;
+            displayY = startPos.y + (targetPos.y - startPos.y) * t - Math.sin(t * Math.PI) * jumpHeight;
+            
+            const scale = 1 + Math.sin(t * Math.PI) * 0.3;
+            ctx.translate(displayX, displayY);
+            ctx.scale(1/scale, scale);
+            ctx.translate(-displayX, -displayY);
+        } else if (isFalling) {
+            displayY += 5;
+            character.rotation += 0.1;
+            ctx.translate(displayX, displayY);
+            ctx.rotate(character.rotation);
+            ctx.translate(-displayX, -displayY);
+        }
+
+        const charWidth = isDoubleStep ? character.size * 1.4 : character.size;
+
+        ctx.fillStyle = isFalling ? '#94a3b8' : '#fcd34d';
+        ctx.beginPath();
+        if (isDoubleStep) { ctx.ellipse(displayX, displayY, charWidth / 2, character.size / 2, 0, 0, Math.PI * 2); }
+        else { ctx.arc(displayX, displayY, character.size / 2, 0, Math.PI * 2); }
+        ctx.fill();
+        ctx.strokeStyle = '#b45309';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        ctx.fillStyle = '#1f2937';
+        ctx.beginPath();
+        ctx.arc(displayX - 8, displayY - 5, 3.5, 0, Math.PI * 2);
+        ctx.arc(displayX + 8, displayY - 5, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+    }
+
+    function handleJump() {
+        if (isFalling || gameState !== 'playing') return;
+
+        // '상' 난이도 전용 수동 착지 로직
+        if (difficulty.manualLanding && jumpState === 'peak') {
+            // 착지 타이밍 체크
+            const nextIdx = (currentStep === 2 || currentStep === 5) ? currentStep : currentStep;
+            const targetStep = boardConfig[nextIdx];
+            const platformCenterX = targetStep.x + boardXOffsets[nextIdx] + targetStep.w/2;
+            const landingZoneX = width / 2;
+            
+            const tolerance = targetStep.w / 1.7; 
+            
+            if (Math.abs(platformCenterX - landingZoneX) > tolerance) {
+                handleFail("발판을 놓쳤어요! 😵");
+                return;
+            }
+            
+            // 착지 시작
+            jumpState = 'falling';
+            jumpBtn.innerText = "착지 중...";
+            return;
+        }
+
+        if (isJumping) return;
+
+        // 점프 시작 전 체크 (상 난이도)
+        if (difficulty.moving && currentStep > 0) {
+            const currentIdx = currentStep - 1;
+            const currentTarget = boardConfig[currentIdx];
+            const platformCenterX = currentTarget.x + boardXOffsets[currentIdx] + currentTarget.w/2;
+            if (Math.abs(platformCenterX - width/2) > currentTarget.w / 1.8) {
+                handleFail("중심을 잃고 미끄러졌어요! 💨");
+                return;
+            }
+        }
+
+        startPos = { x: character.x, y: character.y };
+        currentStep++;
+        
+        const target = boardConfig[currentStep - 1];
+        targetPos = { x: width / 2, y: target.y + target.h / 2 };
+
+        if (currentStep === 3 || currentStep === 6) {
+            instructionTag.innerText = "양발로 쾅! 👣";
+        } else if (currentStep === 4 || currentStep === 7) {
+            handleJump(); 
+            return;
+        } else {
+            instructionTag.innerText = currentStep === 8 ? "도착이다! 🐣" : "한 발로 폴짝! 🐾";
+        }
+
+        stepDisplay.innerText = currentStep === 8 ? "완료" : currentStep + "/8";
+        isJumping = true;
+        jumpProgress = 0;
+        jumpState = 'rising';
+
+        if (difficulty.manualLanding) {
+            jumpBtn.innerText = "공중 부양 중!";
+        }
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#22c55e';
+        ctx.beginPath();
+        ctx.ellipse(width/2, height, width * 0.8, height * 0.2, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        drawBoard();
+        drawCharacter();
+
+        if (isJumping) {
+            if (jumpState === 'rising') {
+                jumpProgress += difficulty.speed;
+                if (jumpProgress >= 0.5) {
+                    if (difficulty.manualLanding) {
+                        jumpProgress = 0.5;
+                        jumpState = 'peak';
+                        jumpBtn.innerText = "지금 착지!!";
+                        jumpBtn.classList.add('bg-yellow-300');
+                    } else {
+                        jumpState = 'falling';
+                    }
+                }
+            } else if (jumpState === 'falling') {
+                jumpProgress += difficulty.speed;
+                jumpBtn.classList.remove('bg-yellow-300');
+                if (jumpProgress >= 1) {
+                    jumpProgress = 1;
+                    isJumping = false;
+                    jumpState = 'ground';
+                    character.x = targetPos.x;
+                    character.y = targetPos.y;
+                    jumpBtn.innerText = "폴짝 점프하기!";
+
+                    if (currentStep === 8) {
+                        gameState = 'success';
+                        document.getElementById('success-msg').innerText = `[${difficulty.name}] 난이도를 정복하고 핍듀를 만났어요!`;
+                        setTimeout(() => { successModal.style.display = 'block'; }, 400);
+                    }
+                }
+            }
+        }
+        requestAnimationFrame(animate);
+    }
+
+    function resetGameParams() {
+        currentStep = 0;
+        isJumping = false;
+        isFalling = false;
+        jumpState = 'ground';
+        jumpProgress = 0;
+        character.rotation = 0;
+        successModal.style.display = 'none';
+        stepDisplay.innerText = "대기";
+        instructionTag.innerText = "한 발로 폴짝! 🐾";
+        jumpBtn.innerText = "폴짝 점프하기!";
+        jumpBtn.classList.remove('bg-yellow-300');
+    }
+
+    window.addEventListener('resize', resize);
+    window.onload = () => {
+        resize();
+        animate();
+    };
+</script>
+</body>
+</html>

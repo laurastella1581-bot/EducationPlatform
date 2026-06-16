@@ -1,0 +1,118 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>로보77</title>
+  <style>
+    :root { color-scheme: light; --bg:#f8fafc; --panel:#fff; --ink:#0f172a; --muted:#64748b; --accent:#4f46e5; --accent2:#7c3aed; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:'Pretendard','Malgun Gothic',sans-serif; background:linear-gradient(135deg,#eef2ff,#f5f3ff); color:var(--ink); min-height:100vh; }
+    button { font: inherit; }
+    .wrap { max-width: 980px; margin:0 auto; padding: 18px; }
+    .panel { background:white; border-radius:28px; box-shadow:0 20px 48px rgba(15,23,42,.12); border:2px solid #e2e8f0; padding:20px; }
+    .header { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:16px; }
+    .title { font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight:900; margin:0; }
+    .sub { color:var(--muted); font-size:.92rem; margin-top:4px; }
+    .btn { border:0; border-radius:999px; padding:10px 14px; font-weight:800; cursor:pointer; }
+    .btn-primary { background:linear-gradient(135deg,#4f46e5,#7c3aed); color:white; }
+    .btn-secondary { background:#f1f5f9; color:#334155; }
+    .status { display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border-radius:18px; background:#f8fafc; margin-bottom:16px; }
+    .board { display:grid; grid-template-columns: 1fr 1.2fr; gap:16px; }
+    .players { display:grid; gap:10px; }
+    .player { display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-radius:18px; border:2px solid #e2e8f0; background:white; }
+    .player.active { background:linear-gradient(135deg,#4f46e5,#7c3aed); color:white; border-color:transparent; }
+    .player.dead { opacity:.45; filter:grayscale(1); }
+    .lives { display:flex; gap:4px; }
+    .life { width:8px; height:8px; border-radius:50%; background:#f43f5e; }
+    .life.off { background:#cbd5e1; }
+    .center { display:grid; gap:12px; }
+    .total { text-align:center; padding:24px; border-radius:24px; background:linear-gradient(135deg,#eff6ff,#f5f3ff); border:2px solid #e2e8f0; }
+    .total-num { font-size: clamp(3rem, 6vw, 5.5rem); font-weight:900; margin:10px 0 4px; }
+    .hand { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+    .card { width:72px; min-height:108px; border-radius:16px; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:1.2rem; border:2px solid #e2e8f0; background:white; cursor:pointer; box-shadow:0 8px 18px rgba(15,23,42,.08); }
+    .card.special { background:linear-gradient(135deg,#4f46e5,#7c3aed); color:white; border-color:transparent; }
+    .log { background:#0f172a; color:#e2e8f0; border-radius:18px; padding:12px; min-height:110px; font-size:.95rem; line-height:1.6; }
+    .rules { margin-top:10px; background:#fffbeb; border:1px solid #fde68a; border-radius:16px; padding:12px; color:#92400e; font-size:.92rem; line-height:1.6; }
+    .overlay { position:fixed; inset:0; background:rgba(15,23,42,.7); display:flex; align-items:center; justify-content:center; padding:18px; z-index:20; }
+    .modal { background:white; border-radius:28px; padding:24px; width:min(100%,440px); text-align:center; box-shadow:0 20px 50px rgba(15,23,42,.24); }
+    .modal h2 { margin:0 0 10px; font-size:1.7rem; }
+    .modal p { color:var(--muted); line-height:1.6; }
+    @media (max-width: 800px) { .board { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="panel">
+      <div class="header">
+        <div>
+          <h1 class="title">🤖 ROBO 77</h1>
+          <div class="sub">77을 넘지 말고, 마지막까지 살아남으세요.</div>
+        </div>
+        <button class="btn btn-primary" id="startBtn">🎮 게임 시작</button>
+      </div>
+      <div class="status">
+        <div><strong id="turnLabel">대기중</strong></div>
+        <div id="statusText">게임을 시작해 주세요.</div>
+      </div>
+      <div class="board">
+        <div class="players" id="players"></div>
+        <div class="center">
+          <div class="total">
+            <div style="font-size:.8rem;font-weight:900;color:#64748b;letter-spacing:.2em;">현재 합계</div>
+            <div class="total-num" id="totalNum">0</div>
+            <div id="totalHint">카드를 내서 합계를 올려보세요.</div>
+          </div>
+          <div class="hand" id="hand"></div>
+          <div class="log" id="log"></div>
+          <div class="rules">규칙: 77을 넘거나 11의 배수면 생명 -1. -10, Pass, Rev 카드로 전략을 세워보세요.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="overlay" id="startOverlay">
+    <div class="modal">
+      <h2>ROBO 77</h2>
+      <p>카드를 내며 숫자를 더하고, 77을 넘지 않게 플레이하세요. AI와 함께 간단히 즐길 수 있는 로직 게임입니다.</p>
+      <div style="display:flex; gap:10px; justify-content:center; margin-top:16px;">
+        <button class="btn btn-primary" id="startGameBtn">게임 시작!</button>
+        <button class="btn btn-secondary" onclick="window.parent.closeGameModal && window.parent.closeGameModal()">닫기</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    const CARD_TYPES = { NUMBER:'NUMBER', MINUS_10:'MINUS_10', ZERO:'ZERO', SKIP:'SKIP', REVERSE:'REVERSE' };
+    const INITIAL_DECK = [
+      ...Array(3).fill({ type: CARD_TYPES.NUMBER, value: 0, label: '0' }),
+      ...Array(4).fill({ type: CARD_TYPES.NUMBER, value: 2, label: '2' }),
+      ...Array(4).fill({ type: CARD_TYPES.NUMBER, value: 3, label: '3' }),
+      ...Array(4).fill({ type: CARD_TYPES.NUMBER, value: 4, label: '4' }),
+      ...Array(4).fill({ type: CARD_TYPES.NUMBER, value: 5, label: '5' }),
+      ...Array(4).fill({ type: CARD_TYPES.NUMBER, value: 6, label: '6' }),
+      ...Array(4).fill({ type: CARD_TYPES.NUMBER, value: 7, label: '7' }),
+      ...Array(4).fill({ type: CARD_TYPES.NUMBER, value: 8, label: '8' }),
+      ...Array(4).fill({ type: CARD_TYPES.NUMBER, value: 9, label: '9' }),
+      ...Array(4).fill({ type: CARD_TYPES.NUMBER, value: 10, label: '10' }),
+      ...Array(4).fill({ type: CARD_TYPES.NUMBER, value: 11, label: '11' }),
+      ...Array(4).fill({ type: CARD_TYPES.MINUS_10, value: -10, label: '-10' }),
+      ...Array(4).fill({ type: CARD_TYPES.ZERO, value: 0, label: '0' }),
+      ...Array(4).fill({ type: CARD_TYPES.SKIP, value: 0, label: 'Pass' }),
+      ...Array(4).fill({ type: CARD_TYPES.REVERSE, value: 0, label: 'Rev' })
+    ];
+    function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
+    const state = { gameState:'lobby', players:[{id:0,name:'나',lives:3,hand:[],isBot:false},{id:1,name:'AI A',lives:3,hand:[],isBot:true},{id:2,name:'AI B',lives:3,hand:[],isBot:true},{id:3,name:'AI C',lives:3,hand:[],isBot:true}], currentTotal:0, currentPlayer:0, direction:1, deck:[], logs:['게임을 시작해주세요!'], lastCard:null };
+    function initGame() { const shuffled = shuffle(INITIAL_DECK); const players = state.players.map(p => ({...p,lives:3, hand:[] })); players.forEach((p, idx) => { p.hand = shuffled.splice(0,5); }); state.players = players; state.deck = shuffled; state.currentTotal = 0; state.currentPlayer = 0; state.direction = 1; state.logs = ['🎮 게임 시작! 77을 넘지 마세요.']; state.lastCard = null; state.gameState = 'playing'; document.getElementById('startOverlay').style.display = 'none'; render(); }
+    function checkNextPlayer(skip=1) { let next = (state.currentPlayer + (state.direction * skip)) % 4; if (next < 0) next += 4; while (state.players[next].lives <= 0) { next = (next + state.direction) % 4; if (next < 0) next += 4; } return next; }
+    function addLog(msg) { state.logs = [msg, ...state.logs].slice(0,6); }
+    function renderPlayers() { const el = document.getElementById('players'); el.innerHTML = state.players.map((p, idx) => `
+        <div class="player ${state.currentPlayer === idx ? 'active' : ''} ${p.lives <= 0 ? 'dead' : ''}">
+          <div><div style="font-weight:900">${p.name}</div><div style="font-size:.8rem;opacity:.85">${p.isBot ? 'AI' : '나'}</div></div>
+          <div class="lives">${Array.from({length:3},(_,i)=>`<div class="life ${i < p.lives ? '' : 'off'}"></div>`).join('')}</div>
+        </div>`).join(''); }
+    function renderHand() { const el = document.getElementById('hand'); const me = state.players[0]; el.innerHTML = me.hand.map((card, idx) => `<button class="card ${card.type !== 'NUMBER' ? 'special' : ''}" data-index="${idx}" ${state.currentPlayer === 0 && state.gameState === 'playing' ? '' : 'disabled'}>${card.label}</button>`).join(''); el.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => playCard(0, Number(btn.dataset.index)))); }
+    function render() { renderPlayers(); document.getElementById('totalNum').textContent = state.currentTotal; document.getElementById('totalHint').textContent = state.currentTotal >= 77 ? '77을 넘겼어요! 생명 -1' : state.currentTotal % 11 === 0 && state.currentTotal !== 0 ? '11의 배수라 생명 -1!' : '카드를 내서 합계를 올려보세요.'; document.getElementById('turnLabel').textContent = state.gameState === 'playing' ? `${state.players[state.currentPlayer].name} 차례` : '게임 종료'; document.getElementById('statusText').textContent = state.gameState === 'playing' ? (state.players[state.currentPlayer].isBot ? 'AI가 생각 중입니다...' : '내 차례입니다. 카드를 선택하세요.') : '게임이 끝났습니다.'; renderHand(); document.getElementById('log').innerHTML = state.logs.map(l => `• ${l}`).join('<br>'); document.getElementById('startBtn').onclick = initGame; }
+    function playCard(pIdx, cIdx) { if (state.gameState !== 'playing' || pIdx !== state.currentPlayer || !state.players[pIdx]?.hand?.[cIdx]) return; const player = state.players[pIdx]; const card = player.hand[cIdx]; let nextTotal = state.currentTotal; let skipCount = 1; if (card.type === CARD_TYPES.NUMBER || card.type === CARD_TYPES.MINUS_10 || card.type === CARD_TYPES.ZERO) nextTotal += card.value; else if (card.type === CARD_TYPES.REVERSE) { state.direction *= -1; addLog(`🔄 ${player.name}이 방향을 바꿨습니다.`); } else if (card.type === CARD_TYPES.SKIP) { skipCount = 2; addLog(`⏭️ ${player.name}이 한 명을 건너뜁니다.`); } state.currentTotal = nextTotal; state.lastCard = card; addLog(`${player.name}: ${card.label} (합계: ${nextTotal})`); let loseLife = false; if (nextTotal >= 77) { loseLife = true; addLog(`💥 77 도달! ${player.name} 생명 -1`); } else if (nextTotal > 0 && nextTotal % 11 === 0) { loseLife = true; addLog(`⚠️ 11의 배수! ${player.name} 생명 -1`); } const newPlayers = state.players.map(p => ({...p})); const newHand = [...player.hand]; newHand.splice(cIdx,1); const newDeck = [...state.deck]; if (newDeck.length > 0) newHand.push(newDeck.shift()); newPlayers[pIdx].hand = newHand; if (loseLife) { newPlayers[pIdx].lives -= 1; state.currentTotal = 0; } state.players = newPlayers; state.deck = newDeck; const survivors = state.players.filter(p => p.lives > 0); if (survivors.length <= 1) { state.gameState='gameOver'; addLog(`🏆 ${survivors[0]?.name} 승리!`); render(); return; } state.currentPlayer = checkNextPlayer(skipCount); render(); if (state.players[state.currentPlayer].isBot) { setTimeout(() => { const bot = state.players[state.currentPlayer]; let bestIdx = 0; for (let i=0;i<bot.hand.length;i++) { const futureTotal = state.currentTotal + bot.hand[i].value; if (futureTotal < 77 && (futureTotal === 0 || futureTotal % 11 !== 0)) { bestIdx = i; break; } } playCard(state.currentPlayer, bestIdx); }, 1000); } }
+    document.getElementById('startGameBtn').addEventListener('click', initGame); document.getElementById('startBtn').addEventListener('click', initGame); render();
+  </script>
+</body>
+</html>

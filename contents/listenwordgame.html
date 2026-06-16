@@ -1,0 +1,259 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>퀴쫑긋! 금개구리와 소금쟁이 퀴즈</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
+        
+        body {
+            font-family: 'Jua', sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .quiz-card {
+            background: white;
+            border-radius: 2rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .option-btn {
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 3px solid transparent;
+        }
+
+        .option-btn:hover {
+            transform: scale(1.02);
+            border-color: #3b82f6;
+        }
+
+        .option-btn:active {
+            transform: scale(0.98);
+        }
+
+        .progress-bar {
+            transition: width 0.5s ease-in-out;
+        }
+
+        .floating {
+            animation: floating 3s ease-in-out infinite;
+        }
+
+        @keyframes floating {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .correct-animation {
+            animation: rubberBand 0.8s;
+        }
+
+        .wrong-animation {
+            animation: headShake 0.5s;
+        }
+    </style>
+</head>
+<body class="p-4">
+
+  <!-- con01 서브헤더 -->
+  <div style="position:fixed;top:0;left:0;right:0;z-index:9999;background:#f0fdf4;border-bottom:2px solid #bbf7d0;padding:6px 16px;">
+    <div style="max-width:900px;margin:0 auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <span style="font-size:10px;font-weight:900;color:#166534;background:#dcfce7;border:1.5px solid #86efac;border-radius:999px;padding:2px 10px;flex-shrink:0;">📌 con01</span>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="con-btn" data-label="🔬 자연관찰놀이" onclick="showAllCon()" style="background:#fff;border:1.5px solid #86efac;border-radius:999px;padding:3px 11px;font-size:10px;font-weight:800;color:#166534;cursor:pointer;transition:all 0.2s;">🔬 자연관찰놀이</button>
+        <button class="con-btn" data-label="📖 국어 동화코너" onclick="showAllCon()" style="background:#fff;border:1.5px solid #86efac;border-radius:999px;padding:3px 11px;font-size:10px;font-weight:800;color:#166534;cursor:pointer;transition:all 0.2s;">📖 국어 동화코너</button>
+        <button class="con-btn" data-label="📚 English story book" onclick="showAllCon()" style="background:#fff;border:1.5px solid #86efac;border-radius:999px;padding:3px 11px;font-size:10px;font-weight:800;color:#166534;cursor:pointer;transition:all 0.2s;">📚 English story book</button>
+        <button class="con-btn" data-label="🗣️ 쿼카의 영어 Q&A 영어라운지" onclick="showAllCon()" style="background:#fff;border:1.5px solid #86efac;border-radius:999px;padding:3px 11px;font-size:10px;font-weight:800;color:#166534;cursor:pointer;transition:all 0.2s;">🗣️ 쿼카의 영어 Q&A 영어라운지</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    var conShown = false;
+    function showAllCon() {
+      conShown = !conShown;
+      document.querySelectorAll('.con-btn').forEach(function(b) {
+        if (conShown) { b.textContent = b.dataset.label + ' · con01'; b.style.background = '#16a34a'; b.style.color = '#fff'; }
+        else { b.textContent = b.dataset.label; b.style.background = '#fff'; b.style.color = '#166534'; }
+      });
+    }
+  </script>
+
+    <div id="app" class="w-full max-w-md">
+        <!-- 시작 화면 -->
+        <div id="start-screen" class="quiz-card p-8 text-center">
+            <div class="text-6xl mb-4 floating">🐸🌊</div>
+            <h1 class="text-4xl text-blue-600 mb-2">퀴쫑긋!</h1>
+            <p class="text-gray-500 mb-8">금개구리와 소금쟁이 이야기 퀴즈</p>
+            <button onclick="startGame()" class="w-full bg-blue-500 hover:bg-blue-600 text-white text-2xl py-4 rounded-2xl shadow-lg transform transition active:scale-95">
+                퀴즈 시작하기!
+            </button>
+        </div>
+
+        <!-- 퀴즈 화면 -->
+        <div id="quiz-screen" class="quiz-card p-6 hidden">
+            <div class="flex justify-between items-center mb-4">
+                <span id="question-number" class="text-blue-500 font-bold">질문 1/10</span>
+                <span id="score-display" class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-sm">점수: 0</span>
+            </div>
+            
+            <div class="w-full bg-gray-200 h-3 rounded-full mb-8 overflow-hidden">
+                <div id="progress" class="progress-bar bg-blue-400 h-full w-0"></div>
+            </div>
+
+            <div id="question-container" class="text-center mb-10">
+                <p class="text-gray-400 text-lg mb-2">대본에 나온 이 단어의 뜻은?</p>
+                <h2 id="question-word" class="text-5xl font-bold text-gray-800 break-words uppercase">Pond</h2>
+            </div>
+
+            <div id="options-grid" class="grid grid-cols-1 gap-3">
+                <!-- 버튼 동적 생성 -->
+            </div>
+        </div>
+
+        <!-- 결과 화면 -->
+        <div id="result-screen" class="quiz-card p-8 text-center hidden">
+            <h2 class="text-3xl font-bold mb-4">이야기 끝! 👏</h2>
+            <div id="final-score-circle" class="w-32 h-32 bg-blue-50 rounded-full flex flex-col items-center justify-center mx-auto mb-6 border-4 border-blue-200">
+                <span class="text-gray-500 text-sm">최종 점수</span>
+                <span id="final-score" class="text-4xl text-blue-600 font-bold">100</span>
+            </div>
+            <p id="result-message" class="text-gray-600 mb-8 font-medium">대단해요! 대본을 아주 잘 이해했군요!</p>
+            <button onclick="resetGame()" class="w-full bg-gray-800 hover:bg-black text-white text-xl py-4 rounded-2xl shadow-md transition transform active:scale-95">
+                다시 도전하기
+            </button>
+        </div>
+
+        <div id="feedback-toast" class="fixed bottom-10 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full text-white font-bold opacity-0 transition-opacity pointer-events-none">
+            정답입니다!
+        </div>
+    </div>
+
+    <script>
+        const quizData = [
+            { question: "Golden", options: ["금빛의", "은빛의", "가벼운", "작은"], answer: "금빛의" },
+            { question: "Pond", options: ["바다", "산", "연못", "계곡"], answer: "연못" },
+            { question: "Water Strider", options: ["물방개", "소금쟁이", "미꾸라지", "개구리"], answer: "소금쟁이" },
+            { question: "Surface", options: ["바닥", "수면(겉면)", "깊은 곳", "동굴"], answer: "수면(겉면)" },
+            { question: "Brave", options: ["지혜로운", "겁쟁이인", "용감한", "빠른"], answer: "용감한" },
+            { question: "Together", options: ["서로", "따로따로", "멀리", "함께"], answer: "함께" },
+            { question: "Legend", options: ["전설", "노래", "소문", "비밀"], answer: "전설" },
+            { question: "Adventure", options: ["공부", "모험", "실수", "대화"], answer: "모험" },
+            { question: "Leap", options: ["잠자다", "걷다", "뛰어오르다", "수영하다"], answer: "뛰어오르다" },
+            { question: "Protect", options: ["파괴하다", "지키다(보호하다)", "숨다", "찾다"], answer: "지키다(보호하다)" }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let isProcessing = false;
+
+        function startGame() {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            isProcessing = false;
+            const currentData = quizData[currentQuestionIndex];
+            
+            document.getElementById('question-number').innerText = `질문 ${currentQuestionIndex + 1}/${quizData.length}`;
+            document.getElementById('question-word').innerText = currentData.question;
+            document.getElementById('score-display').innerText = `점수: ${score}`;
+            
+            const progressPercent = ((currentQuestionIndex) / quizData.length) * 100;
+            document.getElementById('progress').style.width = `${progressPercent}%`;
+
+            const optionsGrid = document.getElementById('options-grid');
+            optionsGrid.innerHTML = '';
+            
+            currentData.options.forEach(option => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn w-full py-4 px-6 bg-gray-50 text-gray-700 text-xl rounded-xl text-left hover:bg-blue-50 hover:text-blue-600 font-medium';
+                btn.innerText = option;
+                btn.onclick = () => checkAnswer(option, btn);
+                optionsGrid.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selected, btn) {
+            if (isProcessing) return;
+            isProcessing = true;
+
+            const correctAnswer = quizData[currentQuestionIndex].answer;
+            const screen = document.getElementById('quiz-screen');
+
+            if (selected === correctAnswer) {
+                score += 10;
+                btn.classList.replace('bg-gray-50', 'bg-green-500');
+                btn.classList.add('text-white');
+                screen.classList.add('correct-animation');
+                showToast("정답! 🐸", "#10B981");
+            } else {
+                btn.classList.replace('bg-gray-50', 'bg-red-500');
+                btn.classList.add('text-white');
+                screen.classList.add('wrong-animation');
+                showToast("틀렸어요! 💧", "#EF4444");
+                
+                Array.from(document.getElementsByClassName('option-btn')).forEach(b => {
+                    if (b.innerText === correctAnswer) {
+                        b.classList.add('border-green-500', 'text-green-600', 'bg-green-50');
+                    }
+                });
+            }
+
+            setTimeout(() => {
+                screen.classList.remove('correct-animation', 'wrong-animation');
+                currentQuestionIndex++;
+                
+                if (currentQuestionIndex < quizData.length) {
+                    loadQuestion();
+                } else {
+                    showResult();
+                }
+            }, 1200);
+        }
+
+        function showToast(message, color) {
+            const toast = document.getElementById('feedback-toast');
+            toast.innerText = message;
+            toast.style.backgroundColor = color;
+            toast.style.opacity = '1';
+            setTimeout(() => {
+                toast.style.opacity = '0';
+            }, 1000);
+        }
+
+        function showResult() {
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+            document.getElementById('final-score').innerText = score;
+
+            let msg = "";
+            if (score >= 100) msg = "최고예요! 금개구리가 보답할 거예요!";
+            else if (score >= 70) msg = "참 잘했어요! 소금쟁이만큼 민첩하시네요!";
+            else msg = "조금 더 연습해서 다시 도전해봐요!";
+            
+            document.getElementById('result-message').innerText = msg;
+        }
+
+        function resetGame() {
+            currentQuestionIndex = 0;
+            score = 0;
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('start-screen').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

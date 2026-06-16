@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>블로커스 (Web Blokus)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;700;900&display=swap');
+        
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: #f1f5f9;
+            touch-action: none;
+            overflow-x: hidden;
+        }
+
+        .board-container {
+            user-select: none;
+        }
+
+        .board-grid {
+            display: grid;
+            grid-template-columns: repeat(20, 1fr);
+            aspect-ratio: 1 / 1;
+            gap: 1px;
+            background-color: #94a3b8;
+            border: 4px solid #475569;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .cell {
+            background-color: white;
+            position: relative;
+            cursor: pointer;
+        }
+
+        /* 플레이어 색상 */
+        .p0 { background-color: #3b82f6; box-shadow: inset 0 0 8px rgba(0,0,0,0.1); } /* Blue */
+        .p1 { background-color: #eab308; box-shadow: inset 0 0 8px rgba(0,0,0,0.1); } /* Yellow */
+        .p2 { background-color: #ef4444; box-shadow: inset 0 0 8px rgba(0,0,0,0.1); } /* Red */
+        .p3 { background-color: #22c55e; box-shadow: inset 0 0 8px rgba(0,0,0,0.1); } /* Green */
+
+        /* 미리보기 상태 */
+        .preview-valid { opacity: 0.5 !important; }
+        .preview-invalid { background-color: #fecaca !important; }
+
+        .piece-btn {
+            aspect-ratio: 1 / 1;
+            padding: 8px;
+            border: 2px solid transparent;
+            border-radius: 12px;
+            background: white;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .piece-btn:hover:not(:disabled) {
+            border-color: #cbd5e1;
+            transform: translateY(-2px);
+        }
+
+        .piece-btn.selected {
+            border-color: #0f172a;
+            background-color: #f8fafc;
+            transform: scale(1.05);
+        }
+
+        .piece-btn:disabled {
+            opacity: 0.15;
+            cursor: not-allowed;
+            filter: grayscale(1);
+        }
+
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+<div id="game-container" class="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
+    
+    <!-- 좌측: 정보 및 컨트롤 -->
+    <div class="lg:col-span-3 space-y-4">
+        <div class="bg-white p-6 rounded-[2rem] shadow-xl border border-slate-200">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>
+                </div>
+                <h1 class="text-2xl font-black tracking-tight text-slate-900 uppercase italic">Blokus</h1>
+            </div>
+            
+            <div id="player-list" class="space-y-3"></div>
+
+            <div class="mt-8 grid grid-cols-1 gap-2">
+                <button onclick="skipTurn()" class="w-full py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl transition-all flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 17 5-5-5-5"/><path d="m13 17 5-5-5-5"/></svg>
+                    이번 턴 패스
+                </button>
+                <button onclick="initGame()" class="w-full py-3 text-slate-400 hover:text-red-500 font-medium text-sm transition-colors">
+                    게임 초기화
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-blue-600 p-6 rounded-[2rem] text-white shadow-lg shadow-blue-200">
+            <h3 class="font-bold mb-3 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                단축키 안내
+            </h3>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+                <div class="bg-blue-500/50 p-2 rounded-lg"><span class="font-bold">R</span> 회전</div>
+                <div class="bg-blue-500/50 p-2 rounded-lg"><span class="font-bold">F</span> 반전</div>
+                <div class="bg-blue-500/50 p-2 rounded-lg"><span class="font-bold">Space</span> 패스</div>
+                <div class="bg-blue-500/50 p-2 rounded-lg"><span class="font-bold">Esc</span> 취소</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 중앙: 보드판 -->
+    <div class="lg:col-span-6 flex flex-col items-center">
+        <div id="board" class="board-grid w-full rounded-lg overflow-hidden relative">
+            <!-- 보드 셀 삽입됨 -->
+        </div>
+
+        <div class="mt-8 flex gap-6">
+            <button onclick="rotateCurrentPiece()" class="group flex flex-col items-center gap-2">
+                <div class="w-16 h-16 bg-white rounded-2xl shadow-md flex items-center justify-center border-2 border-transparent group-hover:border-slate-300 transition-all active:scale-90">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-600"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+                </div>
+                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Rotate (R)</span>
+            </button>
+            <button onclick="flipCurrentPiece()" class="group flex flex-col items-center gap-2">
+                <div class="w-16 h-16 bg-white rounded-2xl shadow-md flex items-center justify-center border-2 border-transparent group-hover:border-slate-300 transition-all active:scale-90">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-600"><path d="m8 3 4 4 4-4"/><path d="m8 21 4-4 4 4"/><line x1="12" y1="7" x2="12" y2="17"/></svg>
+                </div>
+                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Flip (F)</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 우측: 조각 인벤토리 -->
+    <div class="lg:col-span-3">
+        <div class="bg-white p-6 rounded-[2rem] shadow-xl border border-slate-200 h-full flex flex-col max-h-[85vh]">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-slate-800 tracking-tight">남은 조각</h3>
+                <span id="piece-count" class="bg-slate-100 text-slate-500 text-xs px-3 py-1 rounded-full font-bold">21</span>
+            </div>
+            <div id="piece-inventory" class="grid grid-cols-2 sm:grid-cols-3 gap-3 overflow-y-auto pr-2 scrollbar-hide">
+                <!-- 조각 버튼들 -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 게임 종료 모달 -->
+<div id="result-modal" class="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[100] hidden items-center justify-center p-6">
+    <div class="bg-white max-w-md w-full rounded-[3rem] p-10 text-center shadow-2xl scale-in transform transition-all">
+        <div id="winner-crown" class="mb-6 text-6xl">👑</div>
+        <h2 class="text-4xl font-black mb-2 text-slate-900">게임 종료</h2>
+        <p id="winner-text" class="text-xl font-bold text-blue-600 mb-8 uppercase tracking-wide"></p>
+        <div id="final-scores" class="space-y-3 mb-10"></div>
+        <button onclick="initGame()" class="w-full py-5 bg-slate-900 text-white text-lg font-black rounded-[1.5rem] hover:bg-blue-600 transition-all shadow-lg shadow-blue-100 active:scale-95">다시 시작하기</button>
+    </div>
+</div>
+
+<script>
+    const BOARD_SIZE = 20;
+    const PLAYERS = [
+        { id: 0, name: 'Blue Team', colorClass: 'p0', corner: [0, 0] },
+        { id: 1, name: 'Yellow Team', colorClass: 'p1', corner: [0, 19] },
+        { id: 2, name: 'Red Team', colorClass: 'p2', corner: [19, 19] },
+        { id: 3, name: 'Green Team', colorClass: 'p3', corner: [19, 0] }
+    ];
+
+    const PIECES_DATA = [
+        [[0,0]], [[0,0],[0,1]], [[0,0],[0,1],[0,2]], [[0,0],[0,1],[1,1]],
+        [[0,0],[0,1],[0,2],[0,3]], [[0,0],[0,1],[0,2],[1,2]], [[0,0],[0,1],[1,1],[1,2]],
+        [[0,0],[0,1],[1,0],[1,1]], [[0,0],[0,1],[0,2],[1,1]], [[0,0],[0,1],[0,2],[0,3],[0,4]],
+        [[0,0],[0,1],[0,2],[0,3],[1,3]], [[0,0],[1,0],[1,1],[1,2],[1,3]], [[0,0],[0,1],[0,2],[1,2],[2,2]],
+        [[0,0],[0,1],[1,1],[2,1],[2,2]], [[0,0],[0,1],[0,2],[1,1],[2,1]], [[0,0],[0,1],[1,1],[1,2],[2,1]],
+        [[0,0],[1,0],[1,1],[2,1],[2,2]], [[0,0],[0,1],[0,2],[1,0],[1,1]], [[0,0],[0,1],[1,0],[2,0],[2,1]],
+        [[0,0],[0,1],[0,2],[1,0],[2,0]], [[0,0],[0,1],[1,1],[1,2],[0,2]]
+    ];
+
+    let board = [];
+    let currentPlayer = 0;
+    let playerInventory = [];
+    let scores = [0, 0, 0, 0];
+    let selectedPieceIdx = null;
+    let currentShape = null;
+    let isPassed = [false, false, false, false];
+    let lastHovered = null;
+
+    function initGame() {
+        document.getElementById('result-modal').classList.add('hidden');
+        board = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(null));
+        currentPlayer = 0;
+        scores = [0, 0, 0, 0];
+        isPassed = [false, false, false, false];
+        selectedPieceIdx = null;
+        currentShape = null;
+        lastHovered = null;
+
+        playerInventory = PLAYERS.map(() => 
+            PIECES_DATA.map((shape, id) => ({ id, used: false, shape: [...shape] }))
+        );
+
+        renderBoard();
+        renderPlayers();
+        renderInventory();
+    }
+
+    function renderBoard() {
+        const boardEl = document.getElementById('board');
+        boardEl.innerHTML = '';
+        for (let r = 0; r < BOARD_SIZE; r++) {
+            for (let c = 0; c < BOARD_SIZE; c++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                if (board[r][c] !== null) {
+                    cell.classList.add(PLAYERS[board[r][c]].colorClass);
+                }
+                
+                PLAYERS.forEach(p => {
+                    if (p.corner[0] === r && p.corner[1] === c && board[r][c] === null) {
+                        const dot = document.createElement('div');
+                        dot.className = `absolute inset-0 m-auto w-2 h-2 rounded-full opacity-20 ${p.colorClass}`;
+                        cell.appendChild(dot);
+                    }
+                });
+
+                cell.onmouseenter = () => { lastHovered = {r, c}; updatePreview(); };
+                cell.onmouseleave = () => { clearPreview(); };
+                cell.onclick = () => handleCellClick(r, c);
+                boardEl.appendChild(cell);
+            }
+        }
+    }
+
+    function updatePreview() {
+        if (!lastHovered || selectedPieceIdx === null) return;
+        clearPreview();
+        const {r: row, c: col} = lastHovered;
+        const valid = isValidMove(currentShape, row, col, currentPlayer);
+        const cells = document.querySelectorAll('.cell');
+        
+        currentShape.forEach(([dr, dc]) => {
+            const r = row + dr, c = col + dc;
+            if (r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE) {
+                const idx = r * BOARD_SIZE + c;
+                cells[idx].classList.add(valid ? 'preview-valid' : 'preview-invalid');
+                if (valid) cells[idx].classList.add(PLAYERS[currentPlayer].colorClass);
+            }
+        });
+    }
+
+    function clearPreview() {
+        const cells = document.querySelectorAll('.cell');
+        cells.forEach(c => {
+            c.classList.remove('preview-valid', 'preview-invalid', 'p0', 'p1', 'p2', 'p3');
+            // 이미 놓인 조각 다시 칠하기
+            const r = Math.floor(Array.from(cells).indexOf(c) / BOARD_SIZE);
+            const col = Array.from(cells).indexOf(c) % BOARD_SIZE;
+            if (board[r][col] !== null) {
+                c.classList.add(PLAYERS[board[r][col]].colorClass);
+            }
+        });
+    }
+
+    function renderPlayers() {
+        const listEl = document.getElementById('player-list');
+        listEl.innerHTML = '';
+        PLAYERS.forEach((p, i) => {
+            const el = document.createElement('div');
+            const isActive = currentPlayer === i;
+            el.className = `flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${isActive ? 'border-slate-900 bg-slate-50 scale-[1.02] shadow-md ring-4 ring-slate-900/5' : 'border-transparent opacity-40'}`;
+            el.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <div class="w-5 h-5 rounded-lg ${p.colorClass} shadow-sm border border-white/50"></div>
+                    <span class="font-black text-xs uppercase tracking-tight text-slate-800">${p.name}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    ${isPassed[i] ? '<span class="text-[10px] font-bold bg-slate-200 px-2 py-0.5 rounded text-slate-500">PASS</span>' : ''}
+                    <span class="font-mono font-bold text-xl">${scores[i]}</span>
+                </div>
+            `;
+            listEl.appendChild(el);
+        });
+    }
+
+    function renderInventory() {
+        const invEl = document.getElementById('piece-inventory');
+        invEl.innerHTML = '';
+        const currentInv = playerInventory[currentPlayer];
+        let availableCount = 0;
+        
+        currentInv.forEach((piece, idx) => {
+            if (!piece.used) availableCount++;
+            const btn = document.createElement('button');
+            btn.className = `piece-btn ${selectedPieceIdx === idx ? 'selected' : ''}`;
+            btn.disabled = piece.used;
+            btn.innerHTML = createPieceSVG(piece.shape, PLAYERS[currentPlayer].colorClass);
+            btn.onclick = () => selectPiece(idx);
+            invEl.appendChild(btn);
+        });
+        document.getElementById('piece-count').innerText = availableCount;
+    }
+
+    function createPieceSVG(shape, colorClass) {
+        const minR = Math.min(...shape.map(p => p[0])), maxR = Math.max(...shape.map(p => p[0]));
+        const minC = Math.min(...shape.map(p => p[1])), maxC = Math.max(...shape.map(p => p[1]));
+        const h = maxR - minR + 1, w = maxC - minC + 1;
+        const size = Math.max(w, h, 4);
+
+        let grid = `<div class="grid gap-0.5 w-full h-full" style="grid-template-columns: repeat(${size}, 1fr)">`;
+        for (let i = 0; i < size * size; i++) {
+            const r = Math.floor(i / size) + minR;
+            const c = (i % size) + minC;
+            const filled = shape.some(p => p[0] === r && p[1] === c);
+            grid += `<div class="aspect-square rounded-sm ${filled ? colorClass : 'bg-transparent'}"></div>`;
+        }
+        grid += `</div>`;
+        return grid;
+    }
+
+    function selectPiece(idx) {
+        selectedPieceIdx = idx;
+        currentShape = [...playerInventory[currentPlayer][idx].shape];
+        renderInventory();
+        updatePreview();
+    }
+
+    function rotateCurrentPiece() {
+        if (!currentShape) return;
+        currentShape = currentShape.map(([r, c]) => [c, -r]);
+        updatePreview();
+    }
+
+    function flipCurrentPiece() {
+        if (!currentShape) return;
+        currentShape = currentShape.map(([r, c]) => [r, -c]);
+        updatePreview();
+    }
+
+    function isValidMove(shape, row, col, playerIdx) {
+        let touchesOwnDiagonal = false;
+        const playerCorner = PLAYERS[playerIdx].corner;
+        const isFirstMove = scores[playerIdx] === 0;
+
+        for (const [dr, dc] of shape) {
+            const r = row + dr, c = col + dc;
+            if (r < 0 || r >= BOARD_SIZE || c < 0 || c >= BOARD_SIZE) return false;
+            if (board[r][c] !== null) return false;
+
+            // 변(Side) 접촉 금지
+            const sides = [[0,1],[0,-1],[1,0],[-1,0]];
+            for (const [sr, sc] of sides) {
+                const rr = r+sr, cc = c+sc;
+                if (rr >= 0 && rr < BOARD_SIZE && cc >= 0 && cc < BOARD_SIZE) {
+                    if (board[rr][cc] === playerIdx) return false;
+                }
+            }
+
+            // 첫 수 구석 체크
+            if (isFirstMove && r === playerCorner[0] && c === playerCorner[1]) touchesOwnDiagonal = true;
+
+            // 이후 꼭짓점(Diagonal) 체크
+            const diags = [[1,1],[1,-1],[-1,1],[-1,-1]];
+            for (const [drr, dcc] of diags) {
+                const rr = r+drr, cc = c+dcc;
+                if (rr >= 0 && rr < BOARD_SIZE && cc >= 0 && cc < BOARD_SIZE) {
+                    if (board[rr][cc] === playerIdx) touchesOwnDiagonal = true;
+                }
+            }
+        }
+        return touchesOwnDiagonal;
+    }
+
+    function handleCellClick(row, col) {
+        if (selectedPieceIdx === null) return;
+        if (isValidMove(currentShape, row, col, currentPlayer)) {
+            currentShape.forEach(([dr, dc]) => {
+                board[row + dr][col + dc] = currentPlayer;
+                scores[currentPlayer]++;
+            });
+            playerInventory[currentPlayer][selectedPieceIdx].used = true;
+            selectedPieceIdx = null;
+            currentShape = null;
+            nextTurn();
+        }
+    }
+
+    function nextTurn() {
+        let next = (currentPlayer + 1) % 4;
+        let checked = 0;
+        while (isPassed[next] && checked < 4) {
+            next = (next + 1) % 4;
+            checked++;
+        }
+        if (checked === 4) endGame();
+        else {
+            currentPlayer = next;
+            renderBoard();
+            renderPlayers();
+            renderInventory();
+        }
+    }
+
+    function skipTurn() {
+        isPassed[currentPlayer] = true;
+        nextTurn();
+    }
+
+    function endGame() {
+        const modal = document.getElementById('result-modal');
+        const winnerText = document.getElementById('winner-text');
+        const scoresEl = document.getElementById('final-scores');
+        
+        const maxScore = Math.max(...scores);
+        const winners = PLAYERS.filter((_, i) => scores[i] === maxScore).map(p => p.name);
+        
+        winnerText.innerText = winners.join(' & ') + ' Wins!';
+        scoresEl.innerHTML = scores.map((s, i) => `
+            <div class="flex justify-between items-center bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                <div class="flex items-center gap-3">
+                    <div class="w-3 h-3 rounded-full ${PLAYERS[i].colorClass}"></div>
+                    <span class="font-bold text-slate-500">${PLAYERS[i].name}</span>
+                </div>
+                <span class="font-black text-slate-900">${s} pts</span>
+            </div>
+        `).join('');
+
+        modal.classList.remove('hidden');
+    }
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key.toLowerCase() === 'r') rotateCurrentPiece();
+        if (e.key.toLowerCase() === 'f') flipCurrentPiece();
+        if (e.key === 'Escape') { selectedPieceIdx = null; renderInventory(); clearPreview(); }
+        if (e.key === ' ') { e.preventDefault(); skipTurn(); }
+    });
+
+    initGame();
+</script>
+
+</body>
+</html>

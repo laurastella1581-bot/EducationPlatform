@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>과학탐구대모험 - 생태 탐구 코너</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap');
+        
+        body {
+            font-family: 'Nanum+Gothic', sans-serif;
+            background-color: #f0fdf4;
+        }
+
+        .adventure-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .adventure-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #166534 0%, #15803d 100%);
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- Header Area -->
+    <header class="gradient-bg text-white py-10 px-6 text-center shadow-lg">
+        <div class="max-w-4xl mx-auto">
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-4">🌿 과학탐구 대모험</h1>
+            <p class="text-lg md:text-xl opacity-90">쿼카와 함께 떠나는 습지 생태계 탐사 프로젝트</p>
+        </div>
+    </header>
+
+  <!-- con01 서브헤더 -->
+  <div style="background:#f0fdf4;border-bottom:2px solid #bbf7d0;padding:8px 16px;">
+    <div style="max-width:900px;margin:0 auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <span style="font-size:10px;font-weight:900;color:#166534;background:#dcfce7;border:1.5px solid #86efac;border-radius:999px;padding:2px 10px;flex-shrink:0;">📌 con01</span>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="con-btn" data-label="🔬 자연관찰놀이" onclick="showAllCon()" style="background:#fff;border:1.5px solid #86efac;border-radius:999px;padding:3px 11px;font-size:10px;font-weight:800;color:#166534;cursor:pointer;transition:all 0.2s;">🔬 자연관찰놀이</button>
+        <button class="con-btn" data-label="📖 국어 동화코너" onclick="showAllCon()" style="background:#fff;border:1.5px solid #86efac;border-radius:999px;padding:3px 11px;font-size:10px;font-weight:800;color:#166534;cursor:pointer;transition:all 0.2s;">📖 국어 동화코너</button>
+        <button class="con-btn" data-label="📚 English story book" onclick="showAllCon()" style="background:#fff;border:1.5px solid #86efac;border-radius:999px;padding:3px 11px;font-size:10px;font-weight:800;color:#166534;cursor:pointer;transition:all 0.2s;">📚 English story book</button>
+        <button class="con-btn" data-label="🗣️ 쿼카의 영어 Q&A 영어라운지" onclick="showAllCon()" style="background:#fff;border:1.5px solid #86efac;border-radius:999px;padding:3px 11px;font-size:10px;font-weight:800;color:#166534;cursor:pointer;transition:all 0.2s;">🗣️ 쿼카의 영어 Q&A 영어라운지</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    var conShown = false;
+    function showAllCon() {
+      conShown = !conShown;
+      document.querySelectorAll('.con-btn').forEach(function(b) {
+        if (conShown) { b.textContent = b.dataset.label + ' · con01'; b.style.background = '#16a34a'; b.style.color = '#fff'; }
+        else { b.textContent = b.dataset.label; b.style.background = '#fff'; b.style.color = '#166534'; }
+      });
+    }
+  </script>
+
+    <!-- Navigation Tabs -->
+    <nav class="max-w-5xl mx-auto mt-8 px-4">
+        <div class="flex flex-wrap justify-center gap-2 bg-white p-2 rounded-2xl shadow-sm border border-green-100">
+            <button onclick="showTab('home')" class="tab-btn px-6 py-2 rounded-xl font-bold bg-green-600 text-white" id="btn-home">홈</button>
+            <button onclick="showTab('frog')" class="tab-btn px-6 py-2 rounded-xl font-bold hover:bg-green-50 text-green-700" id="btn-frog">금개구리 탐구</button>
+            <button onclick="showTab('strider')" class="tab-btn px-6 py-2 rounded-xl font-bold hover:bg-green-50 text-green-700" id="btn-strider">소금쟁이 탐구</button>
+            <button onclick="showTab('museum')" class="tab-btn px-6 py-2 rounded-xl font-bold hover:bg-green-50 text-green-700" id="btn-museum">박물관/현장학습</button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-5xl mx-auto py-10 px-4">
+        
+        <!-- Home Section -->
+        <section id="home" class="tab-content active text-center">
+            <div class="bg-white p-8 rounded-3xl shadow-md border border-green-100">
+                <div class="text-6xl mb-6">🔍</div>
+                <h2 class="text-2xl font-bold mb-4">어떤 친구를 먼저 만나볼까요?</h2>
+                <p class="text-gray-600 mb-8">우리나라 습지에서 살아가는 소중한 생명체들의 비밀을 파헤쳐 보세요.</p>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div onclick="showTab('frog')" class="cursor-pointer bg-yellow-50 p-6 rounded-2xl border-2 border-yellow-200 hover:border-yellow-400 transition-all">
+                        <div class="text-4xl mb-2">🐸</div>
+                        <h3 class="font-bold text-xl text-yellow-800">금개구리</h3>
+                        <p class="text-sm text-yellow-700">등 위에 두 줄의 금색 선이 있는 멸종위기종</p>
+                    </div>
+                    <div onclick="showTab('strider')" class="cursor-pointer bg-blue-50 p-6 rounded-2xl border-2 border-blue-200 hover:border-blue-400 transition-all">
+                        <div class="text-4xl mb-2">🦟</div>
+                        <h3 class="font-bold text-xl text-blue-800">소금쟁이</h3>
+                        <p class="text-sm text-blue-700">물 위를 걷는 놀라운 마법사</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Gold Frog Section -->
+        <section id="frog" class="tab-content">
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="md:col-span-2">
+                    <div class="bg-white p-8 rounded-3xl shadow-md">
+                        <h2 class="text-3xl font-extrabold text-green-800 mb-6 flex items-center">
+                            <span class="mr-2">🐸</span> 금개구리 (Gold-striped Frog)
+                        </h2>
+                        <div class="bg-green-50 p-6 rounded-2xl mb-6">
+                            <h3 class="font-bold mb-2">🔬 학명: Pelophylax chosenicus</h3>
+                            <p class="leading-relaxed">금개구리는 우리나라 고유종으로, 등에 선명한 두 줄의 금색 선이 있는 것이 특징입니다. 과거엔 논에서 흔히 볼 수 있었지만 현재는 '멸종위기 야생생물 II급'으로 지정되어 보호받고 있어요.</p>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="border border-green-100 p-4 rounded-xl">
+                                <h4 class="font-bold text-green-700">특징</h4>
+                                <p class="text-sm">참개구리와 비슷하지만 눈 뒤부터 엉덩이까지 금색 줄이 뚜렷해요.</p>
+                            </div>
+                            <div class="border border-green-100 p-4 rounded-xl">
+                                <h4 class="font-bold text-green-700">서식지</h4>
+                                <p class="text-sm">흐름이 느린 수로, 저수지, 논 등 수초가 무성한 곳에 살아요.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-6">
+                    <div class="bg-white p-6 rounded-3xl shadow-md border-t-4 border-yellow-400">
+                        <h3 class="font-bold mb-4">📚 추천 백과사전</h3>
+                        <ul class="space-y-3">
+                            <li>
+                                <a href="https://www.nie.re.kr/" target="_blank" class="block p-3 bg-gray-50 rounded-lg hover:bg-green-50 transition-colors">
+                                    <span class="font-bold text-sm">국립생태원</span>
+                                    <p class="text-xs text-gray-500">멸종위기종 정보 및 복원 이야기</p>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://terms.naver.com/entry.naver?docId=1063683" target="_blank" class="block p-3 bg-gray-50 rounded-lg hover:bg-green-50 transition-colors">
+                                    <span class="font-bold text-sm">네이버 지식백과</span>
+                                    <p class="text-xs text-gray-500">금개구리의 생태적 정의</p>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Water Strider Section -->
+        <section id="strider" class="tab-content">
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="md:col-span-2">
+                    <div class="bg-white p-8 rounded-3xl shadow-md">
+                        <h2 class="text-3xl font-extrabold text-blue-800 mb-6 flex items-center">
+                            <span class="mr-2">🦟</span> 소금쟁이 (Water Strider)
+                        </h2>
+                        <div class="bg-blue-50 p-6 rounded-2xl mb-6">
+                            <h3 class="font-bold mb-2">🔬 학명: Gerris paludum</h3>
+                            <p class="leading-relaxed">물 위를 미끄러지듯 이동하는 소금쟁이는 '표면장력'이라는 과학 원리를 이용합니다. 다리 끝에 미세한 털이 있어 공기층을 형성해 물 위에 뜰 수 있어요.</p>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="border border-blue-100 p-4 rounded-xl">
+                                <h4 class="font-bold text-blue-700">특징</h4>
+                                <p class="text-sm">다리 끝에 기름기가 있는 털이 있어 물에 젖지 않아요.</p>
+                            </div>
+                            <div class="border border-blue-100 p-4 rounded-xl">
+                                <h4 class="font-bold text-blue-700">먹이</h4>
+                                <p class="text-sm">물 표면에 떨어진 곤충의 진동을 감지해 사냥해요.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-6">
+                    <div class="bg-white p-6 rounded-3xl shadow-md border-t-4 border-blue-400">
+                        <h3 class="font-bold mb-4">📚 추천 백과사전</h3>
+                        <ul class="space-y-3">
+                            <li>
+                                <a href="https://encykorea.aks.ac.kr/Contents/Item/E0030043" target="_blank" class="block p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors">
+                                    <span class="font-bold text-sm">한국민족문화대백과</span>
+                                    <p class="text-xs text-gray-500">전통적 의미와 생태 분석</p>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://terms.naver.com/entry.naver?docId=1113645" target="_blank" class="block p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors">
+                                    <span class="font-bold text-sm">동물백과</span>
+                                    <p class="text-xs text-gray-500">소금쟁이의 생활사</p>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Museum/Field Trip Section -->
+        <section id="museum" class="tab-content">
+            <h2 class="text-3xl font-bold text-center mb-10">📍 탐험을 떠날 수 있는 장소</h2>
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="adventure-card bg-white p-6 rounded-3xl shadow-md border-b-4 border-green-600">
+                    <div class="text-3xl mb-4 text-green-600"><i class="fas fa-leaf"></i></div>
+                    <h3 class="font-bold text-lg mb-2">국립생태원 (충남 서천)</h3>
+                    <p class="text-sm text-gray-600 mb-4">금개구리의 실제 복원 서식지를 관찰할 수 있는 가장 추천하는 장소입니다.</p>
+                    <a href="https://www.nie.re.kr/" target="_blank" class="text-green-600 font-bold hover:underline">홈페이지 방문 →</a>
+                </div>
+                <div class="adventure-card bg-white p-6 rounded-3xl shadow-md border-b-4 border-blue-600">
+                    <div class="text-3xl mb-4 text-blue-600"><i class="fas fa-flask"></i></div>
+                    <h3 class="font-bold text-lg mb-2">국립중앙과학관 (대전)</h3>
+                    <p class="text-sm text-gray-600 mb-4">소금쟁이 같은 수생 곤충들의 과학적 원리를 체험 전시물로 배울 수 있어요.</p>
+                    <a href="https://www.science.go.kr/" target="_blank" class="text-blue-600 font-bold hover:underline">홈페이지 방문 →</a>
+                </div>
+                <div class="adventure-card bg-white p-6 rounded-3xl shadow-md border-b-4 border-yellow-600">
+                    <div class="text-3xl mb-4 text-yellow-600"><i class="fas fa-map-marked-alt"></i></div>
+                    <h3 class="font-bold text-lg mb-2">지역 습지 생태공원</h3>
+                    <p class="text-sm text-gray-600 mb-4">우리 동네 주변의 논이나 습지를 찾아 직접 소금쟁이를 찾아보는 미션을 수행해보세요!</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-100 py-10 mt-20 border-t border-gray-200 text-center">
+        <p class="text-gray-500 text-sm">© 2024 Great Science Adventure. All rights reserved.</p>
+        <p class="text-gray-400 text-xs mt-2 italic">이 코너는 금개구리와 소금쟁이의 보존을 위해 제작되었습니다.</p>
+    </footer>
+
+    <script>
+        function showTab(tabId) {
+            // Hide all content
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => content.classList.remove('active'));
+
+            // Reset all buttons
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('bg-green-600', 'text-white');
+                btn.classList.add('hover:bg-green-50', 'text-green-700');
+            });
+
+            // Show selected content
+            document.getElementById(tabId).classList.add('active');
+
+            // Style selected button
+            const activeBtn = document.getElementById('btn-' + tabId);
+            if (activeBtn) {
+                activeBtn.classList.remove('hover:bg-green-50', 'text-green-700');
+                activeBtn.classList.add('bg-green-600', 'text-white');
+            }
+        }
+    </script>
+</body>
+</html>

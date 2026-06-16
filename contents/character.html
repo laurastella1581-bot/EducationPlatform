@@ -1,0 +1,227 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>마법의 숲 캐릭터 도감</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
+        body { font-family: 'Noto Sans KR', sans-serif; }
+        .modal-enter { animation: zoomIn 0.3s ease-out; }
+        @keyframes zoomIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="bg-[#fdfbf7] text-gray-900 pt-12 pb-20 selection:bg-emerald-200">
+
+    <!-- Hero Section -->
+    <section class="max-w-7xl mx-auto px-6 pt-12 pb-24 text-center">
+        <div class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full text-xs font-black mb-8 animate-bounce">
+            <i data-lucide="book-open" class="w-4 h-4"></i> NEW ADVENTURERS
+        </div>
+        <h1 class="text-5xl md:text-7xl font-black mb-8 leading-[1.1] tracking-tight text-gray-800">
+            일곱 명의 <span class="text-emerald-600 italic">꼬마 모험가</span>들과 <br />
+            지혜로운 루나 선생님
+        </h1>
+        <p class="text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed">
+            서로 다른 개성과 특별한 능력을 가진 친구들이 모였습니다. <br />
+            마법의 숲을 누비며 스타랏을 찾아 떠나는 흥미진진한 주인공들을 만나보세요!
+        </p>
+    </section>
+
+    <!-- Main Grid Section -->
+    <section class="max-w-7xl mx-auto px-6 pb-32">
+        <div id="character-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <!-- 캐릭터 카드들이 여기에 동적으로 생성됩니다 -->
+        </div>
+    </section>
+
+    <!-- Modal Structure -->
+    <div id="modal-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div id="modal-content" class="bg-white rounded-[2.5rem] max-w-2xl w-full overflow-hidden shadow-2xl modal-enter relative" onclick="event.stopPropagation()">
+            <!-- 모달 내용이 여기에 동적으로 삽입됩니다 -->
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-100 py-16">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
+            <div>
+                <div class="text-2xl font-black text-emerald-700 flex items-center gap-2 mb-2">
+                    <i data-lucide="sparkles" class="fill-emerald-500"></i>
+                    <span>마법의 숲 도감</span>
+                </div>
+                <p class="text-gray-400 text-sm">마법의 숲 친구들과 함께하는 꿈같은 시간</p>
+            </div>
+            <div class="flex gap-4">
+                <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-400 hover:bg-emerald-100 hover:text-emerald-600 transition cursor-pointer">
+                    <i data-lucide="camera" class="w-5 h-5"></i>
+                </div>
+                <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-400 hover:bg-emerald-100 hover:text-emerald-600 transition cursor-pointer">
+                    <i data-lucide="search" class="w-5 h-5"></i>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const characters = [
+            {
+                name: "북극여우 루나",
+                role: "지혜로운 길잡이",
+                image: "../characters/luna.png",
+                description: "모노클과 탐정 모자를 쓴 숲의 현자입니다. 모험의 방향을 제시해주는 든든한 선생님이죠.",
+                longDescription: "루나 선생님은 마법의 숲의 모든 비밀을 알고 있는 지혜로운 북극여우입니다. 항상 모노클과 탐정 모자를 쓰고 다니며, 체스 말과 지도를 이용해 친구들에게 안전한 길을 안내해줍니다.",
+                trait: "차분함", skill: "지도 분석", item: "모노클", color: "blue"
+            },
+            {
+                name: "모험대장 쿼카",
+                role: "용감한 리더",
+                image: "../characters/quokka.png",
+                description: "멋진 조끼를 입고 지도를 든 탐험대의 대장입니다. 언제나 긍정적인 미소를 잃지 않아요.",
+                longDescription: "쿼카는 마법의 숲 탐험대의 정신적 지주이자 리더입니다. 지도를 손에 쥐고 친구들을 이끌며, 어떤 어려운 상황에서도 특유의 행복한 미소로 팀의 사기를 북돋아줍니다.",
+                trait: "열정적", skill: "길 찾기", item: "보물지도", color: "amber"
+            },
+            {
+                name: "쿼카의 절친 루이",
+                role: "보드게임 천재",
+                image: "../characters/louie-redpanda.png",
+                description: "명석한 두뇌의 보드게임 왕",
+                longDescription: "루이는 천진한 성격이지만 놀라운 두뇌를 가진 레서판다에요. 절친인 쿼카의 운동신경을 부러워하지만, 늘 응원해주고, 보드게임을 하며 놀아요. 보드게임이라면 늘 1등. 보드게임 왕이라고 불러요.",
+                trait: "천진함", skill: "보드게임 전략", item: "돋보기", color: "emerald"
+            },
+            {
+                name: "쿼카 여동생 커니",
+                role: "숲의 코디네이터",
+                image: "../characters/connie.png",
+                description: "커다란 분홍색 리본이 포인트! 숲의 아름다움을 찾아내는 섬세한 친구입니다.",
+                longDescription: "커니는 숲의 사소한 아름다움을 발견하는 데 천부적인 재능이 있습니다. 분홍색 리본과 예쁜 드레스를 좋아하며, 친구들을 위해 꽃으로 장식품을 만들어주는 것을 좋아합니다.",
+                trait: "섬세함", skill: "꽃 장식", item: "분홍 리본", color: "pink"
+            },
+            {
+                name: "쿼카 친구 쿼라",
+                role: "지적인 기록가",
+                image: "../characters/quora.png",
+                description: "단정한 셔츠에 리본을 맨 똑똑한 친구입니다. 모험의 모든 순간을 기억해요.",
+                longDescription: "쿼라는 모험의 중요한 기록들을 담당하는 지적인 친구입니다. 단정한 옷차림만큼이나 꼼꼼한 성격을 가졌으며, 루나 선생님의 설명을 가장 잘 이해하고 정리하는 브레인입니다.",
+                trait: "꼼꼼함", skill: "정보 정리", item: "기록 수첩", color: "indigo"
+            },
+            {
+                name: "고슴도치 이끼",
+                role: "사랑둥이 마스코트",
+                image: "../characters/moss-b.png",
+                description: "나무 하트를 소중하게 안고 있는 따뜻한 마음씨의 소유자입니다.",
+                longDescription: "이끼는 마법의 숲에서 가장 따뜻한 마음을 가진 고슴도치입니다. 직접 조각한 나무 하트를 들고 다니며 친구들에게 사랑과 용기를 전해줍니다. 가시가 많지만 누구보다 포근한 친구예요.",
+                trait: "다정함", skill: "위로하기", item: "나무 하트", color: "rose"
+            },
+            {
+                name: "일리피카 피카",
+                role: "행복한 보급관",
+                image: "../characters/pika.png",
+                description: "발그레한 볼과 'Pika! Pika!'라고 적힌 옷이 매력적인 행복한 생쥐 친구입니다.",
+                longDescription: "피카는 세상에서 제일 귀한 간식들을 모으는 것을 좋아하는 일리피카입니다. 발그레한 볼에는 항상 맛있는 것을 먹은 흔적이 남아있죠. 숲속의 맛있는 열매를 찾는 데는 피카가 최고입니다.",
+                trait: "명랑함", skill: "간식 찾기", item: "Pika 멜빵", color: "yellow"
+            }
+        ];
+
+        const grid = document.getElementById('character-grid');
+        const overlay = document.getElementById('modal-overlay');
+        const modalContent = document.getElementById('modal-content');
+
+        // 카드 렌더링
+        characters.forEach((char, index) => {
+            const card = document.createElement('div');
+            card.className = `group relative bg-white rounded-[2rem] p-6 shadow-sm hover:shadow-xl transition-all duration-500 cursor-pointer border border-gray-100 overflow-hidden`;
+            card.innerHTML = `
+                <div class="absolute top-0 left-0 w-full h-2 bg-${char.color}-500"></div>
+                <div class="relative aspect-square mb-6 overflow-hidden rounded-2xl bg-gray-50 flex items-center justify-center">
+                    <img src="${char.image}" alt="${char.name}" class="w-full h-full object-contain transform group-hover:scale-110 transition duration-500 p-2" onerror="this.src='https://via.placeholder.com/400?text=Image+Not+Found'">
+                </div>
+                <div class="text-center">
+                    <span class="text-[10px] font-bold uppercase tracking-tighter px-2 py-1 rounded-md mb-2 inline-block bg-${char.color}-100 text-${char.color}-600">
+                        ${char.role}
+                    </span>
+                    <h3 class="text-xl font-black text-gray-800">${char.name}</h3>
+                    <p class="text-sm text-gray-500 mt-2 line-clamp-2">${char.description}</p>
+                </div>
+            `;
+            card.onclick = () => openModal(char);
+            grid.appendChild(card);
+        });
+
+        // "Join Us" 카드 추가
+        const joinCard = document.createElement('div');
+        joinCard.className = "bg-emerald-600 rounded-[2.5rem] p-10 text-white flex flex-col justify-center items-center text-center shadow-lg shadow-emerald-200";
+        joinCard.innerHTML = `
+            <div class="bg-white/20 w-16 h-16 rounded-full flex items-center justify-center mb-6">
+                <i data-lucide="sparkles" class="w-8 h-8"></i>
+            </div>
+            <h3 class="text-2xl font-black mb-4">함께 떠나요!</h3>
+            <p class="text-emerald-100 text-sm mb-8 leading-relaxed opacity-90">
+                우리의 다음 모험지는 <br />어디가 될까요?
+            </p>
+            <button class="w-full bg-white text-emerald-700 py-4 rounded-2xl font-black text-sm hover:bg-emerald-50 transition shadow-md">
+                모험담 더보기
+            </button>
+        `;
+        grid.appendChild(joinCard);
+
+        // 모달 열기 함수
+        function openModal(char) {
+            modalContent.innerHTML = `
+                <div class="relative h-64 sm:h-80 bg-emerald-50 flex items-center justify-center overflow-hidden">
+                    <div class="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-500 via-transparent to-transparent"></div>
+                    <img src="${char.image}" alt="${char.name}" class="relative h-full w-full object-contain p-4 drop-shadow-xl" onerror="this.src='https://via.placeholder.com/400?text=Image+Not+Found'">
+                    <button onclick="closeModal()" class="absolute top-6 right-6 p-2 bg-white/80 backdrop-blur-md rounded-full text-gray-800 hover:bg-white transition">
+                        <i data-lucide="x" class="w-6 h-6"></i>
+                    </button>
+                </div>
+                <div class="p-8 sm:p-12 text-center">
+                    <div class="inline-block px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest mb-4 bg-${char.color}-100 text-${char.color}-600">
+                        ${char.role}
+                    </div>
+                    <h2 class="text-4xl font-black text-gray-800 mb-4">${char.name}</h2>
+                    <p class="text-gray-600 leading-relaxed text-lg mb-8">${char.longDescription}</p>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="p-4 bg-gray-50 rounded-2xl">
+                            <i data-lucide="heart" class="w-5 h-5 mx-auto text-gray-400 mb-1"></i>
+                            <div class="font-bold text-sm">성격</div>
+                            <div class="text-xs text-gray-500">${char.trait}</div>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-2xl">
+                            <i data-lucide="star" class="w-5 h-5 mx-auto text-gray-400 mb-1"></i>
+                            <div class="font-bold text-sm">특기</div>
+                            <div class="text-xs text-gray-500">${char.skill}</div>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-2xl">
+                            <i data-lucide="map" class="w-5 h-5 mx-auto text-gray-400 mb-1"></i>
+                            <div class="font-bold text-sm">아이템</div>
+                            <div class="text-xs text-gray-500">${char.item}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+            lucide.createIcons(); // 모달 내 아이콘 생성
+        }
+
+        function closeModal() {
+            overlay.classList.add('hidden');
+            overlay.classList.remove('flex');
+        }
+
+        // 오버레이 클릭 시 닫기
+        overlay.onclick = closeModal;
+
+        // 아이콘 초기화
+        lucide.createIcons();
+    </script>
+</body>
+</html>

@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>쿼카의 감성 언어 아뜰리에</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @font-face {
+            font-family: 'HancomMalangMalang-Regular';
+            src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/2403@1.0/HancomMalangMalang-Regular.woff2') format('woff2');
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        body {
+            font-family: 'HancomMalangMalang-Regular', sans-serif;
+            background-color: #FDF8F2;
+            color: #4A3F35;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .quokka-card {
+            background: white;
+            border-radius: 2rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+            border: 1px solid #E8DCC4;
+        }
+
+        .btn-primary {
+            background-color: #D4A373;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: #BC8A5F;
+            transform: translateY(-2px);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .option-card {
+            border: 2px solid #F3E9DC;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .option-card.selected {
+            border-color: #D4A373;
+            background-color: #FFFBF5;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .progress-bar {
+            height: 6px;
+            background-color: #F3E9DC;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: #D4A373;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        textarea {
+            scrollbar-width: thin;
+            scrollbar-color: #D4A373 #F3E9DC;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            border: 4px solid #F3E9DC;
+            border-top: 4px solid #D4A373;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8 flex flex-col items-center">
+
+    <header class="max-w-2xl w-full text-center mb-8 fade-in">
+        <div class="inline-block p-2 bg-white rounded-full shadow-sm mb-4">
+            <span class="text-4xl">🐨</span>
+        </div>
+        <h1 class="text-3xl md:text-4xl font-bold text-[#8B5E3C] mb-1">쿼카의 마음 아뜰리에</h1>
+        <p class="text-[#A68A64] text-lg">몽글몽글한 당신의 진심을 들려주세요.</p>
+    </header>
+
+    <main id="app-container" class="max-w-2xl w-full quokka-card overflow-hidden relative">
+        <!-- Progress Bar (Hidden initially) -->
+        <div id="progress-container" class="progress-bar hidden">
+            <div id="progress-fill" class="progress-fill"></div>
+        </div>
+
+        <!-- Intro Section -->
+        <section id="step-intro" class="p-8 md:p-12 text-center fade-in">
+            <div class="w-32 h-32 mx-auto mb-8 bg-[#FEF3C7] rounded-full flex items-center justify-center border-4 border-white shadow-md">
+                <span class="text-6xl">✨</span>
+            </div>
+            <h2 class="text-2xl md:text-3xl font-bold mb-4 text-[#8B5E3C]">안녕! 만나서 정말 반가워요.</h2>
+            <p class="mb-10 text-[#7C6A58] text-lg leading-relaxed">
+                우리는 오늘 아주 특별한 이야기를 만들 거예요.<br>
+                쿼카가 준비한 보기를 골라도 좋고,<br>
+                당신만의 비밀스러운 대답을 직접 적어주셔도 좋아요.
+            </p>
+            <button onclick="startQuiz()" class="w-full py-5 btn-primary text-white rounded-2xl font-bold text-xl flex items-center justify-center gap-2">
+                대화 시작하기 <span>➜</span>
+            </button>
+        </section>
+
+        <!-- Quiz Section -->
+        <section id="step-quiz" class="p-6 md:p-10 hidden">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-2 text-[#D4A373]">
+                    <span id="quiz-icon" class="text-xl">🍲</span>
+                    <span id="quiz-category" class="text-sm font-bold uppercase tracking-widest">Food</span>
+                </div>
+                <span id="quiz-step-num" class="text-sm font-medium text-[#A68A64] bg-[#FDF8F2] px-3 py-1 rounded-full">1 / 4</span>
+            </div>
+            
+            <h2 id="quiz-question" class="text-xl md:text-2xl font-bold mb-8 text-[#5C4D3C] leading-snug">질문 텍스트가 들어갑니다.</h2>
+
+            <div id="options-container" class="grid grid-cols-1 gap-3 mb-6">
+                <!-- Options will be injected here -->
+            </div>
+
+            <!-- Custom Input Area -->
+            <div id="custom-input-wrapper" onclick="selectCustom()" class="p-5 rounded-2xl border-2 border-[#F3E9DC] hover:border-[#E8DCC4] transition-all cursor-pointer mb-6">
+                <div class="flex items-center gap-4 mb-4">
+                    <div id="custom-icon-box" class="w-10 h-10 rounded-full bg-[#F3E9DC] text-[#8B5E3C] flex items-center justify-center flex-shrink-0 transition-colors">
+                        ✎
+                    </div>
+                    <div class="font-bold text-lg text-[#5C4D3C]">다른 대답을 직접 입력할래요</div>
+                </div>
+                <textarea id="quiz-custom-text" placeholder="여기에 입력해주세요..." class="w-full h-24 p-4 rounded-xl border border-[#F3E9DC] bg-white focus:border-[#D4A373] outline-none text-base text-[#4A3F35] resize-none placeholder:text-[#C4B5A5]"></textarea>
+            </div>
+
+            <button id="next-btn" onclick="handleNext()" disabled class="w-full py-5 rounded-2xl font-bold text-lg shadow-md flex items-center justify-center gap-2 bg-gray-200 text-gray-400 cursor-not-allowed transition-all">
+                다음 질문으로 <span>➜</span>
+            </button>
+        </section>
+
+        <!-- Final Message Section -->
+        <section id="step-final" class="p-6 md:p-10 hidden">
+            <div class="flex items-center justify-between mb-8">
+                <div class="flex items-center gap-2 text-[#D4A373]">
+                    <span class="text-xl">💬</span>
+                    <span class="text-sm font-bold uppercase tracking-widest">Final Step</span>
+                </div>
+                <span class="text-sm font-medium text-[#A68A64] bg-[#FDF8F2] px-3 py-1 rounded-full">4 / 4</span>
+            </div>
+            
+            <h2 class="text-xl md:text-2xl font-bold mb-6 text-[#5C4D3C] leading-snug">
+                마지막으로, 지금 당신의 마음을<br>가장 예쁘게 나타낼 문장은 무엇인가요?
+            </h2>
+
+            <textarea id="final-message" placeholder="쿼카야, 오늘 하루 정말 수고한 나에게 응원의 한마디 해줄래?" class="w-full h-44 p-6 rounded-2xl border-2 border-[#F3E9DC] focus:border-[#D4A373] outline-none text-lg text-[#4A3F35] resize-none mb-8 placeholder:text-[#C4B5A5] shadow-inner"></textarea>
+
+            <button onclick="submitQuiz()" class="w-full py-5 btn-primary text-white rounded-2xl font-bold text-xl flex items-center justify-center gap-2 shadow-lg">
+                쿼카의 답변 보러가기 <span>✉</span>
+            </button>
+        </section>
+
+        <!-- Loading Section -->
+        <section id="step-loading" class="p-20 text-center flex flex-col items-center justify-center min-h-[500px] hidden">
+            <div class="relative mb-8 flex items-center justify-center">
+                <div class="spinner"></div>
+                <span class="absolute text-4xl">🐨</span>
+            </div>
+            <h2 class="text-2xl font-bold text-[#8B5E3C] mb-2">당신의 예쁜 진심을 읽고 있어요</h2>
+            <p class="text-[#A68A64] text-lg">쿼카가 정성껏 마음의 선물을 준비 중이에요...</p>
+        </section>
+
+        <!-- Result Section -->
+        <section id="step-result" class="p-6 md:p-10 hidden">
+            <div class="bg-[#FEF3C7] rounded-[2.5rem] p-8 mb-10 relative border border-[#FDE68A] shadow-md">
+                <div class="absolute -top-5 -left-5 bg-white p-4 rounded-full shadow-lg text-4xl border border-[#F3E9DC]">📖</div>
+                <h3 class="text-xl font-bold text-[#8B5E3C] mb-6 text-center border-b border-[#FDE68A] pb-4">우리의 이야기가 한 편의 동화가 되었어요</h3>
+                <p id="result-story" class="text-[#4A3F35] leading-relaxed italic text-xl text-center font-serif">
+                    "여기에 이야기가 표시됩니다."
+                </p>
+            </div>
+
+            <div class="mb-10 p-8 bg-[#FDF8F2] rounded-3xl border-l-8 border-[#D4A373] shadow-sm">
+                <h3 class="text-xl font-bold text-[#8B5E3C] mb-4 flex items-center gap-3">
+                    <span class="text-[#D4A373]">♥</span>
+                    쿼카의 다정한 분석
+                </h3>
+                <p id="result-analysis" class="text-[#7C6A58] leading-relaxed whitespace-pre-wrap text-lg">
+                    여기에 분석 결과가 표시됩니다.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                <div class="bg-white p-6 rounded-3xl border border-[#F3E9DC] shadow-sm flex flex-col items-center text-center">
+                    <span class="text-3xl mb-3">✨</span>
+                    <span class="text-sm font-bold text-[#A68A64] mb-2">마음 한 문장</span>
+                    <p id="res-sentence" class="text-base font-bold text-[#4A3F35] leading-tight">-</p>
+                </div>
+                <div class="bg-white p-6 rounded-3xl border border-[#F3E9DC] shadow-sm flex flex-col items-center text-center">
+                    <div id="res-color-box" class="w-12 h-12 rounded-full border-4 border-white shadow-md mb-3"></div>
+                    <span class="text-sm font-bold text-[#A68A64] mb-2">오늘의 색</span>
+                    <p id="res-color-text" class="text-base font-bold text-[#4A3F35]">-</p>
+                </div>
+                <div class="bg-white p-6 rounded-3xl border border-[#F3E9DC] shadow-sm flex flex-col items-center text-center">
+                    <span class="text-3xl mb-3">🎶</span>
+                    <span class="text-sm font-bold text-[#A68A64] mb-2">추천 음악</span>
+                    <p id="res-music" class="text-base font-bold text-[#4A3F35]">-</p>
+                </div>
+            </div>
+
+            <button onclick="resetQuiz()" class="w-full py-6 btn-primary text-white rounded-[2rem] font-bold text-xl shadow-xl flex items-center justify-center gap-3">
+                <span>↻</span> 새로운 마음으로 다시하기
+            </button>
+        </section>
+    </main>
+
+    <footer class="mt-10 text-center text-[#A68A64] text-base">
+        <p>당신의 매일이 쿼카처럼 웃는 날이 되길 바랄게요. 🌿</p>
+    </footer>
+
+    <script>
+        const apiKey = ""; // API key is handled by the environment
+
+        const quizData = [
+            {
+                id: "food",
+                category: "Food",
+                icon: "🍲",
+                question: "지금 이 순간, 당신의 마음을 채워줄 가장 기분 좋은 맛은 무엇인가요?",
+                options: [
+                    { id: 1, title: "포근한 크림 수프", desc: "추운 마음까지 녹여줄 따뜻하고 부드러운 위로의 맛" },
+                    { id: 2, title: "톡 쏘는 레몬 에이드", desc: "나른한 오후를 깨워줄 상큼하고 짜릿한 에너지의 맛" },
+                    { id: 3, title: "달콤한 초콜릿 케이크", desc: "오늘 하루 수고한 나에게 주는 가장 달콤한 보상의 맛" }
+                ],
+                placeholder: "위의 메뉴 말고 지금 딱 떠오르는 음식이 있다면 적어주세요!"
+            },
+            {
+                id: "clothing",
+                category: "Outfit",
+                icon: "👕",
+                question: "오늘 당신을 감싸줄 가장 편안한 옷차림은 어떤 느낌인가요?",
+                options: [
+                    { id: 1, title: "품이 넓은 린넨 셔츠", desc: "바람이 잘 통하고 여유로운, 자유로운 산책자의 옷" },
+                    { id: 2, title: "포근한 오버사이즈 니트", desc: "누군가 안아주는 듯한 기분이 드는 부드러운 옷" },
+                    { id: 3, title: "색감이 선명한 티셔츠", desc: "나의 존재감을 밝게 드러내는 에너제틱한 옷" }
+                ],
+                placeholder: "오늘 입고 싶은 특별한 스타일이나 색깔이 있나요?"
+            },
+            {
+                id: "play",
+                category: "Play",
+                icon: "⛺",
+                question: "오후의 숲속, 쿼카 친구들과 어떤 시간을 보내고 싶나요?",
+                options: [
+                    { id: 1, title: "금개구리와의 깊은 대화", desc: "비밀을 다 들어줄 것 같은 친구 곁에서 도란도란 이야기하기" },
+                    { id: 2, title: "소금쟁이와의 물놀이", desc: "물 위를 달리며 햇살을 따라다니는 신나는 술래잡기" },
+                    { id: 3, title: "숲속 친구들과의 피크닉", desc: "모두 모여 맛있는 것을 나눠 먹으며 웃음꽃 피우기" }
+                ],
+                placeholder: "쿼카와 함께하고 싶은 다른 특별한 활동이 있나요?"
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let answers = [];
+        let selectedOptionId = null;
+
+        function showStep(stepId) {
+            document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+            const target = document.getElementById(stepId);
+            target.classList.remove('hidden');
+            target.classList.add('fade-in');
+
+            const progressContainer = document.getElementById('progress-container');
+            if (stepId === 'step-quiz' || stepId === 'step-final') {
+                progressContainer.classList.remove('hidden');
+                updateProgress();
+            } else {
+                progressContainer.classList.add('hidden');
+            }
+        }
+
+        function updateProgress() {
+            const fill = document.getElementById('progress-fill');
+            let percentage = 0;
+            if (currentQuestionIndex < quizData.length) {
+                percentage = ((currentQuestionIndex + 0.5) / 4) * 100;
+            } else {
+                percentage = 100;
+            }
+            fill.style.width = percentage + '%';
+        }
+
+        function startQuiz() {
+            currentQuestionIndex = 0;
+            answers = [];
+            loadQuestion();
+            showStep('step-quiz');
+        }
+
+        function loadQuestion() {
+            const quiz = quizData[currentQuestionIndex];
+            selectedOptionId = null;
+            document.getElementById('quiz-icon').innerText = quiz.icon;
+            document.getElementById('quiz-category').innerText = quiz.category;
+            document.getElementById('quiz-step-num').innerText = `${currentQuestionIndex + 1} / 4`;
+            document.getElementById('quiz-question').innerText = quiz.question;
+            document.getElementById('quiz-custom-text').value = "";
+            document.getElementById('quiz-custom-text').placeholder = quiz.placeholder;
+            
+            const container = document.getElementById('options-container');
+            container.innerHTML = "";
+            
+            quiz.options.forEach(opt => {
+                const btn = document.createElement('div');
+                btn.className = "option-card p-5 rounded-2xl flex items-center gap-4 transition-all";
+                btn.innerHTML = `
+                    <div class="opt-icon-box w-10 h-10 rounded-full bg-[#F3E9DC] text-[#8B5E3C] flex items-center justify-center flex-shrink-0 transition-colors">
+                        ✨
+                    </div>
+                    <div>
+                        <div class="font-bold text-lg text-[#5C4D3C]">${opt.title}</div>
+                        <div class="text-sm text-[#A68A64]">${opt.desc}</div>
+                    </div>
+                `;
+                btn.onclick = () => selectOption(opt.id, btn);
+                container.appendChild(btn);
+            });
+
+            updateNextButton();
+            resetCustomUI();
+        }
+
+        function selectOption(id, element) {
+            selectedOptionId = id;
+            document.querySelectorAll('.option-card').forEach(el => el.classList.remove('selected'));
+            document.querySelectorAll('.opt-icon-box').forEach(el => {
+                el.classList.remove('bg-[#D4A373]', 'text-white');
+                el.classList.add('bg-[#F3E9DC]', 'text-[#8B5E3C]');
+                el.innerText = "✨";
+            });
+
+            element.classList.add('selected');
+            const iconBox = element.querySelector('.opt-icon-box');
+            iconBox.classList.remove('bg-[#F3E9DC]', 'text-[#8B5E3C]');
+            iconBox.classList.add('bg-[#D4A373]', 'text-white');
+            iconBox.innerText = "♥";
+
+            resetCustomUI();
+            updateNextButton();
+        }
+
+        function selectCustom() {
+            selectedOptionId = 'custom';
+            document.querySelectorAll('.option-card').forEach(el => el.classList.remove('selected'));
+            document.querySelectorAll('.opt-icon-box').forEach(el => {
+                el.classList.remove('bg-[#D4A373]', 'text-white');
+                el.classList.add('bg-[#F3E9DC]', 'text-[#8B5E3C]');
+                el.innerText = "✨";
+            });
+
+            const wrapper = document.getElementById('custom-input-wrapper');
+            const iconBox = document.getElementById('custom-icon-box');
+            
+            wrapper.classList.add('selected');
+            iconBox.classList.remove('bg-[#F3E9DC]', 'text-[#8B5E3C]');
+            iconBox.classList.add('bg-[#D4A373]', 'text-white');
+            
+            document.getElementById('quiz-custom-text').focus();
+            updateNextButton();
+        }
+
+        function resetCustomUI() {
+            const wrapper = document.getElementById('custom-input-wrapper');
+            const iconBox = document.getElementById('custom-icon-box');
+            wrapper.classList.remove('selected');
+            iconBox.classList.add('bg-[#F3E9DC]', 'text-[#8B5E3C]');
+            iconBox.classList.remove('bg-[#D4A373]', 'text-white');
+        }
+
+        function updateNextButton() {
+            const btn = document.getElementById('next-btn');
+            const customVal = document.getElementById('quiz-custom-text').value.trim();
+            const isDisabled = !selectedOptionId || (selectedOptionId === 'custom' && !customVal);
+            
+            btn.disabled = isDisabled;
+            if (isDisabled) {
+                btn.className = "w-full py-5 rounded-2xl font-bold text-lg shadow-md flex items-center justify-center gap-2 bg-gray-200 text-gray-400 cursor-not-allowed";
+            } else {
+                btn.className = "w-full py-5 rounded-2xl font-bold text-lg shadow-md flex items-center justify-center gap-2 bg-[#D4A373] hover:bg-[#BC8A5F] text-white";
+            }
+        }
+
+        document.getElementById('quiz-custom-text').addEventListener('input', updateNextButton);
+
+        function handleNext() {
+            const quiz = quizData[currentQuestionIndex];
+            const customVal = document.getElementById('quiz-custom-text').value.trim();
+            
+            let answer;
+            if (selectedOptionId === 'custom') {
+                answer = { category: quiz.category, isCustom: true, value: customVal, title: "직접 입력" };
+            } else {
+                const preset = quiz.options.find(o => o.id === selectedOptionId);
+                answer = { ...preset, category: quiz.category, isCustom: false, reason: customVal };
+            }
+            
+            answers.push(answer);
+
+            if (currentQuestionIndex < quizData.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion();
+            } else {
+                showStep('step-final');
+            }
+        }
+
+        function submitQuiz() {
+            const finalMsg = document.getElementById('final-message').value.trim();
+            showStep('step-loading');
+
+            setTimeout(() => {
+                const result = generateLocalResult(answers, finalMsg);
+                displayResult(result);
+            }, 1200);
+        }
+
+        function generateLocalResult(answers, finalMsg) {
+            const stories = [
+                "오늘 숲속에서 쿼카는 작은 이슬방울 하나를 발견했어요. 그 안에는 오늘 하루의 감정이 고스란히 담겨 있었죠. 쿼카는 그것을 살며시 손에 올려놓고 미소 지었어요. 당신의 마음도 꼭 그 이슬처럼, 소중하고 맑아요.",
+                "마법의 숲 한가운데, 쿼카가 나뭇잎 위에 글씨를 썼어요. 바람이 불어와 그 글씨를 들고 날아갔지만 — 괜찮아요. 마음은 이미 전해졌으니까요. 오늘 당신이 느낀 것들도 모두 소중한 이야기예요.",
+                "숲속 친구들이 모두 모여 앉아 별빛 아래 이야기를 나눴어요. 쿼카는 가장 조용히 앉아 귀를 기울였죠. '제일 잘 듣는 친구가 가장 큰 마음을 가진 거야.' 오늘 당신의 마음이 꼭 그런 것 같아요.",
+                "핍듀 잎사귀 위에 맺힌 이슬처럼, 당신의 감정은 오늘도 반짝이고 있어요. 쿼카가 살며시 옆에 앉아 말해요. '괜찮아, 네 마음은 언제나 충분해.'",
+                "스타랏이 톡 터지듯, 오늘 당신의 마음속에도 무언가 소중한 것이 피어났어요. 쿼카는 그것을 알아채고 살짝 윙크했죠. 당신은 이미 충분히 빛나고 있어요."
+            ];
+
+            const msg = finalMsg || '오늘의 나';
+            const analyses = [
+                `"${msg}"라는 문장 속에 당신의 따뜻한 마음이 담겨 있어요. 지금 이 순간 느끼는 감정을 충분히 인정해 주세요. 쿼카는 당신이 스스로에게 다정할 수 있는 사람이라는 걸 알고 있어요.`,
+                `오늘 당신의 선택들은 마음의 여유와 따뜻함을 원하고 있다는 것을 보여줘요. "${msg}"처럼, 자신을 위한 시간을 충분히 가져도 괜찮아요.`,
+                `당신의 대답 속에는 진심이 가득 담겨 있어요. "${msg}"은 오늘 하루를 특별하게 만드는 열쇠예요. 자신을 믿고 한 걸음씩 나아가요.`,
+                `세 가지 선택 모두 따뜻하고 감성적인 마음을 담고 있네요. 오늘 당신은 충분히 잘 하고 있어요. 쿼카처럼 환하게 웃는 하루가 되길 바랄게요.`
+            ];
+
+            const colorPalette = [
+                { color: "#A8D8B9", name: "민트 그린 — 치유와 평온" },
+                { color: "#FFD6A5", name: "피치 오렌지 — 따뜻함과 활기" },
+                { color: "#C9B1FF", name: "라벤더 — 감성과 상상력" },
+                { color: "#FFDDE1", name: "로즈 핑크 — 사랑과 부드러움" },
+                { color: "#B5EAD7", name: "세이지 그린 — 안정과 신뢰" }
+            ];
+
+            const musicList = [
+                "Joe Hisaishi — 'Summer' (한여름의 서정)",
+                "Norah Jones — 'Come Away with Me' (포근한 위로)",
+                "Yiruma — 'River Flows in You' (감성적인 피아노)",
+                "Ben&Ben — 'Leaves' (따뜻한 어쿠스틱)",
+                "Hozier — 'Cherry Wine' (감성 가득한 선율)"
+            ];
+
+            const sentences = [
+                "오늘의 나는 충분히 아름다워요.",
+                "지금 이 순간도, 나는 잘 해내고 있어요.",
+                "마음이 흔들릴 때도, 뿌리는 굳건해요.",
+                "작은 것에서 기쁨을 찾을 수 있는 당신은 특별해요.",
+                "쿼카처럼, 오늘도 웃음 한 번이면 충분해요."
+            ];
+
+            const idx = Math.floor(Math.random() * 5);
+            const colorIdx = Math.floor(Math.random() * colorPalette.length);
+
+            return {
+                story: stories[idx % stories.length],
+                analysis: analyses[idx % analyses.length],
+                additional: {
+                    sentence: finalMsg ? `"${finalMsg}"` : sentences[idx % sentences.length],
+                    color: colorPalette[colorIdx].color,
+                    music: musicList[idx % musicList.length]
+                }
+            };
+        }
+
+        function displayResult(res) {
+            document.getElementById('result-story').innerText = `"${res.story}"`;
+            document.getElementById('result-analysis').innerText = res.analysis;
+            document.getElementById('res-sentence').innerText = res.additional.sentence;
+            document.getElementById('res-color-text').innerText = res.additional.color;
+            document.getElementById('res-color-box').style.backgroundColor = res.additional.color;
+            document.getElementById('res-music').innerText = res.additional.music;
+            
+            showStep('step-result');
+        }
+
+        function resetQuiz() {
+            document.getElementById('final-message').value = "";
+            showStep('step-intro');
+        }
+    </script>
+</body>
+</html>

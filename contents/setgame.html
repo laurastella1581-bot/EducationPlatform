@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SET 카드 게임</title>
+    <style>
+        :root {
+            --bg-color: #f0f2f5;
+            --panel-color: #ffffff;
+            --primary-color: #4a90e2;
+            --accent-color: #f39c12;
+            --text-color: #333;
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            touch-action: manipulation;
+        }
+
+        .header {
+            width: 100%;
+            max-width: 800px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+        }
+
+        .stat-box {
+            background: var(--panel-color);
+            padding: 10px 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            font-weight: bold;
+        }
+
+        #game-container {
+            position: relative;
+            background: transparent;
+            width: 100%;
+            max-width: 800px;
+            aspect-ratio: 4 / 3;
+            margin-bottom: 20px;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            border-radius: 15px;
+            cursor: pointer;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background-color: var(--primary-color);
+            color: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        button:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background-color: var(--accent-color);
+        }
+
+        .message-box {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 14px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 100;
+        }
+
+        .show-msg {
+            opacity: 1;
+        }
+
+        /* ── 게임 시작 모달 ── */
+        .start-modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9000;
+            background: rgba(30, 27, 75, 0.72);
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .start-modal-box {
+            background: #fff;
+            border-radius: 24px;
+            padding: 36px 32px 28px;
+            max-width: 420px;
+            width: 90vw;
+            box-shadow: 0 32px 80px rgba(79, 70, 229, 0.22);
+            text-align: center;
+            animation: modalPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes modalPop {
+            from { opacity: 0; transform: scale(0.85); }
+            to   { opacity: 1; transform: scale(1); }
+        }
+
+        .start-modal-emoji {
+            font-size: 56px;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .start-modal-title {
+            font-size: 26px;
+            font-weight: 900;
+            color: #4f46e5;
+            margin-bottom: 6px;
+        }
+
+        .start-modal-sub {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .start-modal-rules {
+            background: #eef2ff;
+            border-radius: 14px;
+            padding: 16px 18px;
+            text-align: left;
+            margin-bottom: 24px;
+        }
+
+        .start-modal-rules p {
+            font-size: 12px;
+            font-weight: 700;
+            color: #4f46e5;
+            margin-bottom: 8px;
+        }
+
+        .start-modal-rules ol {
+            padding-left: 16px;
+            font-size: 12px;
+            color: #374151;
+            line-height: 1.85;
+        }
+
+        .start-modal-rules ol li {
+            margin-bottom: 2px;
+        }
+
+        .start-btn {
+            width: 100%;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 900;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            box-shadow: 0 6px 20px rgba(79, 70, 229, 0.38);
+            letter-spacing: 0.3px;
+            transition: all 0.2s;
+            transform: none;
+        }
+
+        .start-btn:hover {
+            opacity: 1;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 28px rgba(79, 70, 229, 0.45);
+        }
+
+        @media (max-width: 600px) {
+            .header { padding: 10px; }
+            .stat-box { padding: 5px 10px; font-size: 14px; }
+            button { padding: 10px 15px; font-size: 14px; }
+            .start-modal-box { padding: 28px 20px 22px; }
+            .start-modal-emoji { font-size: 44px; }
+            .start-modal-title { font-size: 22px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 게임 시작 모달 -->
+    <div id="start-modal" class="start-modal-overlay">
+        <div class="start-modal-box">
+            <span class="start-modal-emoji">🃏</span>
+            <div class="start-modal-title">셋 (SET)</div>
+            <div class="start-modal-sub">패턴 인식 카드 게임 · 6세 이상 · 1~6명</div>
+            <div class="start-modal-rules">
+                <p>📋 게임 방법</p>
+                <ol>
+                    <li>12장의 카드가 펼쳐집니다.</li>
+                    <li>카드 3장을 골라 <strong>모양·색깔·개수·채우기</strong> 4가지 속성이 각각 <strong>모두 같거나 모두 달라야</strong> 세트!</li>
+                    <li>세트를 찾으면 카드를 클릭해 선택하세요.</li>
+                    <li>세트가 없을 땐 <em>'세트 없음?'</em> 버튼을 누르면 3장이 추가됩니다.</li>
+                </ol>
+            </div>
+            <button class="start-btn" onclick="startGame()">🎮 게임 시작!</button>
+        </div>
+    </div>
+
+    <div class="header">
+        <h1>SET</h1>
+        <div class="stats">
+            <div class="stat-box">남은 카드: <span id="deck-count">81</span></div>
+            <div class="stat-box">점수: <span id="score">0</span></div>
+        </div>
+    </div>
+
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <div class="controls">
+        <button onclick="checkNoSet()">세트 없음?</button>
+        <button class="secondary" onclick="resetGame()">다시 시작</button>
+    </div>
+
+    <div id="message" class="message-box"></div>
+
+    <script>
+        /**
+         * SET 게임 규칙:
+         * 3장의 카드가 다음 4개 속성 각각에서 '모두 같거나' '모두 달라야' 세트입니다.
+         * 1. 모양 (Oval, Diamond, Squiggle)
+         * 2. 색상 (Red, Green, Purple)
+         * 3. 개수 (1, 2, 3)
+         * 4. 채우기 (Solid, Striped, Open)
+         */
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const deckCountEl = document.getElementById('deck-count');
+        const scoreEl = document.getElementById('score');
+        const messageEl = document.getElementById('message');
+
+        // 게임 상태
+        let deck = [];
+        let board = [];
+        let selectedIndices = [];
+        let score = 0;
+
+        // 상수 설정
+        const COLORS = ['#FF3E3E', '#27AE60', '#8E44AD']; // Red, Green, Purple
+        const SHAPES = ['oval', 'diamond', 'squiggle'];
+        const SHADINGS = ['solid', 'striped', 'open'];
+        const COUNTS = [1, 2, 3];
+
+        function init() {
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+            resetGame();
+            
+            canvas.addEventListener('mousedown', handlePointer);
+            canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                handlePointer(e.touches[0]);
+            });
+        }
+
+        function resizeCanvas() {
+            // 부모 컨테이너 크기에 맞춰 캔버스 해상도 조정
+            const container = document.getElementById('game-container');
+            const rect = container.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            draw();
+        }
+
+        function resetGame() {
+            deck = [];
+            board = [];
+            selectedIndices = [];
+            score = 0;
+            scoreEl.innerText = score;
+
+            // 81장의 카드 생성
+            for (let c = 0; c < 3; c++) {
+                for (let s = 0; s < 3; s++) {
+                    for (let n = 0; n < 3; n++) {
+                        for (let f = 0; f < 3; f++) {
+                            deck.push({ color: c, shape: s, count: n, shading: f });
+                        }
+                    }
+                }
+            }
+
+            // 셔플
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+
+            // 초기 12장 배치
+            for (let i = 0; i < 12; i++) {
+                board.push(deck.pop());
+            }
+
+            updateStats();
+            draw();
+        }
+
+        function updateStats() {
+            deckCountEl.innerText = deck.length;
+            scoreEl.innerText = score;
+        }
+
+        function showMessage(msg) {
+            messageEl.innerText = msg;
+            messageEl.classList.add('show-msg');
+            setTimeout(() => messageEl.classList.remove('show-msg'), 2000);
+        }
+
+        function handlePointer(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+            const grid = getGridInfo();
+            const col = Math.floor(x / grid.cellW);
+            const row = Math.floor(y / grid.cellH);
+            const index = row * grid.cols + col;
+
+            if (index < board.length) {
+                toggleSelect(index);
+            }
+        }
+
+        function toggleSelect(index) {
+            const pos = selectedIndices.indexOf(index);
+            if (pos > -1) {
+                selectedIndices.splice(pos, 1);
+            } else {
+                selectedIndices.push(index);
+            }
+
+            if (selectedIndices.length === 3) {
+                checkSetSelected();
+            }
+            draw();
+        }
+
+        function isSet(c1, c2, c3) {
+            const props = ['color', 'shape', 'count', 'shading'];
+            return props.every(prop => {
+                const sum = c1[prop] + c2[prop] + c3[prop];
+                return sum % 3 === 0;
+            });
+        }
+
+        function checkSetSelected() {
+            const cards = selectedIndices.map(i => board[i]);
+            if (isSet(cards[0], cards[1], cards[2])) {
+                score += 1;
+                showMessage("세트! 점수 획득!");
+                
+                // 보드에서 제거하고 새로운 카드 채우기
+                // 보드가 12장보다 많거나 덱이 없으면 그냥 제거만 함
+                const indicesToRemove = [...selectedIndices].sort((a, b) => b - a);
+                
+                indicesToRemove.forEach(idx => {
+                    if (board.length > 12 || deck.length === 0) {
+                        board.splice(idx, 1);
+                    } else {
+                        board[idx] = deck.pop();
+                    }
+                });
+            } else {
+                showMessage("세트가 아닙니다.");
+            }
+            selectedIndices = [];
+            updateStats();
+        }
+
+        function checkNoSet() {
+            let found = false;
+            for (let i = 0; i < board.length; i++) {
+                for (let j = i + 1; j < board.length; j++) {
+                    for (let k = j + 1; k < board.length; k++) {
+                        if (isSet(board[i], board[j], board[k])) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (found) break;
+                }
+                if (found) break;
+            }
+
+            if (found) {
+                showMessage("아직 세트가 보드에 있습니다!");
+            } else {
+                if (deck.length > 0) {
+                    showMessage("세트가 없어 3장을 추가합니다.");
+                    for (let i = 0; i < 3; i++) {
+                        if (deck.length > 0) board.push(deck.pop());
+                    }
+                } else {
+                    showMessage("게임 종료! 더 이상 세트가 없습니다.");
+                }
+            }
+            updateStats();
+            draw();
+        }
+
+        function getGridInfo() {
+            const count = board.length;
+            const cols = count > 12 ? 5 : 4;
+            const rows = Math.ceil(count / cols);
+            return {
+                cols,
+                rows,
+                cellW: canvas.width / cols,
+                cellH: canvas.height / rows
+            };
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const grid = getGridInfo();
+
+            board.forEach((card, i) => {
+                const col = i % grid.cols;
+                const row = Math.floor(i / grid.cols);
+                const x = col * grid.cellW;
+                const y = row * grid.cellH;
+                const isSelected = selectedIndices.includes(i);
+                
+                drawCard(ctx, x, y, grid.cellW, grid.cellH, card, isSelected);
+            });
+        }
+
+        function drawCard(ctx, x, y, w, h, card, isSelected) {
+            const padding = 10;
+            const cardX = x + padding;
+            const cardY = y + padding;
+            const cardW = w - padding * 2;
+            const cardH = h - padding * 2;
+
+            // 카드 배경
+            ctx.shadowBlur = isSelected ? 15 : 5;
+            ctx.shadowColor = isSelected ? 'rgba(74, 144, 226, 0.8)' : 'rgba(0,0,0,0.1)';
+            ctx.fillStyle = 'white';
+            
+            // 둥근 사각형 카드
+            drawRoundedRect(ctx, cardX, cardY, cardW, cardH, 10);
+            ctx.fill();
+            
+            if (isSelected) {
+                ctx.strokeStyle = '#4a90e2';
+                ctx.lineWidth = 4;
+                ctx.stroke();
+            }
+            
+            ctx.shadowBlur = 0; // 그림자 초기화
+
+            // 기호 그리기
+            const count = card.count + 1;
+            const color = COLORS[card.color];
+            const shape = SHAPES[card.shape];
+            const shading = SHADINGS[card.shading];
+
+            const symW = cardW * 0.7;
+            const symH = (cardH * 0.8) / 3.5;
+            const totalH = symH * count + (10 * (count - 1));
+            let startY = cardY + (cardH - totalH) / 2;
+
+            for (let i = 0; i < count; i++) {
+                drawSymbol(ctx, cardX + cardW/2 - symW/2, startY, symW, symH, color, shape, shading);
+                startY += symH + 10;
+            }
+        }
+
+        function drawSymbol(ctx, x, y, w, h, color, shape, shading) {
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+
+            if (shape === 'oval') {
+                drawRoundedRect(ctx, x, y, w, h, h/2);
+            } else if (shape === 'diamond') {
+                ctx.moveTo(x + w / 2, y);
+                ctx.lineTo(x + w, y + h / 2);
+                ctx.lineTo(x + w / 2, y + h);
+                ctx.lineTo(x, y + h / 2);
+                ctx.closePath();
+            } else if (shape === 'squiggle') {
+                // 단순화된 물결 모양 (S자)
+                const cp1x = x + w * 0.25, cp1y = y - h * 0.5;
+                const cp2x = x + w * 0.75, cp2y = y + h * 1.5;
+                ctx.moveTo(x, y + h * 0.8);
+                ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x + w, y + h * 0.2);
+                ctx.bezierCurveTo(x + w * 0.75, y + h * 1.5, x + w * 0.25, y - h * 0.5, x, y + h * 0.8);
+            }
+
+            if (shading === 'solid') {
+                ctx.fillStyle = color;
+                ctx.fill();
+            } else if (shading === 'striped') {
+                ctx.save();
+                ctx.clip();
+                ctx.beginPath();
+                for (let i = 0; i < w; i += 6) {
+                    ctx.moveTo(x + i, y);
+                    ctx.lineTo(x + i, y + h);
+                }
+                ctx.stroke();
+                ctx.restore();
+                ctx.stroke();
+            } else {
+                ctx.stroke();
+            }
+        }
+
+        function drawRoundedRect(ctx, x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.lineTo(x + w - r, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+            ctx.lineTo(x + w, y + h - r);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            ctx.lineTo(x + r, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+            ctx.lineTo(x, y + r);
+            ctx.quadraticCurveTo(x, y, x + r, y);
+            ctx.closePath();
+        }
+
+        function startGame() {
+            document.getElementById('start-modal').style.display = 'none';
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

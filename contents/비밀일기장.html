@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>비밀일기장</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    body {
+      background-image: radial-gradient(#e2e8f0 3px, transparent 3px), radial-gradient(#e2e8f0 3px, transparent 3px);
+      background-size: 50px 50px;
+      background-position: 0 0, 25px 25px;
+      background-color: #FFFDF9;
+      margin: 0; padding: 0;
+    }
+    .custom-scrollbar::-webkit-scrollbar { width: 10px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 20px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+    @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slide-in-right { from { transform: translateX(50px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes zoom-in-95 { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    @keyframes bounce { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-10px); } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .anim-fade { animation: fade-in 0.4s ease forwards; }
+    .anim-slide { animation: slide-in-right 0.4s ease forwards; }
+    .anim-zoom { animation: zoom-in-95 0.4s ease forwards; }
+    .anim-bounce { animation: bounce 1.5s infinite; }
+    .anim-spin { animation: spin 0.8s linear infinite; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const EMOTIONS = [
+      { id: 'happy',   emoji: '🌟', label: '최고',  bg: '#fef9c3', text: '#ca8a04' },
+      { id: 'sad',     emoji: '😭', label: '눈물',  bg: '#dbeafe', text: '#1d4ed8' },
+      { id: 'angry',   emoji: '🔥', label: '화나',  bg: '#fee2e2', text: '#dc2626' },
+      { id: 'lonely',  emoji: '☁️', label: '외로워', bg: '#f1f5f9', text: '#475569' },
+      { id: 'scared',  emoji: '👻', label: '무서워', bg: '#ede9fe', text: '#7c3aed' },
+      { id: 'excited', emoji: '🥳', label: '신나',  bg: '#ffedd5', text: '#ea580c' },
+      { id: 'tired',   emoji: '😴', label: '피곤',  bg: '#dcfce7', text: '#15803d' },
+      { id: 'love',    emoji: '💖', label: '사랑',  bg: '#fce7f3', text: '#be185d' },
+    ];
+
+    const STORAGE_KEY = 'bimil_diary_entries';
+
+    function loadEntries() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+      catch { return []; }
+    }
+    function saveEntries(list) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    }
+
+    const GEMINI_API_KEY = "";
+
+    async function callGemini(text, emotionLabel) {
+      const systemInstruction = `당신은 아이의 소중한 마음을 들어주는 따뜻한 멘토 '마음의 등불'입니다.
+아이의 감정(${emotionLabel})을 깊이 공감해주고, 부드러운 어머니의 말투로 답하세요.
+글자가 크게 보일 것이니 문장은 짧고 간결하게, 하지만 사랑을 듬뿍 담아 작성하세요.
+반드시 다음 JSON 구조로만 답하세요:
+{"comfort":"따뜻한 위로 (2~3문장)","advice":"다정한 지혜와 조언 (1~2문장)","mission":"내일의 행복 미션 (재미있게)","quote":"한 줄 명언"}`;
+
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text }] }],
+            systemInstruction: { parts: [{ text: systemInstruction }] },
+            generationConfig: { responseMimeType: 'application/json' }
+          })
+        }
+      );
+      if (!res.ok) throw new Error('API 오류');
+      const data = await res.json();
+      return JSON.parse(data.candidates[0].content.parts[0].text);
+    }
+
+    function App() {
+      const [entries, setEntries]           = useState(loadEntries);
+      const [diaryText, setDiaryText]       = useState('');
+      const [selectedEmotion, setSelected]  = useState('happy');
+      const [isGenerating, setGenerating]   = useState(false);
+      const [view, setView]                 = useState('write');
+      const [currentEntry, setCurrent]      = useState(null);
+      const [error, setError]               = useState(null);
+
+      const getEmotion = id => EMOTIONS.find(e => e.id === id) || EMOTIONS[0];
+
+      async function handleSave() {
+        if (!diaryText.trim()) return;
+        setGenerating(true);
+        setError(null);
+        const emo = getEmotion(selectedEmotion);
+        try {
+          let response = null;
+          if (GEMINI_API_KEY) {
+            response = await callGemini(diaryText, emo.label);
+          } else {
+            response = {
+              comfort: '네 마음을 들었어. 오늘 하루도 정말 수고했어! 💛',
+              advice: '힘든 일이 있어도 넌 충분히 잘 하고 있어.',
+              mission: '오늘 밤 좋아하는 노래 한 곡 들어보기 🎵',
+              quote: '작은 발걸음도 앞으로 나아가는 거야.'
+            };
+          }
+          const entry = {
+            id: Date.now().toString(),
+            content: diaryText,
+            emotionId: selectedEmotion,
+            response,
+            timestamp: Date.now()
+          };
+          const updated = [entry, ...entries];
+          setEntries(updated);
+          saveEntries(updated);
+          setCurrent(entry);
+          setView('detail');
+          setDiaryText('');
+        } catch {
+          setError('등불이 깜빡거려요. 잠시 후에 다시 써볼까요?');
+        } finally {
+          setGenerating(false);
+        }
+      }
+
+      function deleteEntry(id) {
+        if (!window.confirm('정말 이 추억 등불을 끌까요?')) return;
+        const updated = entries.filter(e => e.id !== id);
+        setEntries(updated);
+        saveEntries(updated);
+        setView('history');
+      }
+
+      return (
+        <div className="min-h-screen flex items-center justify-center p-2 md:p-4">
+          <div className="w-full max-w-5xl bg-white rounded-[3rem] shadow-2xl overflow-hidden border-4 border-orange-50 flex flex-col" style={{height:'95vh'}}>
+
+            {/* 헤더 */}
+            <header className="shrink-0 p-8 text-white text-center relative" style={{background:'linear-gradient(135deg,#6366f1,#a855f7,#ec4899)'}}>
+              <div className="flex justify-center mb-2">
+                <div className="p-2 bg-white/20 rounded-full backdrop-blur-md anim-bounce" style={{display:'inline-block'}}>
+                  <span style={{fontSize:'48px'}}>✨</span>
+                </div>
+              </div>
+              <h1 className="font-black tracking-tight drop-shadow-xl mb-3" style={{fontSize:'clamp(2rem,6vw,4rem)'}}>비밀일기장</h1>
+              <p className="text-white/90 font-bold italic" style={{fontSize:'clamp(0.85rem,2vw,1.2rem)'}}>지혜로 피어나는 등불, 소중한 추억이 머무는 비밀 저장소</p>
+              {view !== 'write' && (
+                <button onClick={() => setView('write')} className="absolute left-6 top-1/2 -translate-y-1/2 p-3 hover:bg-white/20 rounded-full transition-colors text-3xl">←</button>
+              )}
+            </header>
+
+            {/* 탭 */}
+            <nav className="flex bg-slate-50 border-b-4 border-slate-100 shrink-0">
+              {[['write','📖 마음 적기'],['history','🗂️ 추억 저장소']].map(([v, label]) => (
+                <button key={v} onClick={() => setView(v)}
+                  className={`flex-1 py-5 font-black flex items-center justify-center gap-2 transition-all ${
+                    (view === v || (v === 'history' && view === 'detail'))
+                    ? 'text-indigo-600 bg-white border-b-4 border-indigo-600'
+                    : 'text-slate-400 hover:bg-white/50'
+                  }`}
+                  style={{fontSize:'clamp(1rem,2.5vw,1.4rem)'}}>
+                  {label}
+                </button>
+              ))}
+            </nav>
+
+            {/* 본문 */}
+            <main className="flex-1 overflow-y-auto p-6 lg:p-10 custom-scrollbar relative" style={{background:"url('https://www.transparenttextures.com/patterns/notebook.png') repeat"}}>
+              {error && (
+                <div className="mb-6 p-5 bg-red-50 text-red-600 rounded-3xl font-bold border-2 border-red-100" style={{fontSize:'1.1rem'}}>
+                  🛡️ {error}
+                </div>
+              )}
+
+              {/* 쓰기 뷰 */}
+              {view === 'write' && (
+                <div className="anim-fade flex flex-col gap-5 h-full">
+                  <div className="relative flex-1">
+                    <textarea
+                      value={diaryText}
+                      onChange={e => setDiaryText(e.target.value)}
+                      placeholder="오늘 어떤 일이 있었니? 이곳은 오직 너와 마음 등불만 아는 비밀 공간이야. 솔직하게 적어봐..."
+                      className="w-full h-full min-h-[220px] p-8 rounded-[2.5rem] bg-white border-4 border-slate-100 focus:border-indigo-300 transition-all outline-none resize-none leading-relaxed font-medium text-slate-700 shadow-inner"
+                      style={{fontSize:'clamp(1.2rem,3vw,2rem)'}}
+                    />
+                    <div className="absolute bottom-8 right-10 text-slate-300 font-black" style={{fontSize:'1rem'}}>{diaryText.length}자의 진심</div>
+                  </div>
+
+                  {/* 감정 스티커 */}
+                  <div className="bg-white/90 backdrop-blur-sm p-5 rounded-[2rem] border-2 border-indigo-100 shadow-sm">
+                    <div className="text-center font-black text-indigo-600 mb-4" style={{fontSize:'1.1rem'}}>🎨 오늘의 마음 스티커 골라주기</div>
+                    <div className="grid gap-2" style={{gridTemplateColumns:'repeat(8,1fr)'}}>
+                      {EMOTIONS.map(e => (
+                        <button key={e.id} onClick={() => setSelected(e.id)}
+                          className="p-2 rounded-2xl transition-all flex flex-col items-center gap-1 border-2"
+                          style={{
+                            background: selectedEmotion === e.id ? e.bg : '#fff',
+                            borderColor: selectedEmotion === e.id ? '#818cf8' : '#f1f5f9',
+                            transform: selectedEmotion === e.id ? 'scale(1.12)' : 'scale(1)'
+                          }}>
+                          <span style={{fontSize:'clamp(1.3rem,3vw,2.2rem)'}}>{e.emoji}</span>
+                          <span style={{fontSize:'0.6rem', fontWeight:900, color: selectedEmotion === e.id ? e.text : '#94a3b8'}}>{e.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button onClick={handleSave} disabled={isGenerating || !diaryText.trim()}
+                    className="w-full rounded-[2.5rem] flex items-center justify-center gap-4 text-white font-black shadow-2xl transition-all"
+                    style={{
+                      padding:'clamp(1rem,3vw,2.5rem) 0',
+                      fontSize:'clamp(1.2rem,3vw,2.2rem)',
+                      background: isGenerating || !diaryText.trim() ? '#cbd5e1' : 'linear-gradient(135deg,#4f46e5,#7c3aed)',
+                      cursor: isGenerating || !diaryText.trim() ? 'not-allowed' : 'pointer'
+                    }}>
+                    {isGenerating
+                      ? <><span className="anim-spin inline-block" style={{width:'2rem',height:'2rem',border:'6px solid rgba(255,255,255,0.3)',borderTopColor:'#fff',borderRadius:'50%'}}></span> 등불을 켜고 있어...</>
+                      : <>✉️ 일기 저장하고 등불 켜기</>
+                    }
+                  </button>
+                </div>
+              )}
+
+              {/* 히스토리 뷰 */}
+              {view === 'history' && (
+                <div className="anim-slide grid grid-cols-1 gap-6 pb-10">
+                  {entries.length === 0 ? (
+                    <div className="text-center py-32 text-slate-400">
+                      <div style={{fontSize:'5rem'}}>🗂️</div>
+                      <p className="font-black mt-4" style={{fontSize:'clamp(1.2rem,3vw,2rem)'}}>아직 서랍이 비어있어!</p>
+                      <p className="mt-2" style={{fontSize:'clamp(0.9rem,2vw,1.3rem)'}}>네 이야기를 들려주면 등불이 켜질 거야.</p>
+                    </div>
+                  ) : entries.map(item => {
+                    const emo = getEmotion(item.emotionId);
+                    return (
+                      <div key={item.id} onClick={() => { setCurrent(item); setView('detail'); }}
+                        className="bg-white border-4 border-slate-50 rounded-[2.5rem] hover:border-indigo-200 hover:shadow-2xl transition-all cursor-pointer"
+                        style={{padding:'clamp(1.2rem,3vw,2.5rem)'}}>
+                        <div className="flex justify-between items-center mb-5">
+                          <div className="flex items-center gap-5">
+                            <div className="rounded-[1.5rem] flex items-center justify-center shadow-sm" style={{width:'clamp(3rem,7vw,5rem)',height:'clamp(3rem,7vw,5rem)',background:emo.bg,fontSize:'clamp(1.5rem,4vw,2.5rem)'}}>
+                              {emo.emoji}
+                            </div>
+                            <div>
+                              <div className="text-slate-400 font-black" style={{fontSize:'0.9rem'}}>
+                                {new Date(item.timestamp).toLocaleDateString('ko-KR', {year:'numeric',month:'long',day:'numeric',weekday:'short'})}
+                              </div>
+                              <div className="font-black" style={{fontSize:'1.1rem', color:emo.text}}>#{emo.label}</div>
+                            </div>
+                          </div>
+                          <span style={{fontSize:'2rem', color:'#cbd5e1'}}>›</span>
+                        </div>
+                        <p className="text-slate-700 font-bold leading-relaxed" style={{fontSize:'clamp(1rem,2.5vw,1.5rem)', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden'}}>
+                          {item.content}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* 상세 뷰 */}
+              {view === 'detail' && currentEntry && (
+                <div className="anim-zoom space-y-8 pb-10">
+                  {/* 내 일기 */}
+                  <div className="bg-white rounded-[3rem] border-4 border-slate-50 shadow-lg relative" style={{padding:'clamp(1.5rem,4vw,3rem)'}}>
+                    <div className="absolute -top-5 left-12 bg-white border-2 border-indigo-100 px-6 py-2 rounded-full font-black text-indigo-600 flex items-center gap-3 shadow-md" style={{fontSize:'1rem'}}>
+                      <span>{getEmotion(currentEntry.emotionId).emoji}</span> 나의 일기
+                    </div>
+                    <button onClick={() => deleteEntry(currentEntry.id)}
+                      className="absolute top-6 right-8 text-slate-200 hover:text-red-400 transition-colors text-2xl">
+                      🗑️
+                    </button>
+                    <p className="text-slate-700 font-bold leading-relaxed whitespace-pre-wrap pt-6" style={{fontSize:'clamp(1.1rem,3vw,2rem)'}}>
+                      {currentEntry.content}
+                    </p>
+                    <div className="mt-6 text-slate-300 font-black text-right" style={{fontSize:'0.85rem'}}>
+                      {new Date(currentEntry.timestamp).toLocaleString('ko-KR')} 기록함
+                    </div>
+                  </div>
+
+                  {/* AI 응답 */}
+                  <div className="rounded-[3rem] border-4 border-indigo-100 shadow-xl" style={{background:'linear-gradient(135deg,#eef2ff,#f5f3ff,#fdf4ff)',padding:'clamp(1.5rem,4vw,3rem)'}}>
+                    <div className="flex items-center gap-3 text-indigo-700 font-black mb-8" style={{fontSize:'clamp(1.2rem,3vw,2rem)'}}>
+                      ✨ 등불의 따뜻한 조언
+                    </div>
+                    <div className="space-y-6">
+                      <section>
+                        <h4 className="text-indigo-400 uppercase tracking-widest mb-3 font-black" style={{fontSize:'0.75rem'}}>따뜻한 토닥임</h4>
+                        <p className="text-slate-800 italic font-bold leading-relaxed" style={{fontSize:'clamp(1rem,2.5vw,1.6rem)'}}>"{currentEntry.response.comfort}"</p>
+                      </section>
+                      <section className="bg-white/70 backdrop-blur-sm rounded-[2rem] border-2 border-white shadow-sm" style={{padding:'clamp(1rem,3vw,2.5rem)'}}>
+                        <h4 className="text-purple-400 uppercase tracking-widest mb-3 font-black" style={{fontSize:'0.75rem'}}>등불의 지혜</h4>
+                        <p className="text-slate-800 font-bold leading-relaxed" style={{fontSize:'clamp(1rem,2.5vw,1.6rem)'}}>{currentEntry.response.advice}</p>
+                      </section>
+                      <section className="text-white rounded-[2rem] shadow-2xl text-center" style={{background:'linear-gradient(135deg,#4f46e5,#7c3aed)',padding:'clamp(1rem,3vw,2.5rem)'}}>
+                        <h4 className="text-indigo-200 uppercase tracking-widest mb-3 font-black" style={{fontSize:'0.75rem'}}>행복한 내일 미션</h4>
+                        <p className="font-black leading-tight" style={{fontSize:'clamp(1.1rem,3vw,2.5rem)'}}>🚀 {currentEntry.response.mission}</p>
+                      </section>
+                      <div className="text-center italic text-slate-400 font-bold border-t-4 border-indigo-100/50 pt-6" style={{fontSize:'clamp(0.9rem,2vw,1.2rem)'}}>
+                        "{currentEntry.response.quote}"
+                      </div>
+                    </div>
+                  </div>
+
+                  <button onClick={() => setView('history')}
+                    className="w-full bg-slate-100 text-slate-500 font-black hover:bg-slate-200 transition-colors rounded-[2.5rem]"
+                    style={{padding:'clamp(1rem,3vw,2rem)', fontSize:'clamp(1rem,2.5vw,1.5rem)'}}>
+                    추억 서랍으로 돌아가기
+                  </button>
+                </div>
+              )}
+            </main>
+
+            {/* 푸터 */}
+            <footer className="px-6 py-4 bg-white border-t-4 border-slate-50 flex items-center justify-between shrink-0">
+              <p className="text-slate-300 font-black" style={{fontSize:'clamp(0.75rem,1.8vw,1rem)'}}>🛡️ 등불처럼 환한 너의 미래를 언제나 응원할게!</p>
+              <button
+                onClick={() => { try { window.parent.closeDiaryModal(); } catch(e) { window.close(); } }}
+                className="flex items-center gap-2 font-black text-white rounded-2xl transition-all hover:opacity-80"
+                style={{background:'linear-gradient(135deg,#6366f1,#a855f7)',padding:'8px 20px',fontSize:'clamp(0.8rem,1.8vw,1rem)',border:'none',cursor:'pointer'}}>
+                ✕ 나가기
+              </button>
+            </footer>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

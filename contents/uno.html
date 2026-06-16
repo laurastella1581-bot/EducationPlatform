@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>대인관계지능 UP! 우노 게임</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
+        
+        body {
+            font-family: 'Jua', sans-serif;
+            background-color: #1a202c;
+            color: white;
+            overflow: hidden;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .card {
+            width: 80px;
+            height: 120px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            user-select: none;
+            border: 3px solid white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .card:hover {
+            transform: translateY(-10px) scale(1.05);
+            z-index: 50;
+        }
+
+        .card.red { background-color: #e53e3e; }
+        .card.blue { background-color: #3182ce; }
+        .card.green { background-color: #38a169; }
+        .card.yellow { background-color: #ecc94b; color: #2d3748; }
+        .card.black { background-color: #2d3748; }
+
+        .card-inner {
+            width: 80%;
+            height: 80%;
+            border: 2px solid rgba(255,255,255,0.5);
+            border-radius: 50% / 30%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ai-hand .card {
+            width: 40px;
+            height: 60px;
+            font-size: 10px;
+            background-image: linear-gradient(135deg, #2d3748 25%, #1a202c 25%, #1a202c 50%, #2d3748 50%, #2d3748 75%, #1a202c 75%, #1a202c 100%);
+            background-size: 20px 20px;
+        }
+
+        .mission-overlay {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .turn-indicator {
+            transition: all 0.3s ease;
+        }
+
+        .active-player {
+            box-shadow: 0 0 20px #4fd1c5;
+            border-color: #4fd1c5;
+        }
+
+        /* 시작 모달 */
+        .start-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.82);
+            z-index: 300;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            backdrop-filter: blur(5px);
+        }
+        .start-modal.hidden { display: none; }
+        .start-modal-box {
+            background: #1e293b;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 420px;
+            overflow: hidden;
+            border: 4px solid #06b6d4;
+            box-shadow: 0 0 40px rgba(6,182,212,0.3);
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn {
+            from { transform: scale(0.7); opacity: 0; }
+            to   { transform: scale(1);   opacity: 1; }
+        }
+        .uno-header {
+            background: linear-gradient(135deg, #e53e3e 0%, #ecc94b 33%, #38a169 66%, #3182ce 100%);
+            padding: 1.5rem;
+            text-align: center;
+        }
+        .rule-item {
+            background: rgba(255,255,255,0.05);
+            border-left: 4px solid #06b6d4;
+            border-radius: 8px;
+            padding: 0.5rem 0.8rem;
+            margin: 0.35rem 0;
+            font-size: 0.9rem;
+            color: #a5f3fc;
+            font-weight: 600;
+        }
+        .uno-start-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #e53e3e, #ecc94b);
+            color: white;
+            font-size: 1.3rem;
+            font-weight: 900;
+            padding: 0.9rem;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            box-shadow: 0 5px 0 #92400e;
+            transition: all 0.15s;
+            font-family: 'Jua', sans-serif;
+        }
+        .uno-start-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 1px 0 #92400e;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-between p-4">
+
+    <!-- 게임 시작 모달 -->
+    <div id="startModal" class="start-modal">
+        <div class="start-modal-box">
+            <div class="uno-header">
+                <div style="font-size:3rem;margin-bottom:0.2rem;">🃏</div>
+                <h2 style="font-size:2.2rem;font-weight:900;color:white;text-shadow:2px 2px 4px rgba(0,0,0,0.4);margin:0;">UNO!</h2>
+                <p style="color:rgba(255,255,255,0.9);font-size:0.85rem;margin-top:4px;">6세 이상 · 2~10명 · 대인관계 카드게임</p>
+            </div>
+            <div style="padding:1.2rem 1.5rem;">
+                <p style="font-size:0.75rem;font-weight:900;color:#06b6d4;text-transform:uppercase;letter-spacing:0.1em;text-align:center;margin-bottom:0.8rem;">게임 방법</p>
+                <div class="rule-item">1️⃣ 카드 7장씩 받고 나머지는 더미로 쌓습니다.</div>
+                <div class="rule-item">2️⃣ 같은 색 또는 같은 숫자의 카드를 냅니다.</div>
+                <div class="rule-item">3️⃣ 낼 카드가 없으면 더미에서 1장을 뽑습니다.</div>
+                <div class="rule-item">4️⃣ 카드가 1장 남으면 "우노!" 를 외치세요!</div>
+                <div class="rule-item">5️⃣ 소통 미션 카드로 친구와 더 가까워져요 🤝</div>
+            </div>
+            <div style="padding:0 1.5rem 1.5rem;">
+                <button class="uno-start-btn" onclick="startGame()">🃏 게임 시작!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI 플레이어 영역 -->
+    <div class="w-full flex justify-around items-start">
+        <div id="player1" class="flex flex-col items-center p-2 rounded-lg turn-indicator">
+            <span class="mb-2">친구 A</span>
+            <div id="hand1" class="ai-hand flex -space-x-4"></div>
+        </div>
+        <div id="player2" class="flex flex-col items-center p-2 rounded-lg turn-indicator">
+            <span class="mb-2">친구 B</span>
+            <div id="hand2" class="ai-hand flex -space-x-4"></div>
+        </div>
+        <div id="player3" class="flex flex-col items-center p-2 rounded-lg turn-indicator">
+            <span class="mb-2">친구 C</span>
+            <div id="hand3" class="ai-hand flex -space-x-4"></div>
+        </div>
+    </div>
+
+    <!-- 중앙 덱 및 버린 카드 -->
+    <div class="flex flex-col items-center space-y-4">
+        <div class="flex items-center space-x-12">
+            <!-- 덱 -->
+            <div id="deck" onclick="drawCardFromDeck()" class="card black cursor-pointer flex-col">
+                <div class="text-xs">더미</div>
+                <div class="text-xl">UNO</div>
+            </div>
+            
+            <!-- 현재 낸 카드 -->
+            <div id="discard-pile" class="relative">
+                <!-- 여기에 카드가 동적으로 생성됨 -->
+            </div>
+        </div>
+        
+        <div id="game-status" class="bg-black/50 px-6 py-2 rounded-full text-lg text-cyan-300 border border-cyan-500/30">
+            당신의 차례입니다!
+        </div>
+        
+        <div id="current-color-info" class="text-sm font-bold opacity-80"></div>
+    </div>
+
+    <!-- 미션 팝업 (대인관계지능 요소) -->
+    <div id="mission-box" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6">
+        <div class="bg-white text-gray-800 p-8 rounded-2xl max-w-sm w-full text-center shadow-2xl mission-overlay border-4 border-cyan-400">
+            <h2 class="text-2xl font-bold mb-4 text-cyan-600">🤝 소통 미션!</h2>
+            <p id="mission-text" class="text-xl mb-6 leading-relaxed">상대방의 눈을 보고 칭찬 한 마디를 건네세요!</p>
+            <button onclick="closeMission()" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-8 rounded-full transition-colors">
+                미션 완료 & 다음 차례
+            </button>
+        </div>
+    </div>
+
+    <!-- 색상 선택 팝업 (와일드 카드) -->
+    <div id="color-picker" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6">
+        <div class="bg-gray-800 p-8 rounded-2xl text-center shadow-2xl">
+            <h2 class="text-xl font-bold mb-6">변경할 색상을 선택하세요</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="selectColor('red')" class="w-20 h-20 bg-red-500 rounded-lg hover:scale-110 transition-transform border-2 border-white"></button>
+                <button onclick="selectColor('blue')" class="w-20 h-20 bg-blue-500 rounded-lg hover:scale-110 transition-transform border-2 border-white"></button>
+                <button onclick="selectColor('green')" class="w-20 h-20 bg-green-500 rounded-lg hover:scale-110 transition-transform border-2 border-white"></button>
+                <button onclick="selectColor('yellow')" class="w-20 h-20 bg-yellow-500 rounded-lg hover:scale-110 transition-transform border-2 border-white"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 내 핸드 -->
+    <div class="w-full flex flex-col items-center pb-8">
+        <div class="mb-2 text-cyan-400 text-sm">나의 카드 (클릭해서 내기)</div>
+        <div id="my-hand" class="flex flex-wrap justify-center -space-x-4 max-w-full overflow-x-auto p-4"></div>
+    </div>
+
+    <script>
+        // 게임 상태 설정
+        const colors = ['red', 'blue', 'green', 'yellow'];
+        const values = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'Skip', 'Reverse', 'Draw2'];
+        const specialMissions = [
+            "오른쪽 사람에게 최근에 고마웠던 점 말하기",
+            "모든 플레이어와 하이파이브 하기",
+            "최근에 읽은 책이나 본 영화 추천하기",
+            "지금 기분이 어떤지 단어로 표현하기",
+            "왼쪽 사람에게 멋진 칭찬 한 마디 하기",
+            "어제 있었던 즐거운 일 한 가지 공유하기",
+            "상대방의 이야기를 10초간 경청하기",
+            "따뜻한 미소로 모두를 바라보기"
+        ];
+
+        let deck = [];
+        let discardPile = [];
+        let players = [[], [], [], []]; // 0: 나, 1~3: AI
+        let currentPlayer = 0;
+        let gameDirection = 1; // 1: 순방향, -1: 역방향
+        let currentColor = "";
+        let currentStatus = "";
+        let isWaitingForMission = false;
+
+        // 초기화
+        function initGame() {
+            createDeck();
+            shuffleDeck();
+            dealCards();
+            
+            // 첫 카드 놓기 (숫자여야 함)
+            let firstCard;
+            do {
+                firstCard = deck.pop();
+                if (firstCard.color === 'black') deck.unshift(firstCard);
+            } while (firstCard.color === 'black');
+            
+            discardPile.push(firstCard);
+            currentColor = firstCard.color;
+            
+            updateUI();
+        }
+
+        function createDeck() {
+            deck = [];
+            colors.forEach(color => {
+                values.forEach(val => {
+                    deck.push({ color, value: val });
+                    if (val !== '0') deck.push({ color, value: val });
+                });
+            });
+            for (let i = 0; i < 4; i++) {
+                deck.push({ color: 'black', value: 'Wild' });
+                deck.push({ color: 'black', value: '+4' });
+            }
+        }
+
+        function shuffleDeck() {
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+        }
+
+        function dealCards() {
+            players = [[], [], [], []];
+            for (let i = 0; i < 7; i++) {
+                for (let j = 0; j < 4; j++) {
+                    players[j].push(deck.pop());
+                }
+            }
+        }
+
+        // 카드 렌더링 함수
+        function createCardElement(card, isHidden = false, onClick = null) {
+            const div = document.createElement('div');
+            div.className = `card ${card.color}`;
+            if (onClick) div.onclick = onClick;
+            
+            if (isHidden) {
+                div.className = `card black opacity-80`;
+                div.innerHTML = `<div class="card-inner text-xs">UNO</div>`;
+            } else {
+                let displayValue = card.value;
+                if (card.value === 'Draw2') displayValue = '+2';
+                if (card.value === 'Wild') displayValue = 'W';
+                if (card.value === '+4') displayValue = '+4';
+                
+                div.innerHTML = `<div class="card-inner">${displayValue}</div>`;
+            }
+            return div;
+        }
+
+        function updateUI() {
+            // 내 핸드 업데이트
+            const myHandEl = document.getElementById('my-hand');
+            myHandEl.innerHTML = '';
+            players[0].sort((a, b) => a.color.localeCompare(b.color)).forEach((card, index) => {
+                myHandEl.appendChild(createCardElement(card, false, () => playCard(0, index)));
+            });
+
+            // AI 핸드 업데이트 (개수만 표시)
+            for (let i = 1; i <= 3; i++) {
+                const aiHandEl = document.getElementById(`hand${i}`);
+                aiHandEl.innerHTML = '';
+                players[i].forEach(() => {
+                    aiHandEl.appendChild(createCardElement({ color: 'black' }, true));
+                });
+                
+                // 턴 표시
+                const playerContainer = document.getElementById(`player${i}`);
+                if (currentPlayer === i) playerContainer.classList.add('active-player');
+                else playerContainer.classList.remove('active-player');
+            }
+
+            // 버린 카드 더미 업데이트
+            const discardPileEl = document.getElementById('discard-pile');
+            discardPileEl.innerHTML = '';
+            const topCard = discardPile[discardPile.length - 1];
+            discardPileEl.appendChild(createCardElement(topCard));
+
+            // 상태 텍스트
+            const statusEl = document.getElementById('game-status');
+            const colorInfoEl = document.getElementById('current-color-info');
+            
+            const colorNames = { red: '빨강', blue: '파랑', green: '초록', yellow: '노랑', black: '검정' };
+            colorInfoEl.textContent = `현재 색상: ${colorNames[currentColor]}`;
+            
+            if (currentPlayer === 0) {
+                statusEl.textContent = "당신의 차례입니다! 낼 카드를 선택하세요.";
+                statusEl.classList.replace('text-gray-400', 'text-cyan-300');
+            } else {
+                statusEl.textContent = `친구 ${String.fromCharCode(64 + currentPlayer)}의 차례입니다...`;
+                statusEl.classList.replace('text-cyan-300', 'text-gray-400');
+            }
+        }
+
+        function playCard(playerIdx, cardIdx) {
+            if (currentPlayer !== playerIdx || isWaitingForMission) return;
+
+            const card = players[playerIdx][cardIdx];
+            const topCard = discardPile[discardPile.length - 1];
+
+            // 우노 규칙 검사
+            const isColorMatch = card.color === currentColor;
+            const isValueMatch = card.value === topCard.value;
+            const isWild = card.color === 'black';
+
+            if (isColorMatch || isValueMatch || isWild) {
+                // 카드 처리
+                players[playerIdx].splice(cardIdx, 1);
+                discardPile.push(card);
+                
+                if (card.color !== 'black') {
+                    currentColor = card.color;
+                }
+
+                // 특수 효과 및 미션
+                handleSpecialCard(card);
+            } else {
+                if (playerIdx === 0) showStatusMessage("그 카드는 낼 수 없습니다!");
+            }
+        }
+
+        function handleSpecialCard(card) {
+            let missionTriggered = false;
+
+            if (card.value === 'Skip') {
+                nextTurn(); 
+                showMission("상대방의 말을 가로막지 않고 끝까지 듣는 '경청'의 중요성을 생각해보세요!");
+                missionTriggered = true;
+            } else if (card.value === 'Reverse') {
+                gameDirection *= -1;
+                showMission("관계의 방향을 바꾸듯, 오늘은 평소보다 더 먼저 인사해볼까요?");
+                missionTriggered = true;
+            } else if (card.value === 'Draw2') {
+                const target = getNextPlayerIndex();
+                drawCards(target, 2);
+                showMission("도움이 필요한 친구에게 먼저 손을 내밀어 본 적이 있나요? 경험을 말해주세요.");
+                missionTriggered = true;
+            } else if (card.value === 'Wild' || card.value === '+4') {
+                if (card.value === '+4') {
+                    drawCards(getNextPlayerIndex(), 4);
+                }
+                
+                if (currentPlayer === 0) {
+                    document.getElementById('color-picker').classList.remove('hidden');
+                    isWaitingForMission = true; // 색상 선택까지 멈춤
+                } else {
+                    // AI의 색상 선택
+                    const aiColors = ['red', 'blue', 'green', 'yellow'];
+                    currentColor = aiColors[Math.floor(Math.random() * 4)];
+                    showMission("새로운 색깔처럼, 새로운 친구를 사귈 때 가장 중요한 태도는 무엇일까요?");
+                    missionTriggered = true;
+                }
+            }
+
+            if (!missionTriggered && (card.value.length === 1)) {
+                // 숫자 카드일 때도 낮은 확률로 소통 미션
+                if (Math.random() > 0.7) {
+                    showMission(specialMissions[Math.floor(Math.random() * specialMissions.length)]);
+                    missionTriggered = true;
+                }
+            }
+
+            if (!missionTriggered && !isWaitingForMission) {
+                checkWinCondition();
+                nextTurn();
+            }
+            
+            updateUI();
+        }
+
+        function selectColor(color) {
+            currentColor = color;
+            document.getElementById('color-picker').classList.add('hidden');
+            isWaitingForMission = false;
+            showMission("성공적으로 색상을 바꿨습니다! 미션을 수행하며 마음의 색깔도 맞춰보세요.");
+            updateUI();
+        }
+
+        function drawCardFromDeck() {
+            if (currentPlayer !== 0 || isWaitingForMission) return;
+            
+            if (deck.length === 0) {
+                const top = discardPile.pop();
+                deck = [...discardPile];
+                shuffleDeck();
+                discardPile = [top];
+            }
+            
+            players[0].push(deck.pop());
+            updateUI();
+            
+            // 낼 카드가 없으면 자동으로 턴 넘김 (실제 게임처럼)
+            setTimeout(() => nextTurn(), 500);
+        }
+
+        function drawCards(playerIdx, count) {
+            for (let i = 0; i < count; i++) {
+                if (deck.length === 0) {
+                    const top = discardPile.pop();
+                    deck = [...discardPile];
+                    shuffleDeck();
+                    discardPile = [top];
+                }
+                players[playerIdx].push(deck.pop());
+            }
+        }
+
+        function nextTurn() {
+            currentPlayer = getNextPlayerIndex();
+            updateUI();
+            
+            if (currentPlayer !== 0) {
+                setTimeout(aiTurn, 1500);
+            }
+        }
+
+        function getNextPlayerIndex() {
+            let next = currentPlayer + gameDirection;
+            if (next > 3) next = 0;
+            if (next < 0) next = 3;
+            return next;
+        }
+
+        function aiTurn() {
+            if (currentPlayer === 0) return;
+
+            const hand = players[currentPlayer];
+            const topCard = discardPile[discardPile.length - 1];
+            
+            // 낼 수 있는 카드 찾기
+            let playableIndex = -1;
+            for (let i = 0; i < hand.length; i++) {
+                if (hand[i].color === currentColor || hand[i].value === topCard.value || hand[i].color === 'black') {
+                    playableIndex = i;
+                    break;
+                }
+            }
+
+            if (playableIndex !== -1) {
+                playCard(currentPlayer, playableIndex);
+            } else {
+                // 카드 뽑기
+                drawCards(currentPlayer, 1);
+                nextTurn();
+            }
+        }
+
+        function showMission(text) {
+            document.getElementById('mission-text').textContent = text;
+            document.getElementById('mission-box').classList.remove('hidden');
+            isWaitingForMission = true;
+        }
+
+        function closeMission() {
+            document.getElementById('mission-box').classList.add('hidden');
+            isWaitingForMission = false;
+            checkWinCondition();
+            nextTurn();
+        }
+
+        function showStatusMessage(msg) {
+            const statusEl = document.getElementById('game-status');
+            const original = statusEl.textContent;
+            statusEl.textContent = msg;
+            statusEl.classList.add('text-red-400');
+            setTimeout(() => {
+                statusEl.textContent = original;
+                statusEl.classList.remove('text-red-400');
+            }, 2000);
+        }
+
+        function checkWinCondition() {
+            players.forEach((hand, idx) => {
+                if (hand.length === 0) {
+                    const winnerName = idx === 0 ? "당신" : `친구 ${String.fromCharCode(64 + idx)}`;
+                    alert(`🎉 게임 종료! 승자는 ${winnerName}입니다!`);
+                    location.reload();
+                }
+            });
+        }
+
+        function startGame() {
+            document.getElementById('startModal').classList.add('hidden');
+            initGame();
+        }
+
+        // 초기화: 모달만 표시
+        window.onload = () => {
+            document.getElementById('startModal').classList.remove('hidden');
+        };
+    </script>
+</body>
+</html>
