@@ -1,7 +1,16 @@
 ﻿<!DOCTYPE html>
 <!-- saved from url=(0032)http://127.0.0.1:5500/index.html -->
 <html lang="ko"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  
+  <script>
+    (function () {
+      var isMobileUA = /Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      var isNarrowScreen = window.innerWidth <= 768;
+      if (isMobileUA || isNarrowScreen) {
+        location.replace('index_mobile1.html' + location.search + location.hash);
+      }
+    })();
+  </script>
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>쿼카의 모험 — 호기심 가득한 쿼카 친구들</title>
   <script src="https://cdn.tailwindcss.com"></script>
