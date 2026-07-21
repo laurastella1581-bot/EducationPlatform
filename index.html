@@ -8508,23 +8508,60 @@
       return hasBatchim ? '이' : '가';
     }
 
+    /* ── 안내 영상: 유튜브 공식 IFrame Player API로 종료 감지 (postMessage 추측 방식은 신뢰할 수 없어 교체) ── */
+    var _charGuidePlayer = null;
+    var _charGuidePendingVideoId = null;
+    var _ytApiLoading = false;
+
+    function _startCharGuideVideo(videoId) {
+      if (_charGuidePlayer && typeof _charGuidePlayer.loadVideoById === 'function') {
+        _charGuidePlayer.loadVideoById(videoId);
+        return;
+      }
+      _charGuidePlayer = new YT.Player('char-guide-video-player', {
+        videoId: videoId,
+        playerVars: { autoplay: 1, cc_load_policy: 0, cc_lang_pref: 'none' },
+        events: {
+          onReady: function (e) {
+            e.target.playVideo();
+            var el = document.getElementById('char-guide-video-player');
+            if (el) _ytKillCC(el);
+          },
+          onStateChange: function (e) {
+            if (e.data === YT.PlayerState.ENDED) closeCharGuideVideo();
+          }
+        }
+      });
+    }
+
+    function onYouTubeIframeAPIReady() {
+      if (_charGuidePendingVideoId) {
+        var vid = _charGuidePendingVideoId;
+        _charGuidePendingVideoId = null;
+        _startCharGuideVideo(vid);
+      }
+    }
+
     function openCharGuideVideo(videoId) {
-      document.getElementById('char-guide-video-player').src = 'https://www.youtube.com/embed/' + videoId + '?autoplay=1&cc_load_policy=0&cc_lang_pref=none&enablejsapi=1';
       document.getElementById('char-guide-video-modal').style.display = 'flex';
+      if (window.YT && window.YT.Player) {
+        _startCharGuideVideo(videoId);
+      } else {
+        _charGuidePendingVideoId = videoId;
+        if (!_ytApiLoading) {
+          _ytApiLoading = true;
+          var tag = document.createElement('script');
+          tag.src = 'https://www.youtube.com/iframe_api';
+          document.head.appendChild(tag);
+        }
+      }
     }
     function closeCharGuideVideo() {
       document.getElementById('char-guide-video-modal').style.display = 'none';
-      document.getElementById('char-guide-video-player').src = '';
+      if (_charGuidePlayer && typeof _charGuidePlayer.stopVideo === 'function') {
+        try { _charGuidePlayer.stopVideo(); } catch (e) {}
+      }
     }
-    /* 안내 영상이 끝나면(재생 상태 0 = ended) 자동으로 모달을 닫는다 */
-    window.addEventListener('message', function (e) {
-      var iframe = document.getElementById('char-guide-video-player');
-      if (!iframe || !iframe.src || e.source !== iframe.contentWindow) return;
-      try {
-        var data = JSON.parse(e.data);
-        if (data.event === 'onStateChange' && data.info === 0) closeCharGuideVideo();
-      } catch (err) {}
-    });
 
     function showCharGuide(type) {
       var d = CHAR_GUIDE_DATA[type];
