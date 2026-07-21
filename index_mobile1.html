@@ -1602,14 +1602,16 @@
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:0.5rem;">
 
             <!-- 피듀저장소 -->
-            <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:2px solid #86efac;border-radius:16px;padding:18px 14px;text-align:center;box-shadow:0 4px 14px rgba(134,239,172,0.25);">
+            <div onclick="openFooterInfo('pipdew')" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:2px solid #86efac;border-radius:16px;padding:18px 14px;text-align:center;box-shadow:0 4px 14px rgba(134,239,172,0.25);position:relative;cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;" onmouseenter="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 20px rgba(134,239,172,0.4)'" onmouseleave="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 14px rgba(134,239,172,0.25)'">
+              <div style="position:absolute;top:8px;right:8px;background:#16a34a;color:#fff;font-size:8px;font-weight:900;padding:2px 6px;border-radius:999px;">클릭</div>
               <div style="font-size:28px;margin-bottom:6px;">🌿</div>
               <div style="font-size:13px;font-weight:900;color:#14532d;margin-bottom:4px;">핍듀 저장소</div>
               <div style="font-size:10px;color:#166534;line-height:1.5;">핍듀와 함께<br>모은 아이템 보관</div>
             </div>
 
             <!-- 스타랏 교환소 -->
-            <div style="background:linear-gradient(135deg,#fffbeb,#fef3c7);border:2px solid #fde68a;border-radius:16px;padding:18px 14px;text-align:center;box-shadow:0 4px 14px rgba(253,230,138,0.3);">
+            <div onclick="openFooterInfo('starlat')" style="background:linear-gradient(135deg,#fffbeb,#fef3c7);border:2px solid #fde68a;border-radius:16px;padding:18px 14px;text-align:center;box-shadow:0 4px 14px rgba(253,230,138,0.3);position:relative;cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;" onmouseenter="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 20px rgba(253,230,138,0.45)'" onmouseleave="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 14px rgba(253,230,138,0.3)'">
+              <div style="position:absolute;top:8px;right:8px;background:#d97706;color:#fff;font-size:8px;font-weight:900;padding:2px 6px;border-radius:999px;">클릭</div>
               <div style="font-size:28px;margin-bottom:6px;">⭐</div>
               <div style="font-size:13px;font-weight:900;color:#92400e;margin-bottom:4px;">스타랏 교환소</div>
               <div style="font-size:10px;color:#a16207;line-height:1.5;">스타랏으로<br>특별 보상 교환</div>
@@ -6200,11 +6202,11 @@
       <div>
         <h4 style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.42);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.1);">서비스</h4>
         <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:11px;">
-          <li><a href="#" style="color:rgba(255,255,255,0.78);text-decoration:none;font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;" onmouseover="this.style.color='#FFD93D'" onmouseout="this.style.color='rgba(255,255,255,0.78)'"><span>🧩</span> 다중지능 놀이</a></li>
-          <li><a href="#" style="color:rgba(255,255,255,0.78);text-decoration:none;font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;" onmouseover="this.style.color='#FFD93D'" onmouseout="this.style.color='rgba(255,255,255,0.78)'"><span>📊</span> 성장 리포트</a></li>
-          <li><a href="#" style="color:rgba(255,255,255,0.78);text-decoration:none;font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;" onmouseover="this.style.color='#FFD93D'" onmouseout="this.style.color='rgba(255,255,255,0.78)'"><span>📓</span> 포트폴리오</a></li>
-          <li><a href="#" style="color:rgba(255,255,255,0.78);text-decoration:none;font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;" onmouseover="this.style.color='#FFD93D'" onmouseout="this.style.color='rgba(255,255,255,0.78)'"><span>🎲</span> 보드게임 추천</a></li>
-          <li><a href="#" style="color:rgba(255,255,255,0.78);text-decoration:none;font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;" onmouseover="this.style.color='#FFD93D'" onmouseout="this.style.color='rgba(255,255,255,0.78)'"><span>📖</span> 영어 동화극장</a></li>
+          <li><a href="#intelligence-grid" style="color:rgba(255,255,255,0.78);text-decoration:none;font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;" onmouseover="this.style.color='#FFD93D'" onmouseout="this.style.color='rgba(255,255,255,0.78)'"><span>🧩</span> 다중지능 놀이</a></li>
+          <li><a href="#" onclick="goToReport();return false;" style="color:rgba(255,255,255,0.78);text-decoration:none;font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;" onmouseover="this.style.color='#FFD93D'" onmouseout="this.style.color='rgba(255,255,255,0.78)'"><span>📊</span> 성장 리포트</a></li>
+          <li><a href="#portfolio" style="color:rgba(255,255,255,0.78);text-decoration:none;font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;" onmouseover="this.style.color='#FFD93D'" onmouseout="this.style.color='rgba(255,255,255,0.78)'"><span>📓</span> 포트폴리오</a></li>
+          <li><a href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});snavToggle('snav-item-3');return false;" style="color:rgba(255,255,255,0.78);text-decoration:none;font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;" onmouseover="this.style.color='#FFD93D'" onmouseout="this.style.color='rgba(255,255,255,0.78)'"><span>🎲</span> 보드게임 추천</a></li>
+          <li><a href="#theme-english-card" style="color:rgba(255,255,255,0.78);text-decoration:none;font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;" onmouseover="this.style.color='#FFD93D'" onmouseout="this.style.color='rgba(255,255,255,0.78)'"><span>📖</span> 영어 동화극장</a></li>
         </ul>
       </div>
 
@@ -6212,11 +6214,11 @@
       <div>
         <h4 style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.42);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.1);">안내</h4>
         <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:11px;">
-          <li><a href="#" style="color:rgba(255,255,255,0.78);text-decoration:none;font-size:13px;font-weight:500;" onmouseover="this.style.color='#FFD93D'" onmouseout="this.style.color='rgba(255,255,255,0.78)'">이용약관</a></li>
-          <li><a href="#" style="color:rgba(255,217,61,0.85);text-decoration:none;font-size:13px;font-weight:600;" onmouseover="this.style.color='#FFD93D'" onmouseout="this.style.color='rgba(255,217,61,0.85)'">개인정보처리방침 ★</a></li>
-          <li><a href="#" style="color:rgba(255,255,255,0.78);text-decoration:none;font-size:13px;font-weight:500;" onmouseover="this.style.color='#FFD93D'" onmouseout="this.style.color='rgba(255,255,255,0.78)'">고객센터</a></li>
-          <li><a href="#" style="color:rgba(255,255,255,0.78);text-decoration:none;font-size:13px;font-weight:500;" onmouseover="this.style.color='#FFD93D'" onmouseout="this.style.color='rgba(255,255,255,0.78)'">교구 구매 안내</a></li>
-          <li><a href="#" style="color:rgba(255,255,255,0.78);text-decoration:none;font-size:13px;font-weight:500;" onmouseover="this.style.color='#FFD93D'" onmouseout="this.style.color='rgba(255,255,255,0.78)'">도서 구입처</a></li>
+          <li><a href="#" onclick="openFooterInfo('terms');return false;" style="color:rgba(255,255,255,0.78);text-decoration:none;font-size:13px;font-weight:500;" onmouseover="this.style.color='#FFD93D'" onmouseout="this.style.color='rgba(255,255,255,0.78)'">이용약관</a></li>
+          <li><a href="#" onclick="openFooterInfo('privacy');return false;" style="color:rgba(255,217,61,0.85);text-decoration:none;font-size:13px;font-weight:600;" onmouseover="this.style.color='#FFD93D'" onmouseout="this.style.color='rgba(255,217,61,0.85)'">개인정보처리방침 ★</a></li>
+          <li><a href="#" onclick="openFooterInfo('support');return false;" style="color:rgba(255,255,255,0.78);text-decoration:none;font-size:13px;font-weight:500;" onmouseover="this.style.color='#FFD93D'" onmouseout="this.style.color='rgba(255,255,255,0.78)'">고객센터</a></li>
+          <li><a href="#" onclick="openFooterInfo('materials');return false;" style="color:rgba(255,255,255,0.78);text-decoration:none;font-size:13px;font-weight:500;" onmouseover="this.style.color='#FFD93D'" onmouseout="this.style.color='rgba(255,255,255,0.78)'">교구 구매 안내</a></li>
+          <li><a href="#" onclick="openFooterInfo('books');return false;" style="color:rgba(255,255,255,0.78);text-decoration:none;font-size:13px;font-weight:500;" onmouseover="this.style.color='#FFD93D'" onmouseout="this.style.color='rgba(255,255,255,0.78)'">도서 구입처</a></li>
         </ul>
       </div>
 
@@ -6609,6 +6611,22 @@
   </div>
 
   <!-- ══════════════════════════════════
+       모달 ⑤-2 footer 안내 정보 (이용약관 등)
+  ══════════════════════════════════ -->
+  <div id="footer-info-modal"
+       style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:10000;align-items:center;justify-content:center;backdrop-filter:blur(5px);padding:1rem;"
+       onclick="if(event.target===this)closeFooterInfo()">
+    <div style="background:#fff;border-radius:1.75rem;padding:2.25rem;max-width:560px;width:100%;max-height:82vh;overflow-y:auto;position:relative;box-shadow:0 30px 70px rgba(0,0,0,0.35);">
+      <button onclick="closeFooterInfo()"
+              style="position:absolute;top:16px;right:16px;background:#f1f5f9;border:none;color:#475569;font-size:18px;font-weight:900;width:34px;height:34px;border-radius:50%;cursor:pointer;line-height:1;"
+              onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">✕</button>
+      <div id="footer-info-icon" style="font-size:34px;margin-bottom:10px;"></div>
+      <div id="footer-info-title" style="font-size:20px;font-weight:900;color:#1e293b;margin-bottom:18px;"></div>
+      <div id="footer-info-body" style="font-size:13.5px;color:#475569;line-height:1.9;"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
        모달 ③ 쿼카의 마법송 가사
   ══════════════════════════════════ -->
   <div id="magic-song-modal"
@@ -6777,6 +6795,76 @@
     }
     function closeFooterImg() {
       document.getElementById('footer-img-modal').style.display = 'none';
+    }
+    const FOOTER_INFO = {
+      terms: {
+        icon: '📜', title: '이용약관',
+        body: `
+          <p style="margin-bottom:14px;"><strong>제1조 (목적)</strong><br>본 약관은 쿼카 놀이터(이하 "서비스")가 제공하는 놀이·학습 콘텐츠 이용과 관련하여 서비스와 이용자 간의 권리, 의무 및 책임사항을 정함을 목적으로 합니다.</p>
+          <p style="margin-bottom:14px;"><strong>제2조 (서비스 이용)</strong><br>서비스는 만 3~9세 아동의 보호자가 함께 이용하는 것을 권장하며, 콘텐츠는 교육·놀이 목적으로만 제공됩니다.</p>
+          <p style="margin-bottom:14px;"><strong>제3조 (콘텐츠 저작권)</strong><br>서비스 내 모든 이미지·영상·게임 콘텐츠의 저작권은 쿼카 놀이터에 있으며, 무단 복제 및 배포를 금합니다.</p>
+          <p><strong>제4조 (책임의 한계)</strong><br>서비스는 무료로 제공되는 학습 놀이터로, 천재지변 등 불가항력적 사유로 인한 서비스 중단에 대해서는 책임을 지지 않습니다.</p>`
+      },
+      privacy: {
+        icon: '🔒', title: '개인정보처리방침',
+        body: `
+          <p style="margin-bottom:14px;">쿼카 놀이터는 아동 이용자의 개인정보 보호를 최우선으로 생각합니다.</p>
+          <p style="margin-bottom:14px;"><strong>수집 항목</strong><br>회원가입 시 닉네임과 비밀번호만 수집하며, 이는 <strong>이용자의 브라우저(localStorage)에만 저장</strong>됩니다. 별도의 서버로 전송되거나 저장되지 않습니다.</p>
+          <p style="margin-bottom:14px;"><strong>보관 및 파기</strong><br>브라우저 저장 데이터를 삭제(캐시 삭제)하면 즉시 파기됩니다.</p>
+          <p><strong>제3자 제공</strong><br>수집한 정보는 어떠한 경우에도 제3자에게 제공하지 않습니다.</p>`
+      },
+      support: {
+        icon: '💬', title: '고객센터',
+        body: `
+          <p style="margin-bottom:14px;">이용 중 궁금한 점이나 오류를 발견하셨다면 언제든 알려주세요!</p>
+          <p style="margin-bottom:8px;">📧 이메일: <strong>support@quokkaplayforest.example</strong></p>
+          <p style="margin-bottom:8px;">💬 카카오톡 채널: 쿼카 놀이터 (운영시간 평일 10:00~18:00)</p>
+          <p style="margin-bottom:14px;">📋 자주 묻는 질문은 상단 메뉴의 게시판에서도 확인하실 수 있어요.</p>
+          <p style="color:#94a3b8;font-size:12px;">* 문의 채널은 준비 중이며, 정식 오픈 시 실제 연락처로 안내드릴 예정입니다.</p>`
+      },
+      materials: {
+        icon: '🧩', title: '교구 구매 안내',
+        body: `
+          <p style="margin-bottom:14px;">쿼카 놀이터에서 소개하는 보드게임·놀이 교구는 아래와 같은 방법으로 구매하실 수 있어요.</p>
+          <p style="margin-bottom:8px;">🏪 전국 보드게임 카페 및 완구점</p>
+          <p style="margin-bottom:8px;">🛒 온라인 쇼핑몰 (보드게임 전문 스토어)</p>
+          <p style="margin-bottom:14px;">🏛 지역 도서관·문화센터 대여 프로그램</p>
+          <p style="color:#94a3b8;font-size:12px;">* 제휴 판매처 연동은 준비 중입니다. 연동 완료 시 각 게임 소개 페이지에서 바로 구매 링크를 제공할 예정이에요.</p>`
+      },
+      books: {
+        icon: '📚', title: '도서 구입처',
+        body: `
+          <p style="margin-bottom:14px;">쿼카 놀이터의 동화·이야기 콘텐츠와 함께 보면 좋은 도서는 아래에서 만나보실 수 있어요.</p>
+          <p style="margin-bottom:8px;">📖 전국 서점 (교보문고, 영풍문고 등) 아동 도서 코너</p>
+          <p style="margin-bottom:8px;">🌐 온라인 서점</p>
+          <p style="margin-bottom:14px;">🏛 지역 도서관 아동자료실</p>
+          <p style="color:#94a3b8;font-size:12px;">* 추천 도서 목록과 구매 링크는 순차적으로 추가될 예정입니다.</p>`
+      },
+      pipdew: {
+        icon: '🌿', title: '핍듀 저장소',
+        body: `
+          <p style="margin-bottom:14px;">놀이와 학습 활동을 완료할 때마다 마법숲 열매 <strong>핍듀</strong>를 모을 수 있어요!</p>
+          <p style="margin-bottom:14px;">모은 핍듀는 이곳 저장소에 차곡차곡 쌓여서, 나만의 컬렉션으로 확인할 수 있게 될 예정이에요.</p>
+          <p style="color:#94a3b8;font-size:12px;">* 핍듀 적립 기능은 현재 준비 중입니다. 오픈되면 활동 기록과 자동으로 연동돼요.</p>`
+      },
+      starlat: {
+        icon: '⭐', title: '스타랏 교환소',
+        body: `
+          <p style="margin-bottom:14px;">활동을 통해 모은 별빛 보석 <strong>스타랏</strong>으로 특별한 보상을 교환할 수 있는 공간이에요.</p>
+          <p style="margin-bottom:14px;">배지, 캐릭터 꾸미기 아이템 등 다양한 교환 상품이 준비되고 있어요.</p>
+          <p style="color:#94a3b8;font-size:12px;">* 스타랏 교환 기능은 현재 준비 중입니다. 오픈 시 알려드릴게요!</p>`
+      }
+    };
+    function openFooterInfo(type) {
+      const data = FOOTER_INFO[type];
+      if (!data) return;
+      document.getElementById('footer-info-icon').textContent = data.icon;
+      document.getElementById('footer-info-title').textContent = data.title;
+      document.getElementById('footer-info-body').innerHTML = data.body;
+      document.getElementById('footer-info-modal').style.display = 'flex';
+    }
+    function closeFooterInfo() {
+      document.getElementById('footer-info-modal').style.display = 'none';
     }
     function openMagicSongModal() {
       document.getElementById('magic-song-modal').style.display = 'flex';
@@ -7598,65 +7686,97 @@
     </div>
   </div>
 
+  <!-- ════ 인증 모달 공통 애니메이션 ════ -->
+  <style>
+    @keyframes authModalPop { from { opacity:0; transform:translateY(14px) scale(0.97); } to { opacity:1; transform:translateY(0) scale(1); } }
+    .auth-modal-box.modal-pop { animation: authModalPop 0.28s cubic-bezier(0.16,1,0.3,1); }
+    .auth-input-wrap { position:relative; }
+    .auth-input-wrap .auth-input-icon { position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:15px; pointer-events:none; opacity:0.55; }
+    .auth-input-wrap input { padding-left:40px !important; }
+    .auth-pw-toggle { position:absolute; right:6px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:15px; padding:6px; opacity:0.5; line-height:1; }
+    .auth-pw-toggle:hover { opacity:0.9; }
+    .auth-error { font-size:11.5px; color:#dc2626; font-weight:700; margin:-6px 0 12px; min-height:14px; }
+  </style>
+
   <!-- ════ 로그인 모달 ════ -->
   <div id="login-modal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:1rem;" onclick="if(event.target===this)closeLoginModal()">
-    <div style="background:#fff;border-radius:2rem;width:100%;max-width:380px;padding:2rem;box-shadow:0 24px 60px rgba(0,0,0,0.25);" onclick="event.stopPropagation()">
-      <div style="text-align:center;margin-bottom:1.5rem;">
-        <div style="font-size:40px;margin-bottom:8px;">🐨</div>
+    <div id="login-modal-box" class="auth-modal-box" style="background:#fff;border-radius:2rem;width:100%;max-width:380px;padding:2rem;box-shadow:0 24px 60px rgba(0,0,0,0.25);position:relative;" onclick="event.stopPropagation()">
+      <button onclick="closeLoginModal()" style="position:absolute;top:1rem;right:1rem;background:#f1f5f9;border:none;width:34px;height:34px;border-radius:50%;font-size:16px;cursor:pointer;">✕</button>
+      <div style="text-align:center;margin-bottom:1.75rem;">
+        <div style="width:64px;height:64px;margin:0 auto 12px;background:linear-gradient(135deg,#10b981,#059669);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:32px;box-shadow:0 8px 20px rgba(16,185,129,0.35);">🐨</div>
         <div style="font-size:20px;font-weight:900;color:#1e293b;">쿼카 놀이터 로그인</div>
         <div style="font-size:12px;color:#94a3b8;margin-top:4px;">이름과 비밀번호를 입력해주세요</div>
       </div>
-      <div style="margin-bottom:12px;">
-        <label style="font-size:12px;font-weight:700;color:#475569;display:block;margin-bottom:6px;">👤 이름</label>
-        <input id="login-name" type="text" placeholder="예: 김쿼카" onkeydown="if(event.key==='Enter')login()"
-          style="width:100%;padding:11px 14px;border:2px solid #e2e8f0;border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;"
-          onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#e2e8f0'">
+      <div style="margin-bottom:10px;">
+        <label style="font-size:12px;font-weight:700;color:#475569;display:block;margin-bottom:6px;">이름</label>
+        <div class="auth-input-wrap">
+          <span class="auth-input-icon">👤</span>
+          <input id="login-name" type="text" placeholder="예: 김쿼카" onkeydown="if(event.key==='Enter')login()"
+            style="width:100%;padding:11px 14px;border:2px solid #e2e8f0;border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;"
+            onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#e2e8f0'">
+        </div>
       </div>
-      <div style="margin-bottom:20px;">
-        <label style="font-size:12px;font-weight:700;color:#475569;display:block;margin-bottom:6px;">🔒 비밀번호</label>
-        <input id="login-pw" type="password" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')login()"
-          style="width:100%;padding:11px 14px;border:2px solid #e2e8f0;border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;"
-          onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#e2e8f0'">
+      <div style="margin-bottom:6px;">
+        <label style="font-size:12px;font-weight:700;color:#475569;display:block;margin-bottom:6px;">비밀번호</label>
+        <div class="auth-input-wrap">
+          <span class="auth-input-icon">🔒</span>
+          <input id="login-pw" type="password" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')login()"
+            style="width:100%;padding:11px 40px 11px 14px;border:2px solid #e2e8f0;border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;"
+            onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#e2e8f0'">
+          <button type="button" class="auth-pw-toggle" onclick="_toggleAuthPw('login-pw',this)">👁️</button>
+        </div>
       </div>
-      <button onclick="login()" style="width:100%;padding:13px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:900;cursor:pointer;margin-bottom:10px;">🌿 로그인</button>
+      <div id="login-error" class="auth-error"></div>
+      <button onclick="login()" style="width:100%;padding:13px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:900;cursor:pointer;margin-bottom:10px;transition:transform 0.15s,box-shadow 0.15s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 8px 20px rgba(16,185,129,0.35)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none'">🌿 로그인</button>
       <div style="text-align:center;font-size:12px;color:#94a3b8;">아직 회원이 아닌가요?
         <span onclick="closeLoginModal();openSignupModal()" style="color:#10b981;font-weight:800;cursor:pointer;"> 회원가입 →</span>
       </div>
-      <button onclick="closeLoginModal()" style="position:absolute;top:1rem;right:1rem;background:#f1f5f9;border:none;width:34px;height:34px;border-radius:50%;font-size:16px;cursor:pointer;">✕</button>
     </div>
   </div>
 
   <!-- ════ 회원가입 모달 ════ -->
   <div id="signup-modal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:1rem;" onclick="if(event.target===this)closeSignupModal()">
-    <div style="background:#fff;border-radius:2rem;width:100%;max-width:380px;padding:2rem;box-shadow:0 24px 60px rgba(0,0,0,0.25);position:relative;" onclick="event.stopPropagation()">
-      <div style="text-align:center;margin-bottom:1.5rem;">
-        <div style="font-size:40px;margin-bottom:8px;">🌟</div>
+    <div id="signup-modal-box" class="auth-modal-box" style="background:#fff;border-radius:2rem;width:100%;max-width:380px;padding:2rem;box-shadow:0 24px 60px rgba(0,0,0,0.25);position:relative;" onclick="event.stopPropagation()">
+      <button onclick="closeSignupModal()" style="position:absolute;top:1rem;right:1rem;background:#f1f5f9;border:none;width:34px;height:34px;border-radius:50%;font-size:16px;cursor:pointer;">✕</button>
+      <div style="text-align:center;margin-bottom:1.75rem;">
+        <div style="width:64px;height:64px;margin:0 auto 12px;background:linear-gradient(135deg,#4ade80,#22c55e);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:32px;box-shadow:0 8px 20px rgba(74,222,128,0.35);">🌟</div>
         <div style="font-size:20px;font-weight:900;color:#1e293b;">쿼카 놀이터 회원가입</div>
         <div style="font-size:12px;color:#94a3b8;margin-top:4px;">이름과 비밀번호를 설정해주세요</div>
       </div>
-      <div style="margin-bottom:12px;">
-        <label style="font-size:12px;font-weight:700;color:#475569;display:block;margin-bottom:6px;">👤 이름 (닉네임)</label>
-        <input id="signup-name" type="text" placeholder="예: 김쿼카"
-          style="width:100%;padding:11px 14px;border:2px solid #e2e8f0;border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;"
-          onfocus="this.style.borderColor='#4ade80'" onblur="this.style.borderColor='#e2e8f0'">
+      <div style="margin-bottom:10px;">
+        <label style="font-size:12px;font-weight:700;color:#475569;display:block;margin-bottom:6px;">이름 (닉네임)</label>
+        <div class="auth-input-wrap">
+          <span class="auth-input-icon">👤</span>
+          <input id="signup-name" type="text" placeholder="예: 김쿼카"
+            style="width:100%;padding:11px 14px;border:2px solid #e2e8f0;border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;"
+            onfocus="this.style.borderColor='#4ade80'" onblur="this.style.borderColor='#e2e8f0'">
+        </div>
       </div>
-      <div style="margin-bottom:12px;">
-        <label style="font-size:12px;font-weight:700;color:#475569;display:block;margin-bottom:6px;">🔒 비밀번호</label>
-        <input id="signup-pw" type="password" placeholder="비밀번호 설정"
-          style="width:100%;padding:11px 14px;border:2px solid #e2e8f0;border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;"
-          onfocus="this.style.borderColor='#4ade80'" onblur="this.style.borderColor='#e2e8f0'">
+      <div style="margin-bottom:10px;">
+        <label style="font-size:12px;font-weight:700;color:#475569;display:block;margin-bottom:6px;">비밀번호</label>
+        <div class="auth-input-wrap">
+          <span class="auth-input-icon">🔒</span>
+          <input id="signup-pw" type="password" placeholder="4자 이상으로 설정"
+            style="width:100%;padding:11px 40px 11px 14px;border:2px solid #e2e8f0;border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;"
+            onfocus="this.style.borderColor='#4ade80'" onblur="this.style.borderColor='#e2e8f0'">
+          <button type="button" class="auth-pw-toggle" onclick="_toggleAuthPw('signup-pw',this)">👁️</button>
+        </div>
       </div>
-      <div style="margin-bottom:20px;">
-        <label style="font-size:12px;font-weight:700;color:#475569;display:block;margin-bottom:6px;">🔒 비밀번호 확인</label>
-        <input id="signup-pw2" type="password" placeholder="비밀번호 재입력" onkeydown="if(event.key==='Enter')signup()"
-          style="width:100%;padding:11px 14px;border:2px solid #e2e8f0;border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;"
-          onfocus="this.style.borderColor='#4ade80'" onblur="this.style.borderColor='#e2e8f0'">
+      <div style="margin-bottom:6px;">
+        <label style="font-size:12px;font-weight:700;color:#475569;display:block;margin-bottom:6px;">비밀번호 확인</label>
+        <div class="auth-input-wrap">
+          <span class="auth-input-icon">🔒</span>
+          <input id="signup-pw2" type="password" placeholder="비밀번호 재입력" onkeydown="if(event.key==='Enter')signup()"
+            style="width:100%;padding:11px 40px 11px 14px;border:2px solid #e2e8f0;border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;"
+            onfocus="this.style.borderColor='#4ade80'" onblur="this.style.borderColor='#e2e8f0'">
+          <button type="button" class="auth-pw-toggle" onclick="_toggleAuthPw('signup-pw2',this)">👁️</button>
+        </div>
       </div>
-      <button onclick="signup()" style="width:100%;padding:13px;background:linear-gradient(135deg,#4ade80,#22c55e);color:#14532d;border:none;border-radius:14px;font-size:15px;font-weight:900;cursor:pointer;margin-bottom:10px;">✨ 가입하기</button>
+      <div id="signup-error" class="auth-error"></div>
+      <button onclick="signup()" style="width:100%;padding:13px;background:linear-gradient(135deg,#4ade80,#22c55e);color:#14532d;border:none;border-radius:14px;font-size:15px;font-weight:900;cursor:pointer;margin-bottom:10px;transition:transform 0.15s,box-shadow 0.15s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 8px 20px rgba(74,222,128,0.4)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none'">✨ 가입하기</button>
       <div style="text-align:center;font-size:12px;color:#94a3b8;">이미 회원이신가요?
         <span onclick="closeSignupModal();openLoginModal()" style="color:#22c55e;font-weight:800;cursor:pointer;"> 로그인 →</span>
       </div>
-      <button onclick="closeSignupModal()" style="position:absolute;top:1rem;right:1rem;background:#f1f5f9;border:none;width:34px;height:34px;border-radius:50%;font-size:16px;cursor:pointer;">✕</button>
     </div>
   </div>
 
@@ -7849,9 +7969,25 @@
   }
   let _pendingActivity = null; // 로그인 후 자동으로 열 기록 팝업 정보
 
+  function _toggleAuthPw(inputId, btn) {
+    const el = document.getElementById(inputId);
+    if (!el) return;
+    const showing = el.type === 'text';
+    el.type = showing ? 'password' : 'text';
+    btn.textContent = showing ? '👁️' : '🙈';
+  }
+  function _replayModalPop(boxId) {
+    const el = document.getElementById(boxId);
+    if (!el) return;
+    el.classList.remove('modal-pop');
+    void el.offsetWidth;
+    el.classList.add('modal-pop');
+  }
   function openLoginModal(pendingGame, pendingCat) {
     if (pendingGame) _pendingActivity = { game: pendingGame, cat: pendingCat };
+    document.getElementById('login-error').textContent = '';
     document.getElementById('login-modal').style.display = 'flex';
+    _replayModalPop('login-modal-box');
     setTimeout(() => { const el = document.getElementById('login-name'); if(el) el.focus(); }, 100);
   }
   function closeLoginModal() {
@@ -7859,12 +7995,14 @@
     ['login-name','login-pw'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
   }
   function login() {
+    const errEl = document.getElementById('login-error');
     const name = document.getElementById('login-name').value.trim();
     const pw   = document.getElementById('login-pw').value;
-    if (!name || !pw) { alert('이름과 비밀번호를 입력해주세요! 🔒'); return; }
+    if (!name || !pw) { errEl.textContent = '이름과 비밀번호를 입력해주세요.'; return; }
     const users = JSON.parse(localStorage.getItem('quokkaUsers') || '[]');
     const found = users.find(u => u.name === name && u.password === pw);
-    if (!found) { alert('이름 또는 비밀번호가 맞지 않아요! 🔒\n아직 회원이 아니라면 회원가입을 해주세요!'); return; }
+    if (!found) { errEl.textContent = '이름 또는 비밀번호가 맞지 않아요.'; return; }
+    errEl.textContent = '';
     localStorage.setItem('quokkaCurrentUser', name);
     closeLoginModal();
     updateAuthUI();
@@ -7883,7 +8021,9 @@
     }
   }
   function openSignupModal() {
+    document.getElementById('signup-error').textContent = '';
     document.getElementById('signup-modal').style.display = 'flex';
+    _replayModalPop('signup-modal-box');
     setTimeout(() => { const el = document.getElementById('signup-name'); if(el) el.focus(); }, 100);
   }
   function closeSignupModal() {
@@ -7891,14 +8031,16 @@
     ['signup-name','signup-pw','signup-pw2'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
   }
   function signup() {
+    const errEl = document.getElementById('signup-error');
     const name = document.getElementById('signup-name').value.trim();
     const pw   = document.getElementById('signup-pw').value;
     const pw2  = document.getElementById('signup-pw2').value;
-    if (!name || !pw) { alert('이름과 비밀번호를 입력해주세요!'); return; }
-    if (pw !== pw2)  { alert('비밀번호가 일치하지 않아요! 🔒'); return; }
-    if (pw.length < 4) { alert('비밀번호는 4자 이상으로 설정해주세요!'); return; }
+    if (!name || !pw) { errEl.textContent = '이름과 비밀번호를 입력해주세요.'; return; }
+    if (pw !== pw2)  { errEl.textContent = '비밀번호가 일치하지 않아요.'; return; }
+    if (pw.length < 4) { errEl.textContent = '비밀번호는 4자 이상으로 설정해주세요.'; return; }
     const users = JSON.parse(localStorage.getItem('quokkaUsers') || '[]');
-    if (users.find(u => u.name === name)) { alert('이미 사용 중인 이름이에요! 다른 이름을 사용해주세요.'); return; }
+    if (users.find(u => u.name === name)) { errEl.textContent = '이미 사용 중인 이름이에요.'; return; }
+    errEl.textContent = '';
     users.push({ name, password: pw });
     localStorage.setItem('quokkaUsers', JSON.stringify(users));
     localStorage.setItem('quokkaCurrentUser', name);
@@ -8497,7 +8639,7 @@ var KS_SLIDES = [
 
   <script>
     var CHAR_GUIDE_DATA = {
-      logic:   { img:'characters/math-fairy1.png',    char:'수학 요정',        badge:'🔢 논리수학 지능',  color:'#f97316', bg:'#fff7ed', speech:'안녕! 나는 수학 요정이야 🧮<br>셈셈시리즈, 셋(SET), 로보77...<br>논리적 사고를 키워줄 신나는 게임들이 기다리고 있어! 함께 탐험해볼까? 🌟', btn:'🔢 논리수학 놀이 탐험하기 →', fn:'openLogicModal' },
+      logic:   { img:'마법숲의 정령이미지.png',    char:'수학 요정',        badge:'🔢 논리수학 지능',  color:'#f97316', bg:'#fff7ed', speech:'안녕! 나는 수학 요정이야 🧮<br>셈셈시리즈, 셋(SET), 로보77...<br>논리적 사고를 키워줄 신나는 게임들이 기다리고 있어! 함께 탐험해볼까? 🌟', btn:'🔢 논리수학 놀이 탐험하기 →', fn:'openLogicModal' },
       space:   { img:'characters/quokka.png',          char:'쿼카',             badge:'🎨 공간시각 지능',  color:'#7c3aed', bg:'#f5f3ff', speech:'안녕! 나는 쿼카야 🗺️<br>라비린스, 블로커스, 우봉고...<br>공간 감각과 상상력을 키워주는 게임들을 함께 탐험해보자! 🎨', btn:'🎨 공간시각 놀이 탐험하기 →', fn:'openSpaceModal' },
       lang:    { img:'characters/luna.png',            char:'북극여우 루나',    badge:'📖 언어 지능',      color:'#2563eb', bg:'#eff6ff', speech:'안녕! 나는 북극여우 루나야 📚<br>딕싯, 징고, 콘셉트...<br>말하고 듣고 표현하며 어휘력과 상상력을 키워봐! 언어의 숲으로 출발~', btn:'📖 언어 놀이 탐험하기 →', fn:'openLangModal' },
       body:    { img:'characters/louie-redpanda.png',  char:'루이',             badge:'🏃 신체운동 지능',  color:'#059669', bg:'#f0fdf4', speech:'안녕! 나는 루이야 🌲<br>젠가, 오퍼레이션, 톡톡 우드맨...<br>온몸으로 신나게 즐기는 게임들이 기다려! 같이 도전해보자~', btn:'🌲 신체운동 놀이 탐험하기 →', fn:'openBodyModal' },
@@ -8510,6 +8652,15 @@ var KS_SLIDES = [
 
     var _charGuideFn = null;
 
+    function _pickIGa(word) {
+      if (!word) return '가';
+      var lastChar = word.trim().slice(-1);
+      var code = lastChar.charCodeAt(0);
+      if (code < 0xAC00 || code > 0xD7A3) return '가';
+      var hasBatchim = (code - 0xAC00) % 28 !== 0;
+      return hasBatchim ? '이' : '가';
+    }
+
     function showCharGuide(type) {
       var d = CHAR_GUIDE_DATA[type];
       if (!d) return;
@@ -8519,7 +8670,7 @@ var KS_SLIDES = [
       badge.textContent = d.badge;
       badge.style.background = d.bg;
       badge.style.color = d.color;
-      document.getElementById('intel-char-name').textContent = d.char + '가 안내해요!';
+      document.getElementById('intel-char-name').textContent = d.char + _pickIGa(d.char) + ' 안내해요!';
       var speech = document.getElementById('intel-char-speech');
       speech.innerHTML = d.speech;
       speech.style.borderLeftColor = d.color;
