@@ -341,9 +341,12 @@
     }
 
     /* footer: 좁은 화면에서 글자가 한 글자씩 세로로 쪼개지는 것 방지 — 컬럼 수를 줄이고 결국 1열로 스택 */
-    @media (max-width: 900px) {
+    /* 190px 고정 좌우 이미지 칸이 6열 콘텐츠 폭을 먼저 잠식하므로, 좌우 이미지를 일찍(1300px) 위아래로 뺀다 */
+    @media (max-width: 1300px) {
       .footer-outer-grid { grid-template-columns: 1fr !important; }
       .footer-side-img { height: 160px !important; }
+    }
+    @media (max-width: 1000px) {
       .footer-inner-grid { grid-template-columns: repeat(2, 1fr) !important; }
     }
     @media (max-width: 560px) {
