@@ -8637,9 +8637,23 @@ var KS_SLIDES = [
     </div>
   </div>
 
+  <!-- ════ 다중지능 캐릭터 안내 영상 모달 ════ -->
+  <div id="char-guide-video-modal"
+       style="display:none;position:fixed;inset:0;z-index:10600;background:rgba(0,0,0,0.88);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:1rem;"
+       onclick="if(event.target===this)closeCharGuideVideo()">
+    <div style="position:relative;width:100%;max-width:720px;">
+      <button onclick="closeCharGuideVideo()"
+              style="position:absolute;top:-48px;right:0;background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:20px;font-weight:900;width:38px;height:38px;border-radius:50%;cursor:pointer;line-height:1;"
+              onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">✕</button>
+      <div style="border-radius:1.5rem;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.6);">
+        <iframe id="char-guide-video-player" src="" style="width:100%;aspect-ratio:16/9;display:block;background:#000;border:none;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen title="지능 안내 영상" onload="_ytKillCC(this)"></iframe>
+      </div>
+    </div>
+  </div>
+
   <script>
     var CHAR_GUIDE_DATA = {
-      logic:   { img:'마법숲의 정령이미지.png',    char:'수학 요정',        badge:'🔢 논리수학 지능',  color:'#f97316', bg:'#fff7ed', speech:'안녕! 나는 수학 요정이야 🧮<br>셈셈시리즈, 셋(SET), 로보77...<br>논리적 사고를 키워줄 신나는 게임들이 기다리고 있어! 함께 탐험해볼까? 🌟', btn:'🔢 논리수학 놀이 탐험하기 →', fn:'openLogicModal' },
+      logic:   { img:'마법숲의 정령이미지.png',    char:'수학 요정',        badge:'🔢 논리수학 지능',  color:'#f97316', bg:'#fff7ed', speech:'안녕! 나는 수학 요정이야 🧮<br>셈셈시리즈, 셋(SET), 로보77...<br>논리적 사고를 키워줄 신나는 게임들이 기다리고 있어! 함께 탐험해볼까? 🌟', btn:'🔢 논리수학 놀이 탐험하기 →', fn:'openLogicModal', video:'kJ-lzVIonrA' },
       space:   { img:'characters/quokka.png',          char:'쿼카',             badge:'🎨 공간시각 지능',  color:'#7c3aed', bg:'#f5f3ff', speech:'안녕! 나는 쿼카야 🗺️<br>라비린스, 블로커스, 우봉고...<br>공간 감각과 상상력을 키워주는 게임들을 함께 탐험해보자! 🎨', btn:'🎨 공간시각 놀이 탐험하기 →', fn:'openSpaceModal' },
       lang:    { img:'characters/luna.png',            char:'북극여우 루나',    badge:'📖 언어 지능',      color:'#2563eb', bg:'#eff6ff', speech:'안녕! 나는 북극여우 루나야 📚<br>딕싯, 징고, 콘셉트...<br>말하고 듣고 표현하며 어휘력과 상상력을 키워봐! 언어의 숲으로 출발~', btn:'📖 언어 놀이 탐험하기 →', fn:'openLangModal' },
       body:    { img:'characters/louie-redpanda.png',  char:'루이',             badge:'🏃 신체운동 지능',  color:'#059669', bg:'#f0fdf4', speech:'안녕! 나는 루이야 🌲<br>젠가, 오퍼레이션, 톡톡 우드맨...<br>온몸으로 신나게 즐기는 게임들이 기다려! 같이 도전해보자~', btn:'🌲 신체운동 놀이 탐험하기 →', fn:'openBodyModal' },
@@ -8661,11 +8675,30 @@ var KS_SLIDES = [
       return hasBatchim ? '이' : '가';
     }
 
+    function openCharGuideVideo(videoId) {
+      document.getElementById('char-guide-video-player').src = 'https://www.youtube.com/embed/' + videoId + '?autoplay=1&cc_load_policy=0&cc_lang_pref=none&enablejsapi=1';
+      document.getElementById('char-guide-video-modal').style.display = 'flex';
+    }
+    function closeCharGuideVideo() {
+      document.getElementById('char-guide-video-modal').style.display = 'none';
+      document.getElementById('char-guide-video-player').src = '';
+    }
+
     function showCharGuide(type) {
       var d = CHAR_GUIDE_DATA[type];
       if (!d) return;
-      document.getElementById('intel-char-img').src = d.img;
-      document.getElementById('intel-char-img').alt = d.char;
+      var charImg = document.getElementById('intel-char-img');
+      charImg.src = d.img;
+      charImg.alt = d.char;
+      if (d.video) {
+        charImg.style.cursor = 'pointer';
+        charImg.title = '클릭하면 안내 영상을 볼 수 있어요';
+        charImg.onclick = function () { openCharGuideVideo(d.video); };
+      } else {
+        charImg.style.cursor = '';
+        charImg.title = '';
+        charImg.onclick = null;
+      }
       var badge = document.getElementById('intel-char-badge');
       badge.textContent = d.badge;
       badge.style.background = d.bg;
