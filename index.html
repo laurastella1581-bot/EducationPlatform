@@ -8508,67 +8508,21 @@
       return hasBatchim ? '이' : '가';
     }
 
-    /* ── 안내 영상: 유튜브 공식 IFrame Player API로 종료 감지 (postMessage 추측 방식은 신뢰할 수 없어 교체) ── */
-    var _charGuidePlayer = null;
-    var _charGuidePendingVideoId = null;
-    var _ytApiLoading = false;
-
-    function _startCharGuideVideo(videoId) {
-      if (_charGuidePlayer && typeof _charGuidePlayer.loadVideoById === 'function') {
-        _charGuidePlayer.loadVideoById(videoId);
-        return;
-      }
-      _charGuidePlayer = new YT.Player('char-guide-video-player', {
-        videoId: videoId,
-        playerVars: { autoplay: 1, cc_load_policy: 0, cc_lang_pref: 'none' },
-        events: {
-          onReady: function (e) {
-            e.target.playVideo();
-            var el = document.getElementById('char-guide-video-player');
-            if (el) _ytKillCC(el);
-          },
-          onStateChange: function (e) {
-            if (e.data === YT.PlayerState.ENDED) closeCharGuideVideo();
-          }
-        }
-      });
-    }
-
-    function onYouTubeIframeAPIReady() {
-      if (_charGuidePendingVideoId) {
-        var vid = _charGuidePendingVideoId;
-        _charGuidePendingVideoId = null;
-        _startCharGuideVideo(vid);
-      }
-    }
-
+    /* ── 안내 영상: 사이트 전역에서 쓰는 iframe.src 방식(가장 안정적으로 검증된 방식)으로 재생하고,
+       종료 감지는 영상 길이 기반 타이머로 확실하게 처리한다 ── */
     var _charGuideCloseTimer = null;
     function openCharGuideVideo(videoId, duration) {
+      document.getElementById('char-guide-video-player').src = 'https://www.youtube.com/embed/' + videoId + '?autoplay=1&cc_load_policy=0&cc_lang_pref=none&enablejsapi=1';
       document.getElementById('char-guide-video-modal').style.display = 'flex';
       clearTimeout(_charGuideCloseTimer);
-      /* 유튜브 API의 종료 이벤트가 오지 않는 환경(자동화/봇 감지 등)을 대비한 확실한 안전장치 —
-         영상 길이(+1초 여유)가 지나면 API 감지 여부와 상관없이 무조건 닫는다 */
       if (duration) {
         _charGuideCloseTimer = setTimeout(closeCharGuideVideo, (duration + 1) * 1000);
-      }
-      if (window.YT && window.YT.Player) {
-        _startCharGuideVideo(videoId);
-      } else {
-        _charGuidePendingVideoId = videoId;
-        if (!_ytApiLoading) {
-          _ytApiLoading = true;
-          var tag = document.createElement('script');
-          tag.src = 'https://www.youtube.com/iframe_api';
-          document.head.appendChild(tag);
-        }
       }
     }
     function closeCharGuideVideo() {
       clearTimeout(_charGuideCloseTimer);
       document.getElementById('char-guide-video-modal').style.display = 'none';
-      if (_charGuidePlayer && typeof _charGuidePlayer.stopVideo === 'function') {
-        try { _charGuidePlayer.stopVideo(); } catch (e) {}
-      }
+      document.getElementById('char-guide-video-player').src = '';
     }
 
     function showCharGuide(type) {
