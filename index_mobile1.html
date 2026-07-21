@@ -8683,6 +8683,15 @@ var KS_SLIDES = [
       document.getElementById('char-guide-video-modal').style.display = 'none';
       document.getElementById('char-guide-video-player').src = '';
     }
+    /* 안내 영상이 끝나면(재생 상태 0 = ended) 자동으로 모달을 닫는다 */
+    window.addEventListener('message', function (e) {
+      var iframe = document.getElementById('char-guide-video-player');
+      if (!iframe || !iframe.src || e.source !== iframe.contentWindow) return;
+      try {
+        var data = JSON.parse(e.data);
+        if (data.event === 'onStateChange' && data.info === 0) closeCharGuideVideo();
+      } catch (err) {}
+    });
 
     function showCharGuide(type) {
       var d = CHAR_GUIDE_DATA[type];
