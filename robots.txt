@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://laurastella1581-bot.github.io/EducationPlatform/sitemap.xml
