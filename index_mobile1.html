@@ -3877,14 +3877,13 @@
       if (!iframe || !iframe.src || iframe.src.indexOf('/embed/') === -1) return;
       function post() {
         try {
+          /* unloadModule만으로는 일부 영상(예: 자동 생성 자막이 있는 영상)에서 자막이 다시 켜지는
+             경우가 있어, 트랙 선택 자체를 비우는 setOption 명령을 함께 보내 이중으로 막는다. */
           iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'unloadModule', args: ['captions'] }), '*');
+          iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'setOption', args: ['captions', 'track', {}] }), '*');
         } catch (e) {}
       }
-      setTimeout(post, 300);
-      setTimeout(post, 900);
-      setTimeout(post, 1800);
-      setTimeout(post, 3000);
-      setTimeout(post, 5000);
+      [100, 300, 600, 900, 1500, 2500, 4000, 6000].forEach(function (ms) { setTimeout(post, ms); });
       /* 재생 시작 등 플레이어가 실제로 메시지를 보내오는 시점마다 즉시 재전송 (재생 시 자막 재활성화 방지) */
       if (!iframe._ccListenerAttached) {
         iframe._ccListenerAttached = true;
@@ -3903,11 +3902,11 @@
         }
         post();
         _ccTicks++;
-        if (_ccTicks > 80) {
+        if (_ccTicks > 180) {
           clearInterval(iframe._ccInterval);
           iframe._ccInterval = null;
         }
-      }, 1500);
+      }, 1000);
     }
 
     /* ── English Play House 영상 모달 ── */
